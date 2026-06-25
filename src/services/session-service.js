@@ -7,9 +7,7 @@ export default class SessionService {
         "msg_" +
         Date.now() +
         "_" +
-        Math.random()
-          .toString(36)
-          .slice(2),
+        Math.random().toString(36).slice(2),
       role,
       content,
       createdAt: Date.now()
@@ -184,10 +182,7 @@ export default class SessionService {
     if (!session) return null;
 
     const message =
-      this.createMessage(
-        role,
-        content
-      );
+      this.createMessage(role, content);
 
     session.messages.push(message);
 
@@ -202,6 +197,53 @@ export default class SessionService {
     this.save(data);
 
     return message;
+  }
+
+  static updateMessage(messageId, newContent) {
+    const data = this.load();
+
+    const session =
+      data.sessions.find(
+        s =>
+          s.id === data.currentSessionId
+      );
+
+    if (!session) return;
+
+    const msg =
+      session.messages.find(
+        m => m.id === messageId
+      );
+
+    if (!msg) return;
+
+    msg.content = newContent;
+
+    this.save(data);
+  }
+
+  static removeMessagesAfter(messageId) {
+    const data = this.load();
+
+    const session =
+      data.sessions.find(
+        s =>
+          s.id === data.currentSessionId
+      );
+
+    if (!session) return;
+
+    const index =
+      session.messages.findIndex(
+        m => m.id === messageId
+      );
+
+    if (index === -1) return;
+
+    session.messages =
+      session.messages.slice(0, index + 1);
+
+    this.save(data);
   }
 
   static removeLastAssistantMessage() {
