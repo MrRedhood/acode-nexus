@@ -1,333 +1,7 @@
 :root {
-  --nx-bg: rgba(18, 18, 24, 0.88);
-  --nx-surface: rgba(255, 255, 255, 0.06);
-  --nx-border: rgba(255, 255, 255, 0.08);
-  --nx-text: #f4f4f5;
-  --nx-muted: #a1a1aa;
-  --nx-accent: #6366f1;
-  --nx-accent-2: #8b5cf6;
-}
-
-.nexus-fab {
-  position: fixed;
-  right: 18px;
-  bottom: 90px;
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: linear-gradient(135deg, var(--nx-accent), var(--nx-accent-2));
-  color: white;
-  font-size: 22px;
-  font-weight: 700;
-  z-index: 999999;
-  box-shadow: 0 8px 30px rgba(99,102,241,0.35);
-}
-
-.nexus-panel {
-  position: fixed !important;
-  inset: 0 0 0 auto !important;
-
-  width: min(88vw, 390px) !important;
-  height: 100dvh !important;
-
-  background: rgba(18,18,24,0.95) !important;
-  backdrop-filter: blur(18px);
-
-  color: white;
-  z-index: 999998 !important;
-
-  display: flex;
-  flex-direction: column;
-
-  box-sizing: border-box;
-  padding: 18px;
-  overflow: hidden;
-
-  transform: translateX(100%);
-  transition: transform 0.28s ease;
-}
-
-.nexus-panel.open {
-  transform: translateX(0);
-}
-
-.nexus-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.nexus-title {
-  font-size: 26px;
-  font-weight: 700;
-}
-
-.nexus-close {
-  background: transparent;
-  color: white;
-  border: none;
-  font-size: 24px;
-}
-
-.nexus-label {
-  display: block;
-  margin-top: 14px;
-  margin-bottom: 6px;
-  color: var(--nx-muted);
-  font-size: 14px;
-}
-
-.nexus-input,
-.nexus-select,
-.nexus-textarea {
-  width: 100%;
-  background: var(--nx-surface);
-  color: white;
-  border: 1px solid var(--nx-border);
-  border-radius: 14px;
-  padding: 12px;
-  box-sizing: border-box;
-}
-
-.nexus-textarea {
-  width: 100%;
-  min-height: 70px;
-  max-height: 140px;
-  resize: none;
-  margin-top: 12px;
-}
-
-.nexus-button {
-  width: 100%;
-  margin-top: 12px;
-  border: none;
-  border-radius: 14px;
-  padding: 12px;
-  background: linear-gradient(135deg, var(--nx-accent), var(--nx-accent-2));
-  color: white;
-  font-weight: 600;
-}
-
-
-.nexus-msg {
-  margin-bottom: 12px;
-  padding: 12px;
-  border-radius: 14px;
-  line-height: 1.4;
-
-  min-width: 0;
-  overflow: hidden;
-}
-
-.nexus-user {
-  background: rgba(99,102,241,0.25);
-}
-
-.nexus-ai {
-  background: rgba(255,255,255,0.06);
-}
-
-.nexus-session-item {
-  padding: 12px;
-  margin-top: 8px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.05);
-  font-size: 14px;
-}
-
-.nexus-session-item.active {
-  background: rgba(99,102,241,0.25);
-  border: 1px solid rgba(99,102,241,0.4);
-}
-
-.nexus-sessions-header {
-  margin-bottom: 12px;
-}
-
-.nexus-header-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.nexus-icon-btn {
-  width: 38px;
-  height: 38px;
-  border: none;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.06);
-  color: white;
-  font-size: 18px;
-}
-
-.nexus-layout {
-  display: flex;
-  gap: 14px;
-  margin-top: 16px;
-  height: calc(100vh - 140px);
-}
-
-.nexus-sessions-panel {
-  width: 120px;
-  overflow-y: auto;
-  flex-shrink: 0;
-}
-
-.nexus-chat-panel {
-  flex: 1;
-  min-width: 0;
-} 
-
-.nexus-settings-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(8px);
-  z-index: 1000001;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.nexus-settings-modal {
-  width: min(420px, 92vw);
-  padding: 22px;
-  border-radius: 24px;
-  background: rgba(24,24,30,0.96);
-  border: 1px solid rgba(255,255,255,0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.nexus-settings-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.nexus-input {
-  width: 100%;
-  padding: 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.04);
-  color: white;
-  outline: none;
-}
-
-.nexus-left-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.nexus-chat-full {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  margin-top: 14px;
-}
-
-.nexus-drawer {
-  position: absolute;
-  top: 72px;
-  left: -100%;
-  width: 85%;
-  max-width: 300px;
-  height: calc(100% - 72px);
-  z-index: 30;
-  transition: left 0.28s ease;
-}
-
-.nexus-drawer.open {
-  left: 0;
-}
-
-.nexus-drawer-inner {
-  padding: 18px;
-}
-
-.nexus-session-list {
-  margin-top: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.nexus-session-item {
-  width: 100%;
-  padding: 16px;
-  border: none;
-  border-radius: 18px;
-  text-align: left;
-  color: white;
-  background: rgba(255,255,255,0.05);
-}
-
-.nexus-session-item.active {
-  background: rgba(99,102,241,0.32);
-}
-
-.nexus-empty {
-  opacity: 0.65;
-  padding: 12px;
-}
-
-.nexus-msg h1,
-.nexus-msg h2,
-.nexus-msg h3 {
-  margin: 10px 0;
-  font-weight: 700;
-}
-
-.nexus-msg h1 {
-  font-size: 24px;
-}
-
-.nexus-msg h2 {
-  font-size: 20px;
-}
-
-.nexus-msg h3 {
-  font-size: 17px;
-}
-
-.nexus-msg strong {
-  font-weight: 700;
-}
-
-.nexus-inline-code {
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: rgba(255,255,255,0.08);
-  font-family: monospace;
-  font-size: 13px;
-}
-
-.nexus-code-block {
-  margin: 12px 0;
-  padding: 14px;
-  border-radius: 14px;
-  background: rgba(0,0,0,0.35);
-  border: 1px solid rgba(255,255,255,0.08);
-  overflow-x: auto;
-  overflow-y: hidden;
-  max-width: 100%;
-}
-
-.nexus-code-block pre {
-  margin: 0;
-  overflow-x: auto;
-}
-
-:root {
   --nx-bg: rgba(18, 18, 24, 0.96);
-  --nx-surface: rgba(255, 255, 255, 0.06);
-  --nx-border: rgba(255, 255, 255, 0.08);
+  --nx-surface: rgba(255,255,255,0.06);
+  --nx-border: rgba(255,255,255,0.08);
   --nx-text: #f4f4f5;
   --nx-muted: #a1a1aa;
   --nx-accent: #6366f1;
@@ -348,23 +22,23 @@
   bottom: 90px !important;
   width: 54px;
   height: 54px;
-  border-radius: 50%;
   border: none;
+  border-radius: 50%;
   background: linear-gradient(135deg, var(--nx-accent), var(--nx-accent-2));
   color: white;
   font-size: 22px;
   font-weight: 700;
   z-index: 2147483646 !important;
-  box-shadow: 0 8px 30px rgba(99,102,241,0.35);
 }
 
 /* MAIN PANEL */
 .nexus-panel {
   position: fixed !important;
-  top: 0 !important;
-  right: 0 !important;
-  width: min(88vw, 390px) !important;
-  height: 100vh !important;
+  top: 0;
+  right: 0;
+
+  width: min(88vw, 390px);
+  height: 100dvh;
 
   display: flex;
   flex-direction: column;
@@ -385,6 +59,7 @@
   transform: translateX(0);
 }
 
+/* HEADER */
 .nexus-header {
   display: flex;
   justify-content: space-between;
@@ -395,8 +70,8 @@
 .nexus-left-actions,
 .nexus-header-actions {
   display: flex;
-  align-items: center;
   gap: 10px;
+  align-items: center;
 }
 
 .nexus-title {
@@ -431,18 +106,23 @@
   margin-top: 14px;
 }
 
+/* CHAT BODY */
 .nexus-chat {
   flex: 1;
+  min-height: 0;
+
   overflow-y: auto;
   overflow-x: hidden;
 
   margin-top: 14px;
   padding: 12px;
+
   border-radius: 16px;
   background: rgba(255,255,255,0.03);
   border: 1px solid var(--nx-border);
 }
 
+/* INPUT */
 .nexus-input-area {
   flex-shrink: 0;
   padding: 12px 0 18px;
@@ -470,9 +150,9 @@
 .nexus-button {
   width: 100%;
   margin-top: 12px;
+  padding: 12px;
   border: none;
   border-radius: 14px;
-  padding: 12px;
   background: linear-gradient(135deg, var(--nx-accent), var(--nx-accent-2));
   color: white;
   font-weight: 600;
@@ -497,26 +177,29 @@
 
 /* DRAWER */
 .nexus-drawer {
-  position: absolute;
+  position: fixed !important;
   top: 0;
   left: 0;
 
-  width: 300px;
-  max-width: 85vw;
-  height: 100%;
+  width: min(300px, 85vw);
+  height: 100dvh;
 
-  background: rgba(20,20,28,0.99);
+  background: rgba(20,20,28,0.995);
   border-right: 1px solid rgba(255,255,255,0.08);
 
   z-index: 2147483646;
 
-  transform: translateX(-105%);
-  transition: transform .28s ease;
   overflow-y: auto;
+  overflow-x: hidden;
+
+  transform: translate3d(-100%, 0, 0);
+  transition: transform .28s ease;
+
+  will-change: transform;
 }
 
 .nexus-drawer.open {
-  transform: translateX(0);
+  transform: translate3d(0, 0, 0);
 }
 
 .nexus-drawer-inner {
@@ -552,7 +235,7 @@
 /* SETTINGS */
 .nexus-settings-overlay {
   position: fixed !important;
-  inset: 0 !important;
+  inset: 0;
   background: rgba(0,0,0,0.65);
   display: flex;
   align-items: center;
