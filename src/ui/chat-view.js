@@ -7,6 +7,7 @@ export default class ChatView {
     this.container = container;
     this.activeController = null;
     this.isGenerating = false;
+    this.editingMessageId = null;
   }
 
   render() {
@@ -62,12 +63,10 @@ export default class ChatView {
 
     box.innerHTML = "";
 
-    const messages =
-      SessionService.getMessages();
-
-    messages.forEach(msg => {
-      this.appendMessageObject(msg, false);
-    });
+    SessionService.getMessages()
+      .forEach(msg => {
+        this.appendMessageObject(msg, false);
+      });
 
     box.scrollTop = box.scrollHeight;
   }
@@ -86,9 +85,7 @@ export default class ChatView {
 
     document.body.appendChild(toast);
 
-    setTimeout(() => {
-      toast.remove();
-    }, 1500);
+    setTimeout(() => toast.remove(), 1500);
   }
 
   copyText(content) {
@@ -102,6 +99,21 @@ export default class ChatView {
     if (this.activeController) {
       this.activeController.abort();
     }
+  }
+
+  startEditMessage(message) {
+    const input =
+      this.container.querySelector("#chat-input");
+
+    const sendBtn =
+      this.container.querySelector("#send-btn");
+
+    this.editingMessageId = message.id;
+    input.value = message.content;
+    input.focus();
+
+    sendBtn.textContent =
+      "Save & Regenerate";
   }
 
   attachCodeCopyListeners(msgNode) {
@@ -159,36 +171,37 @@ export default class ChatView {
         ? "You"
         : "Nexus";
 
-    const extraButtons =
-      message.role === "assistant"
-        ? `
-          <button
-            class="nexus-msg-action-btn nexus-regen-btn"
-          >
-            ↻
-          </button>
-        `
-        : "";
+    let extraButtons = "";
+
+    if (message.role === "assistant") {
+      extraButtons = `
+        <button class="nexus-msg-action-btn nexus-regen-btn">
+          ↻
+        </button>
+      `;
+    } else {
+      extraButtons = `
+        <button class="nexus-msg-action-btn nexus-edit-btn">
+          Edit
+        </button>
+      `;
+    }
 
     msg.innerHTML = `
       <strong>${label}</strong><br>
       ${rendered}
       <div class="nexus-msg-actions">
-        <button
-          class="nexus-msg-action-btn nexus-copy-btn"
-        >
+        <button class="nexus-msg-action-btn nexus-copy-btn">
           Copy
         </button>
         ${extraButtons}
       </div>
     `;
 
-    const copyBtn =
-      msg.querySelector(".nexus-copy-btn");
-
-    copyBtn.addEventListener("click", () => {
-      this.copyText(message.content);
-    });
+    msg.querySelector(".nexus-copy-btn")
+      .addEventListener("click", () => {
+        this.copyText(message.content);
+      });
 
     const regenBtn =
       msg.querySelector(".nexus-regen-btn");
@@ -196,6 +209,15 @@ export default class ChatView {
     if (regenBtn) {
       regenBtn.addEventListener("click", () => {
         this.regenerateResponse();
+      });
+    }
+
+    const editBtn =
+      msg.querySelector(".nexus-edit-btn");
+
+    if (editBtn) {
+      editBtn.addEventListener("click", () => {
+        this.startEditMessage(message);
       });
     }
 
@@ -219,11 +241,6 @@ export default class ChatView {
 
     SessionService.removeLastAssistantMessage();
     this.renderMessages();
-
-    const lastUser =
-      SessionService.getLastUserMessage();
-
-    if (!lastUser) return;
 
     await this.generateAssistantReply();
   }
@@ -266,8 +283,6 @@ export default class ChatView {
       });
 
     } catch (error) {
-      console.error(error);
-
       if (error.name === "AbortError") {
         thinkingNode.innerHTML =
           `<strong>Nexus</strong><br>Generation stopped`;
@@ -280,9 +295,12 @@ export default class ChatView {
       this.isGenerating = false;
 
       input.disabled = false;
-      sendBtn.textContent = "Send";
-
       input.focus();
+
+      sendBtn.textContent =
+        this.editingMessageId
+          ? "Save & Regenerate"
+          : "Send";
     }
   }
 
@@ -292,9 +310,32 @@ export default class ChatView {
     const input =
       this.container.querySelector("#chat-input");
 
+    const sendBtn =
+      this.container.querySelector("#send-btn");
+
     const text = input.value.trim();
 
     if (!text) return;
+
+    if (this.editingMessageId) {
+      SessionService.updateMessage(
+        this.editingMessageId,
+        text
+      );
+
+      SessionService.removeMessagesAfter(
+        this.editingMessageId
+      );
+
+      this.editingMessageId = null;
+      sendBtn.textContent = "Send";
+
+      this.renderMessages();
+      input.value = "";
+
+      await this.generateAssistantReply();
+      return;
+    }
 
     this.appendMessageObject({
       role: "user",
