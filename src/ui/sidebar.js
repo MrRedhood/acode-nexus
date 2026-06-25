@@ -153,29 +153,20 @@ export default class Sidebar {
   }
 
   openPanel() {
-    console.log("Opening panel");
+  console.log("Opening panel");
 
-    this.panel.classList.add("open");
+  this.panel.style.display = "flex";
+  this.fab.style.display = "none";
+  this.isOpen = true;
+}
 
-    if (this.fab) {
-      this.fab.style.display = "none";
-    }
+closePanel() {
+  console.log("Closing panel");
 
-    this.isOpen = true;
-    this.updatePanelHeight();
-  }
-
-  closePanel() {
-    console.log("Closing panel");
-
-    this.panel.classList.remove("open");
-
-    if (this.fab) {
-      this.fab.style.display = "block";
-    }
-
-    this.isOpen = false;
-  }
+  this.panel.style.display = "none";
+  this.fab.style.display = "block";
+  this.isOpen = false;
+}
 
   destroy() {
     console.log("Destroy sidebar");
