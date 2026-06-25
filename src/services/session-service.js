@@ -1,38 +1,44 @@
 const STORAGE_KEY = "acode_nexus_sessions";
 
 export default class SessionService {
+  static createDefaultData() {
+    const session = {
+      id: "session_1",
+      title: "New Chat",
+      pinned: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      messages: []
+    };
+
+    return {
+      currentSessionId: session.id,
+      sessions: [session]
+    };
+  }
+
   static load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
 
       if (!raw) {
-        const defaultData = {
-          currentSessionId: "session_1",
-          sessions: [
-            {
-              id: "session_1",
-              title: "New Chat",
-              messages: []
-            }
-          ]
-        };
-
-        localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify(defaultData)
-        );
-
-        return defaultData;
+        const data = this.createDefaultData();
+        this.save(data);
+        return data;
       }
 
-      return JSON.parse(raw);
+      const data = JSON.parse(raw);
+
+      if (!data.sessions?.length) {
+        const fallback = this.createDefaultData();
+        this.save(fallback);
+        return fallback;
+      }
+
+      return data;
     } catch (error) {
       console.error(error);
-
-      return {
-        currentSessionId: null,
-        sessions: []
-      };
+      return this.createDefaultData();
     }
   }
 
@@ -47,16 +53,16 @@ export default class SessionService {
     return this.load().sessions;
   }
 
+  static getActiveSessionId() {
+    return this.load().currentSessionId;
+  }
+
   static getCurrentSession() {
     const data = this.load();
 
     return data.sessions.find(
       session => session.id === data.currentSessionId
     );
-  }
-
-  static getActiveSessionId() {
-    return this.load().currentSessionId;
   }
 
   static setActiveSession(id) {
@@ -75,6 +81,9 @@ export default class SessionService {
     const newSession = {
       id: "session_" + Date.now(),
       title: "New Chat",
+      pinned: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
       messages: []
     };
 
@@ -93,12 +102,18 @@ export default class SessionService {
       session => session.id === data.currentSessionId
     );
 
-    if (!session) return;
+    if (!session) return null;
 
-    session.messages.push({
+    const message = {
+      id: "msg_" + Date.now(),
       role,
-      content
-    });
+      content,
+      createdAt: Date.now(),
+      status: "done"
+    };
+
+    session.messages.push(message);
+    session.updatedAt = Date.now();
 
     if (
       session.title === "New Chat" &&
@@ -108,6 +123,8 @@ export default class SessionService {
     }
 
     this.save(data);
+
+    return message;
   }
 
   static getMessages() {
