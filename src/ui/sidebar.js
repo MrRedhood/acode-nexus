@@ -3,7 +3,9 @@ import SessionsView from "./sessions-view.js";
 import SettingsView from "./settings-view.js";
 
 export default class Sidebar {
-  constructor() {
+  constructor(page) {
+    this.page = page || document.body;
+
     this.fab = null;
     this.panel = null;
     this.chatView = null;
@@ -30,7 +32,7 @@ export default class Sidebar {
 
     this.fab.onclick = () => this.togglePanel();
 
-    document.body.appendChild(this.fab);
+    this.page.appendChild(this.fab);
   }
 
   createPanel() {
@@ -51,11 +53,10 @@ export default class Sidebar {
       </div>
 
       <div id="sessions-drawer" class="nexus-drawer"></div>
-
       <div id="chat-root" class="nexus-chat-full"></div>
     `;
 
-    document.body.appendChild(this.panel);
+    this.page.appendChild(this.panel);
 
     this.settingsView = new SettingsView();
 
