@@ -6,8 +6,7 @@ export default class Sidebar {
   constructor(page) {
     console.log("Sidebar constructor page:", page);
 
-    this.page = page || document.body;
-
+    this.page = page;
     this.fab = null;
     this.panel = null;
     this.chatView = null;
@@ -45,18 +44,8 @@ export default class Sidebar {
       this.togglePanel();
     };
 
-    try {
-      if (this.page && typeof this.page.appendChild === "function") {
-        this.page.appendChild(this.fab);
-        console.log("FAB appended to page");
-      } else {
-        document.body.appendChild(this.fab);
-        console.log("FAB appended to body");
-      }
-    } catch (err) {
-      console.error("FAB append error:", err);
-      document.body.appendChild(this.fab);
-    }
+    document.body.appendChild(this.fab);
+    console.log("FAB appended to body");
   }
 
   createPanel() {
@@ -82,23 +71,18 @@ export default class Sidebar {
       <div id="chat-root" class="nexus-chat-full"></div>
     `;
 
-    try {
-      if (this.page && typeof this.page.appendChild === "function") {
-        this.page.appendChild(this.panel);
-        console.log("Panel appended to page");
-      } else {
-        document.body.appendChild(this.panel);
-        console.log("Panel appended to body");
-      }
-    } catch (err) {
-      console.error("Panel append error:", err);
-      document.body.appendChild(this.panel);
-    }
+    document.body.appendChild(this.panel);
+    this.panel.style.display = "none";
+
+    console.log("Panel appended to body");
 
     this.settingsView = new SettingsView();
 
-    const drawer = this.panel.querySelector("#sessions-drawer");
-    const chatRoot = this.panel.querySelector("#chat-root");
+    const drawer =
+      this.panel.querySelector("#sessions-drawer");
+
+    const chatRoot =
+      this.panel.querySelector("#chat-root");
 
     this.chatView = new ChatView(chatRoot);
 
@@ -116,7 +100,7 @@ export default class Sidebar {
     this.panel
       .querySelector("#drawer-btn")
       .addEventListener("click", () => {
-        console.log("Drawer button clicked");
+        console.log("Drawer clicked");
         drawer.classList.toggle("open");
       });
 
@@ -138,12 +122,15 @@ export default class Sidebar {
   updatePanelHeight() {
     if (!this.panel) return;
 
-    this.panel.style.height = window.innerHeight + "px";
-    this.panel.style.maxHeight = window.innerHeight + "px";
+    this.panel.style.height =
+      window.innerHeight + "px";
+
+    this.panel.style.maxHeight =
+      window.innerHeight + "px";
   }
 
   togglePanel() {
-    console.log("togglePanel", this.isOpen);
+    console.log("togglePanel:", this.isOpen);
 
     if (this.isOpen) {
       this.closePanel();
@@ -153,20 +140,24 @@ export default class Sidebar {
   }
 
   openPanel() {
-  console.log("Opening panel");
+    console.log("Opening panel");
 
-  this.panel.style.display = "flex";
-  this.fab.style.display = "none";
-  this.isOpen = true;
-}
+    this.panel.style.display = "flex";
+    this.panel.classList.add("open");
 
-closePanel() {
-  console.log("Closing panel");
+    this.fab.style.display = "none";
+    this.isOpen = true;
+  }
 
-  this.panel.style.display = "none";
-  this.fab.style.display = "block";
-  this.isOpen = false;
-}
+  closePanel() {
+    console.log("Closing panel");
+
+    this.panel.classList.remove("open");
+    this.panel.style.display = "none";
+
+    this.fab.style.display = "block";
+    this.isOpen = false;
+  }
 
   destroy() {
     console.log("Destroy sidebar");
