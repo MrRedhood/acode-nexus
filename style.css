@@ -10,6 +10,7 @@
 
 /* RESET */
 .nexus-panel *,
+.nexus-drawer *,
 .nexus-settings-overlay *,
 .nexus-fab {
   box-sizing: border-box;
@@ -24,11 +25,16 @@
   height: 54px;
   border: none;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--nx-accent), var(--nx-accent-2));
+  background: linear-gradient(
+    135deg,
+    var(--nx-accent),
+    var(--nx-accent-2)
+  );
   color: white;
   font-size: 22px;
   font-weight: 700;
   z-index: 2147483646 !important;
+  box-shadow: 0 8px 30px rgba(99,102,241,0.35);
 }
 
 /* MAIN PANEL */
@@ -46,13 +52,15 @@
   padding: 18px;
   overflow: hidden;
 
-  background: var(--nx-bg);
+  background: rgba(18,18,24,0.97);
+  backdrop-filter: blur(18px);
+
   color: var(--nx-text);
 
   z-index: 2147483645 !important;
 
   transform: translateX(100%);
-  transition: transform .28s ease;
+  transition: transform 0.28s ease;
 }
 
 .nexus-panel.open {
@@ -106,11 +114,9 @@
   margin-top: 14px;
 }
 
-/* CHAT BODY */
 .nexus-chat {
   flex: 1;
   min-height: 0;
-
   overflow-y: auto;
   overflow-x: hidden;
 
@@ -153,12 +159,16 @@
   padding: 12px;
   border: none;
   border-radius: 14px;
-  background: linear-gradient(135deg, var(--nx-accent), var(--nx-accent-2));
+  background: linear-gradient(
+    135deg,
+    var(--nx-accent),
+    var(--nx-accent-2)
+  );
   color: white;
   font-weight: 600;
 }
 
-/* MESSAGES */
+/* CHAT MESSAGES */
 .nexus-msg {
   margin-bottom: 12px;
   padding: 12px;
@@ -175,7 +185,7 @@
   background: rgba(255,255,255,0.06);
 }
 
-/* DRAWER */
+/* DRAWER (SEPARATE SIBLING LAYER) */
 .nexus-drawer {
   position: fixed !important;
   top: 0;
@@ -185,21 +195,21 @@
   height: 100dvh;
 
   background: rgba(20,20,28,0.995);
+  backdrop-filter: blur(16px);
+
   border-right: 1px solid rgba(255,255,255,0.08);
 
-  z-index: 2147483646;
+  z-index: 2147483648 !important;
 
   overflow-y: auto;
   overflow-x: hidden;
 
-  transform: translate3d(-100%, 0, 0);
-  transition: transform .28s ease;
-
-  will-change: transform;
+  transform: translateX(-100%);
+  transition: transform 0.28s ease;
 }
 
 .nexus-drawer.open {
-  transform: translate3d(0, 0, 0);
+  transform: translateX(0);
 }
 
 .nexus-drawer-inner {
@@ -228,7 +238,7 @@
 }
 
 .nexus-empty {
-  opacity: .65;
+  opacity: 0.65;
   padding: 12px;
 }
 
@@ -237,10 +247,13 @@
   position: fixed !important;
   inset: 0;
   background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(8px);
+
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2147483647 !important;
+
+  z-index: 2147483649 !important;
 }
 
 .nexus-settings-modal {
@@ -249,6 +262,7 @@
   border-radius: 24px;
   background: rgba(24,24,30,0.98);
   border: 1px solid rgba(255,255,255,0.08);
+
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -268,9 +282,17 @@
   font-weight: 700;
 }
 
-.nexus-msg h1 { font-size: 24px; }
-.nexus-msg h2 { font-size: 20px; }
-.nexus-msg h3 { font-size: 17px; }
+.nexus-msg h1 {
+  font-size: 24px;
+}
+
+.nexus-msg h2 {
+  font-size: 20px;
+}
+
+.nexus-msg h3 {
+  font-size: 17px;
+}
 
 .nexus-msg strong {
   font-weight: 700;
@@ -309,6 +331,6 @@
   margin-bottom: 10px;
   font-size: 12px;
   font-weight: 700;
-  opacity: .7;
+  opacity: 0.7;
   text-transform: uppercase;
 }
