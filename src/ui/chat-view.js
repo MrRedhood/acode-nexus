@@ -64,6 +64,36 @@ export default class ChatView {
     box.scrollTop = box.scrollHeight;
   }
 
+  showToast(text) {
+    const old =
+      document.querySelector(".nexus-copy-toast");
+
+    if (old) old.remove();
+
+    const toast =
+      document.createElement("div");
+
+    toast.className = "nexus-copy-toast";
+    toast.textContent = text;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.remove();
+    }, 1500);
+  }
+
+  copyMessage(content) {
+    navigator.clipboard
+      .writeText(content)
+      .then(() => {
+        this.showToast("Copied!");
+      })
+      .catch(() => {
+        this.showToast("Copy failed");
+      });
+  }
+
   appendMessageObject(message, persist = true) {
     const box =
       this.container.querySelector("#chat-messages");
@@ -71,6 +101,7 @@ export default class ChatView {
     if (!box) return;
 
     const msg = document.createElement("div");
+
     msg.className =
       "nexus-msg " +
       (message.role === "user"
@@ -89,8 +120,22 @@ export default class ChatView {
         ? "You"
         : "Nexus";
 
-    msg.innerHTML =
-      `<strong>${label}</strong><br>${rendered}`;
+    msg.innerHTML = `
+      <strong>${label}</strong><br>
+      ${rendered}
+      <div class="nexus-msg-actions">
+        <button class="nexus-msg-action-btn">
+          Copy
+        </button>
+      </div>
+    `;
+
+    const copyBtn =
+      msg.querySelector(".nexus-msg-action-btn");
+
+    copyBtn.addEventListener("click", () => {
+      this.copyMessage(message.content);
+    });
 
     box.appendChild(msg);
     box.scrollTop = box.scrollHeight;
@@ -150,32 +195,31 @@ export default class ChatView {
 
       assistantMessage.content = response;
 
-      assistantNode.innerHTML =
-        `<strong>Nexus</strong><br>${parseMarkdown(response)}`;
+      assistantNode.remove();
 
-      SessionService.addMessage(
-        "assistant",
-        response
-      );
+      this.appendMessageObject({
+        id: assistantMessage.id,
+        role: "assistant",
+        content: response
+      });
+
     } catch (error) {
       console.error(error);
 
       assistantNode.innerHTML =
         `<strong>Error</strong><br>${error.message}`;
     } finally {
+      SessionService.addMessage(
+        "assistant",
+        assistantMessage.content
+      );
+
       this.isGenerating = false;
 
       input.disabled = false;
       sendBtn.disabled = false;
 
       input.focus();
-
-      const box =
-        this.container.querySelector("#chat-messages");
-
-      if (box) {
-        box.scrollTop = box.scrollHeight;
-      }
     }
   }
 }
