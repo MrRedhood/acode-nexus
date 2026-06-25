@@ -124,3 +124,21 @@
 .nexus-ai {
   background: rgba(255,255,255,0.06);
 }
+
+.nexus-session-item {
+  padding: 12px;
+  margin-top: 8px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.05);
+  font-size: 14px;
+}
+
+.nexus-session-item.active {
+  background: rgba(99,102,241,0.25);
+  border: 1px solid rgba(99,102,241,0.4);
+}
+
+.nexus-sessions-header {
+  margin-bottom: 12px;
+}
