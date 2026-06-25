@@ -12,7 +12,24 @@ export default class GeminiProvider {
       const data = await response.json();
 
       return (data.models || [])
-        .filter(model => model.name.includes("gemini"))
+        .filter(model => {
+          const id = model.name.replace("models/", "");
+
+          const hasGenerate =
+            model.supportedGenerationMethods?.includes(
+              "generateContent"
+            );
+
+          const badTypes =
+            id.includes("embedding") ||
+            id.includes("image") ||
+            id.includes("tts") ||
+            id.includes("robotics") ||
+            id.includes("vision") ||
+            id.includes("aqa");
+
+          return hasGenerate && !badTypes;
+        })
         .map(model => ({
           id: model.name.replace("models/", ""),
           name: model.name.replace("models/", "")
@@ -35,9 +52,7 @@ export default class GeminiProvider {
           contents: [
             {
               parts: [
-                {
-                  text: message
-                }
+                { text: message }
               ]
             }
           ]
