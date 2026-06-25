@@ -92,21 +92,29 @@ export default class ChatView {
 
   attachCodeCopyListeners(msgNode) {
     const buttons =
-      msgNode.querySelectorAll(".nexus-code-copy");
+      msgNode.querySelectorAll(
+        ".nexus-code-copy"
+      );
 
     buttons.forEach(button => {
       button.addEventListener("click", e => {
         e.stopPropagation();
 
-        const code =
-          button.dataset.code
-            .replace(/&#10;/g, "\n")
-            .replace(/&quot;/g, '"')
-            .replace(/&amp;/g, "&")
-            .replace(/&lt;/g, "<")
-            .replace(/&gt;/g, ">");
+        const wrapper =
+          button.closest(
+            ".nexus-code-block"
+          );
 
-        this.copyText(code);
+        if (!wrapper) return;
+
+        const textarea =
+          wrapper.querySelector(
+            ".nexus-hidden-code"
+          );
+
+        if (!textarea) return;
+
+        this.copyText(textarea.value);
       });
     });
   }
@@ -125,7 +133,9 @@ export default class ChatView {
         ? "nexus-user"
         : "nexus-ai");
 
-    msg.dataset.messageId = message.id;
+    if (message.id) {
+      msg.dataset.messageId = message.id;
+    }
 
     const rendered =
       message.role === "user"
@@ -140,7 +150,9 @@ export default class ChatView {
     const extraButtons =
       message.role === "assistant"
         ? `
-          <button class="nexus-msg-action-btn nexus-regen-btn">
+          <button
+            class="nexus-msg-action-btn nexus-regen-btn"
+          >
             ↻
           </button>
         `
@@ -150,7 +162,9 @@ export default class ChatView {
       <strong>${label}</strong><br>
       ${rendered}
       <div class="nexus-msg-actions">
-        <button class="nexus-msg-action-btn">
+        <button
+          class="nexus-msg-action-btn nexus-copy-btn"
+        >
           Copy
         </button>
         ${extraButtons}
@@ -158,7 +172,7 @@ export default class ChatView {
     `;
 
     const copyBtn =
-      msg.querySelector(".nexus-msg-action-btn");
+      msg.querySelector(".nexus-copy-btn");
 
     copyBtn.addEventListener("click", () => {
       this.copyText(message.content);
