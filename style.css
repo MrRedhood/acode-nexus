@@ -49,7 +49,7 @@
 }
 
 .nexus-panel.open {
-  right: 0;
+  transform: translateX(0);
 }
 
 .nexus-header {
