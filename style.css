@@ -347,6 +347,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+
   margin-top: 14px;
   padding: 12px;
   border-radius: 16px;
