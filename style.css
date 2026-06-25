@@ -225,7 +225,11 @@
 }
 
 .nexus-chat-full {
-  height: calc(100% - 72px);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 14px;
 }
 
 .nexus-drawer {
