@@ -230,14 +230,16 @@ position: fixed;
 .nexus-drawer {
   position: absolute;
   top: 72px;
-  left: -320px;
-  width: 300px;
+  left: -100%;
+  width: 85%;
+  max-width: 300px;
   height: calc(100% - 72px);
-  background: rgba(20,20,28,0.98);
-  border-right: 1px solid rgba(255,255,255,0.08);
-  backdrop-filter: blur(16px);
+  z-index: 30;
   transition: left 0.28s ease;
-  z-index: 10;
+}
+
+.nexus-drawer.open {
+  left: 0;
 }
 
 .nexus-drawer.open {
