@@ -9,7 +9,10 @@ export default class Nexus {
   }
 
   async injectStyles() {
+    console.log("Inject styles start");
+
     const cssPath = `${this.baseUrl}style.css`;
+    console.log("CSS path:", cssPath);
 
     const res = await fetch(cssPath);
     const css = await res.text();
@@ -19,13 +22,25 @@ export default class Nexus {
     style.textContent = css;
 
     document.head.appendChild(style);
+
+    console.log("Inject styles done");
   }
 
   async init() {
-    await this.injectStyles();
+    try {
+      console.log("Nexus init start");
 
-    this.sidebar = new Sidebar(this.page);
-    this.sidebar.init();
+      await this.injectStyles();
+
+      console.log("Creating sidebar");
+
+      this.sidebar = new Sidebar(this.page);
+      this.sidebar.init();
+
+      console.log("Sidebar initialized");
+    } catch (err) {
+      console.error("Nexus init crash:", err);
+    }
   }
 
   destroy() {
