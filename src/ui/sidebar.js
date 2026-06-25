@@ -1,12 +1,12 @@
 import ChatView from "./chat-view.js";
-import StorageService from "../services/storage-service.js";
-import AIService from "../services/ai-service.js";
+import SessionsView from "./sessions-view.js";
 
 export default class Sidebar {
   constructor() {
     this.fab = null;
     this.panel = null;
     this.chatView = null;
+    this.sessionsView = null;
     this.isOpen = false;
   }
 
@@ -28,55 +28,23 @@ export default class Sidebar {
   }
 
   createPanel() {
-    const savedProvider =
-      StorageService.get("provider") || "gemini";
-
-    const savedApiKey =
-      StorageService.get("apiKey") || "";
-
     this.panel = document.createElement("div");
     this.panel.className = "nexus-panel";
 
     this.panel.innerHTML = `
       <div class="nexus-header">
         <span class="nexus-title">Nexus</span>
-        <button id="nexus-close" class="nexus-close">×</button>
+
+        <div class="nexus-header-actions">
+          <button id="settings-btn" class="nexus-icon-btn">⚙</button>
+          <button id="nexus-close" class="nexus-close">×</button>
+        </div>
       </div>
 
-      <label class="nexus-label">Provider</label>
-      <select id="provider-select" class="nexus-select">
-        <option value="openrouter" ${
-          savedProvider === "openrouter" ? "selected" : ""
-        }>OpenRouter</option>
-
-        <option value="gemini" ${
-          savedProvider === "gemini" ? "selected" : ""
-        }>Gemini</option>
-
-        <option value="deepinfra" ${
-          savedProvider === "deepinfra" ? "selected" : ""
-        }>DeepInfra</option>
-      </select>
-
-      <label class="nexus-label">API Key</label>
-      <input
-        id="api-key"
-        class="nexus-input"
-        type="password"
-        placeholder="Enter API key"
-        value="${savedApiKey}"
-      />
-
-      <label class="nexus-label">Model</label>
-      <select id="model-select" class="nexus-select">
-        <option>Select provider first</option>
-      </select>
-
-      <button id="save-config" class="nexus-button">
-        Load Models
-      </button>
-
-      <div id="chat-root"></div>
+      <div class="nexus-layout">
+        <div id="sessions-root" class="nexus-sessions-panel"></div>
+        <div id="chat-root" class="nexus-chat-panel"></div>
+      </div>
     `;
 
     document.body.appendChild(this.panel);
@@ -86,71 +54,29 @@ export default class Sidebar {
       .addEventListener("click", () => this.closePanel());
 
     this.panel
-      .querySelector("#save-config")
-      .addEventListener("click", () => this.loadModels());
-
-    const modelSelect =
-      this.panel.querySelector("#model-select");
-
-    modelSelect.addEventListener("change", () => {
-      StorageService.set("model", modelSelect.value);
-    });
-
-    const chatRoot = this.panel.querySelector("#chat-root");
-    this.chatView = new ChatView(chatRoot);
-    this.chatView.render();
-  }
-
-  async loadModels() {
-    const provider =
-      document.getElementById("provider-select").value;
-
-    const apiKey =
-      document.getElementById("api-key").value.trim();
-
-    const modelSelect =
-      document.getElementById("model-select");
-
-    if (!apiKey) {
-      alert("API key required");
-      return;
-    }
-
-    StorageService.set("provider", provider);
-    StorageService.set("apiKey", apiKey);
-
-    modelSelect.innerHTML =
-      "<option>Loading models...</option>";
-
-    try {
-      const models = await AIService.getModels();
-
-      modelSelect.innerHTML = "";
-
-      if (!models.length) {
-        modelSelect.innerHTML =
-          "<option>No models found</option>";
-        return;
-      }
-
-      models.forEach(model => {
-        const option = document.createElement("option");
-        option.value = model.id;
-        option.textContent = model.name;
-        modelSelect.appendChild(option);
+      .querySelector("#settings-btn")
+      .addEventListener("click", () => {
+        alert("Settings modal coming next");
       });
 
-      const savedModel = StorageService.get("model");
+    const sessionsRoot =
+      this.panel.querySelector("#sessions-root");
 
-      if (savedModel) {
-        modelSelect.value = savedModel;
+    const chatRoot =
+      this.panel.querySelector("#chat-root");
+
+    this.chatView = new ChatView(chatRoot);
+
+    this.sessionsView = new SessionsView(
+      sessionsRoot,
+      () => {
+        this.sessionsView.render();
+        this.chatView.render();
       }
-    } catch (error) {
-      console.error(error);
-      modelSelect.innerHTML =
-        "<option>Failed to load</option>";
-      alert(error.message);
-    }
+    );
+
+    this.sessionsView.render();
+    this.chatView.render();
   }
 
   togglePanel() {
@@ -173,4 +99,4 @@ export default class Sidebar {
     if (this.fab) this.fab.remove();
     if (this.panel) this.panel.remove();
   }
-}
+} 
