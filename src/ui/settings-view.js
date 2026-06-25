@@ -2,8 +2,9 @@ import AIService from "../services/ai-service.js";
 import StorageService from "../services/storage-service.js";
 
 export default class SettingsView {
-  constructor() {
+  constructor(parent = document.body) {
     this.modal = null;
+    this.parent = parent;
   }
 
   open() {
@@ -29,7 +30,11 @@ export default class SettingsView {
         savedModel.id ||
         savedModel.name ||
         "";
-      StorageService.set("model", savedModel);
+
+      StorageService.set(
+        "model",
+        savedModel
+      );
     }
 
     this.modal.innerHTML = `
@@ -68,7 +73,12 @@ export default class SettingsView {
       </div>
     `;
 
-    document.body.appendChild(this.modal);
+    try {
+      this.parent.appendChild(this.modal);
+    } catch (err) {
+      console.error("Settings append failed:", err);
+      document.body.appendChild(this.modal);
+    }
 
     const providerEl =
       this.modal.querySelector("#settings-provider");
@@ -86,7 +96,9 @@ export default class SettingsView {
 
     this.modal
       .querySelector("#settings-close")
-      .addEventListener("click", () => this.close());
+      .addEventListener("click", () => {
+        this.close();
+      });
 
     providerEl.addEventListener("change", () => {
       this.loadModels();
@@ -101,38 +113,60 @@ export default class SettingsView {
     this.modal
       .querySelector("#settings-save")
       .addEventListener("click", () => {
-        StorageService.set("provider", providerEl.value);
-        StorageService.set("apiKey", keyEl.value);
-        StorageService.set("model", modelEl.value);
+        StorageService.set(
+          "provider",
+          providerEl.value
+        );
+
+        StorageService.set(
+          "apiKey",
+          keyEl.value
+        );
+
+        StorageService.set(
+          "model",
+          modelEl.value
+        );
 
         alert("Settings saved");
         this.close();
       });
+
+    this.modal.addEventListener("click", e => {
+      if (e.target === this.modal) {
+        this.close();
+      }
+    });
   }
 
   async loadModels(selected = "") {
+    if (!this.modal) return;
+
     const modelEl =
       this.modal.querySelector("#settings-model");
 
-    modelEl.innerHTML = `<option>Loading...</option>`;
+    modelEl.innerHTML =
+      `<option>Loading...</option>`;
 
     try {
-      const models = await AIService.getModels();
+      const models =
+        await AIService.getModels();
 
       modelEl.innerHTML = "";
 
       models.forEach(model => {
-        const option = document.createElement("option");
+        const option =
+          document.createElement("option");
 
         const value =
           typeof model === "string"
             ? model
-            : (model.id || model.name);
+            : model.id || model.name;
 
         const label =
           typeof model === "string"
             ? model
-            : (model.name || model.id);
+            : model.name || model.id;
 
         option.value = value;
         option.textContent = label;
@@ -145,6 +179,7 @@ export default class SettingsView {
       });
     } catch (error) {
       console.error(error);
+
       modelEl.innerHTML =
         `<option>Failed to load</option>`;
     }
