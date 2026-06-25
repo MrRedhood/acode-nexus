@@ -27,19 +27,18 @@
 .nexus-panel {
   position: fixed;
   top: 0;
-  right: -90vw;
-  left: auto;
-  bottom: 0;
-
+  right: 0;
   width: 88vw;
   max-width: 390px;
   height: 100vh;
 
+  transform: translateX(100%);
+  transition: transform 0.28s ease;
+
   background: var(--nx-bg);
   backdrop-filter: blur(18px);
-  color: var(--nx-text;
+  color: var(--nx-text);
   z-index: 999998;
-  transition: right 0.28s ease;
   padding: 18px;
   box-sizing: border-box;
   overflow: hidden;
