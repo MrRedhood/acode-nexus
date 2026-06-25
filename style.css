@@ -354,6 +354,5 @@
 
 .nexus-input-area {
   flex-shrink: 0;
-  padding-top: 12px;
-  background: var(--nx-bg);
+  padding: 12px 0 18px 0;
 }
