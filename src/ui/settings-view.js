@@ -83,7 +83,12 @@ export default class SettingsView {
     providerEl.value = savedProvider;
     keyEl.value = savedKey;
 
-    this.loadModels(savedModel);
+    if (savedKey) {
+      this.loadModels(savedModel);
+    } else {
+      modelEl.innerHTML =
+        `<option>Enter API key first</option>`;
+    }
 
     this.modal
       .querySelector("#settings-close")
@@ -105,7 +110,7 @@ export default class SettingsView {
       .querySelector("#settings-save")
       .addEventListener("click", () => {
         StorageService.set("provider", providerEl.value);
-        StorageService.set("apiKey", keyEl.value);
+        StorageService.set("apiKey", keyEl.value.trim());
         StorageService.set("model", modelEl.value);
 
         alert("Settings saved");
@@ -125,14 +130,38 @@ export default class SettingsView {
     const modelEl =
       this.modal.querySelector("#settings-model");
 
+    const providerEl =
+      this.modal.querySelector("#settings-provider");
+
+    const keyEl =
+      this.modal.querySelector("#settings-key");
+
+    const provider = providerEl.value;
+    const apiKey = keyEl.value.trim();
+
+    if (!apiKey) {
+      modelEl.innerHTML =
+        `<option>Enter API key first</option>`;
+      return;
+    }
+
     modelEl.innerHTML =
       `<option>Loading...</option>`;
 
     try {
       const models =
-        await AIService.getModels();
+        await AIService.getModels(
+          provider,
+          apiKey
+        );
 
       modelEl.innerHTML = "";
+
+      if (!models.length) {
+        modelEl.innerHTML =
+          `<option>No models found</option>`;
+        return;
+      }
 
       models.forEach(model => {
         const option =
@@ -159,6 +188,7 @@ export default class SettingsView {
       });
     } catch (error) {
       console.error(error);
+
       modelEl.innerHTML =
         `<option>Failed to load</option>`;
     }
