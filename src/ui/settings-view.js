@@ -1,4 +1,5 @@
 import AIService from "../services/ai-service.js";
+import StorageService from "../services/storage-service.js";
 
 export default class SettingsView {
   constructor() {
@@ -12,13 +13,13 @@ export default class SettingsView {
     this.modal.className = "nexus-settings-overlay";
 
     const savedProvider =
-      localStorage.getItem("nexus_provider") || "gemini";
+      StorageService.get("provider") || "gemini";
 
     const savedKey =
-      localStorage.getItem("nexus_api_key") || "";
+      StorageService.get("apiKey") || "";
 
     const savedModel =
-      localStorage.getItem("nexus_model") || "";
+      StorageService.get("model") || "";
 
     this.modal.innerHTML = `
       <div class="nexus-settings-modal">
@@ -70,68 +71,69 @@ export default class SettingsView {
     providerEl.value = savedProvider;
     keyEl.value = savedKey;
 
-    this.loadModels(savedProvider, savedModel);
+    this.loadModels(savedModel);
 
     this.modal
       .querySelector("#settings-close")
       .addEventListener("click", () => this.close());
 
     providerEl.addEventListener("change", () => {
-      this.loadModels(providerEl.value);
+      this.loadModels();
     });
 
     this.modal
       .querySelector("#settings-load-models")
       .addEventListener("click", async () => {
-        await this.loadModels(providerEl.value);
+        await this.loadModels();
       });
 
     this.modal
       .querySelector("#settings-save")
       .addEventListener("click", () => {
-        localStorage.setItem(
-          "nexus_provider",
-          providerEl.value
-        );
-
-        localStorage.setItem(
-          "nexus_api_key",
-          keyEl.value
-        );
-
-        localStorage.setItem(
-          "nexus_model",
-          modelEl.value
-        );
+        StorageService.set("provider", providerEl.value);
+        StorageService.set("apiKey", keyEl.value);
+        StorageService.set("model", modelEl.value);
 
         alert("Settings saved");
         this.close();
       });
   }
 
-  async loadModels(provider, selected = "") {
+  async loadModels(selected = "") {
     const modelEl =
       this.modal.querySelector("#settings-model");
 
     modelEl.innerHTML = `<option>Loading...</option>`;
 
     try {
-      const models = await AIService.getModels(provider);
+      const models = await AIService.getModels();
 
       modelEl.innerHTML = "";
 
       models.forEach(model => {
         const option = document.createElement("option");
-        option.value = model;
-        option.textContent = model;
 
-        if (model === selected) {
+        const value =
+          typeof model === "string"
+            ? model
+            : (model.id || model.name);
+
+        const label =
+          typeof model === "string"
+            ? model
+            : (model.name || model.id);
+
+        option.value = value;
+        option.textContent = label;
+
+        if (value === selected) {
           option.selected = true;
         }
 
         modelEl.appendChild(option);
       });
     } catch (error) {
+      console.error(error);
       modelEl.innerHTML =
         `<option>Failed to load</option>`;
     }
