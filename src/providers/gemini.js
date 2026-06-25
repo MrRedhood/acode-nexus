@@ -1,23 +1,13 @@
 export default class GeminiProvider {
   static async getModels(apiKey) {
     try {
-      console.log("[Gemini] Fetching models...");
-      console.log("[Gemini] API key exists:", !!apiKey);
-
       const url =
         `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
 
-      console.log("[Gemini] URL:", url);
-
       const response = await fetch(url);
-
-      console.log("[Gemini] Status:", response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-
-        console.error("[Gemini] API error:", errorText);
-
         throw new Error(
           `Gemini API error ${response.status}: ${errorText}`
         );
@@ -25,9 +15,7 @@ export default class GeminiProvider {
 
       const data = await response.json();
 
-      console.log("[Gemini] Raw response:", data);
-
-      const models = (data.models || [])
+      return (data.models || [])
         .filter(model => {
           const id = model.name.replace("models/", "");
 
@@ -50,18 +38,26 @@ export default class GeminiProvider {
           id: model.name.replace("models/", ""),
           name: model.name.replace("models/", "")
         }));
-
-      console.log("[Gemini] Filtered models:", models);
-
-      return models;
     } catch (error) {
       console.error("[Gemini] getModels failed:", error);
       throw error;
     }
   }
 
-  static async chat(apiKey, model, message) {
+  static async chat(apiKey, model, messages) {
     try {
+      const contents = messages.map(msg => ({
+        role:
+          msg.role === "assistant"
+            ? "model"
+            : "user",
+        parts: [
+          {
+            text: msg.content
+          }
+        ]
+      }));
+
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
@@ -70,11 +66,7 @@ export default class GeminiProvider {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            contents: [
-              {
-                parts: [{ text: message }]
-              }
-            ]
+            contents
           })
         }
       );
