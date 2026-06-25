@@ -1,5 +1,6 @@
 import ChatView from "./chat-view.js";
 import SessionsView from "./sessions-view.js";
+import SettingsView from "./settings-view.js";
 
 export default class Sidebar {
   constructor() {
@@ -7,6 +8,7 @@ export default class Sidebar {
     this.panel = null;
     this.chatView = null;
     this.sessionsView = null;
+    this.settingsView = null;
     this.isOpen = false;
   }
 
@@ -49,6 +51,8 @@ export default class Sidebar {
 
     document.body.appendChild(this.panel);
 
+    this.settingsView = new SettingsView();
+
     this.panel
       .querySelector("#nexus-close")
       .addEventListener("click", () => this.closePanel());
@@ -56,7 +60,7 @@ export default class Sidebar {
     this.panel
       .querySelector("#settings-btn")
       .addEventListener("click", () => {
-        alert("Settings modal coming next");
+        this.settingsView.open();
       });
 
     const sessionsRoot =
@@ -99,4 +103,4 @@ export default class Sidebar {
     if (this.fab) this.fab.remove();
     if (this.panel) this.panel.remove();
   }
-} 
+}
