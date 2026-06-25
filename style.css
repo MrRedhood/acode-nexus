@@ -242,10 +242,6 @@ position: fixed;
   left: 0;
 }
 
-.nexus-drawer.open {
-  left: 0;
-}
-
 .nexus-drawer-inner {
   padding: 18px;
 }
