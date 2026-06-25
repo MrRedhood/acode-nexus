@@ -1,17 +1,19 @@
 export default class ChatView {
   constructor(container) {
     this.container = container;
-    this.messages = [];
   }
 
   render() {
     this.container.innerHTML = `
-      <div id="chat-messages" style="height:300px;overflow:auto;border:1px solid #333;padding:8px;margin-top:12px;"></div>
+      <div id="chat-messages" class="nexus-chat"></div>
 
-      <textarea id="chat-input" placeholder="Type message..."
-      style="width:100%;margin-top:12px;height:70px;"></textarea>
+      <textarea
+        id="chat-input"
+        class="nexus-textarea"
+        placeholder="Ask Nexus anything..."
+      ></textarea>
 
-      <button id="send-btn" style="margin-top:8px;width:100%;">
+      <button id="send-btn" class="nexus-button">
         Send
       </button>
     `;
@@ -27,8 +29,17 @@ export default class ChatView {
     const box = this.container.querySelector("#chat-messages");
 
     const msg = document.createElement("div");
-    msg.style.marginBottom = "10px";
-    msg.innerHTML = `<b>${role}:</b> ${text}`;
+
+    let cssClass = "nexus-msg ";
+
+    if (role === "You") {
+      cssClass += "nexus-user";
+    } else {
+      cssClass += "nexus-ai";
+    }
+
+    msg.className = cssClass;
+    msg.innerHTML = `<strong>${role}</strong><br>${text}`;
 
     box.appendChild(msg);
     box.scrollTop = box.scrollHeight;
@@ -50,7 +61,7 @@ export default class ChatView {
         "Nexus",
         `[${provider} | ${model}] Nexus received: ${text}`
       );
-    }, 400);
+    }, 300);
 
     input.value = "";
   }
