@@ -1,0 +1,53 @@
+.nexus-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 50%;
+  background: #4f46e5;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  z-index: 999999;
+}
+
+.nexus-panel {
+  position: fixed;
+  top: 0;
+  right: -340px;
+  width: 340px;
+  height: 100%;
+  background: #1e1e1e;
+  color: white;
+  z-index: 999998;
+  transition: right 0.25s ease;
+  box-shadow: -4px 0 16px rgba(0,0,0,0.4);
+}
+
+.nexus-panel.open {
+  right: 0;
+}
+
+.nexus-header {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid #333;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.nexus-header button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 28px;
+}
+
+.nexus-body {
+  padding: 16px;
+}
