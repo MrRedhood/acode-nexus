@@ -1,4 +1,5 @@
 import AIService from "../services/ai-service.js";
+import SessionService from "../services/session-service.js";
 
 export default class ChatView {
   constructor(container) {
@@ -20,6 +21,8 @@ export default class ChatView {
       </button>
     `;
 
+    this.renderMessages();
+
     const sendBtn = this.container.querySelector("#send-btn");
 
     sendBtn.addEventListener("click", () => {
@@ -27,7 +30,24 @@ export default class ChatView {
     });
   }
 
-  appendMessage(role, text) {
+  renderMessages() {
+    const box = this.container.querySelector("#chat-messages");
+    if (!box) return;
+
+    box.innerHTML = "";
+
+    const messages = SessionService.getMessages();
+
+    messages.forEach(msg => {
+      this.appendMessage(
+        msg.role === "user" ? "You" : "Nexus",
+        msg.content,
+        false
+      );
+    });
+  }
+
+  appendMessage(role, text, persist = true) {
     const box = this.container.querySelector("#chat-messages");
 
     const msg = document.createElement("div");
@@ -45,6 +65,13 @@ export default class ChatView {
 
     box.appendChild(msg);
     box.scrollTop = box.scrollHeight;
+
+    if (persist) {
+      SessionService.addMessage(
+        role === "You" ? "user" : "assistant",
+        text
+      );
+    }
   }
 
   async sendMessage() {
@@ -68,6 +95,22 @@ export default class ChatView {
 
       thinkingNode.innerHTML =
         `<strong>Nexus</strong><br>${response}`;
+
+      const data = SessionService.load();
+      const session = data.sessions.find(
+        s => s.id === data.currentSessionId
+      );
+
+      if (session && session.messages.length > 0) {
+        session.messages.pop();
+
+        session.messages.push({
+          role: "assistant",
+          content: response
+        });
+
+        SessionService.save(data);
+      }
     } catch (error) {
       console.error(error);
 
