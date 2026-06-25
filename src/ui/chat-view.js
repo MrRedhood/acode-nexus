@@ -1,5 +1,6 @@
 import AIService from "../services/ai-service.js";
 import SessionService from "../services/session-service.js";
+import parseMarkdown from "../utils/markdown.js";
 
 export default class ChatView {
   constructor(container) {
@@ -23,7 +24,8 @@ export default class ChatView {
 
     this.renderMessages();
 
-    const sendBtn = this.container.querySelector("#send-btn");
+    const sendBtn =
+      this.container.querySelector("#send-btn");
 
     sendBtn.addEventListener("click", () => {
       this.sendMessage();
@@ -31,12 +33,15 @@ export default class ChatView {
   }
 
   renderMessages() {
-    const box = this.container.querySelector("#chat-messages");
+    const box =
+      this.container.querySelector("#chat-messages");
+
     if (!box) return;
 
     box.innerHTML = "";
 
-    const messages = SessionService.getMessages();
+    const messages =
+      SessionService.getMessages();
 
     messages.forEach(msg => {
       this.appendMessage(
@@ -48,7 +53,8 @@ export default class ChatView {
   }
 
   appendMessage(role, text, persist = true) {
-    const box = this.container.querySelector("#chat-messages");
+    const box =
+      this.container.querySelector("#chat-messages");
 
     const msg = document.createElement("div");
 
@@ -61,7 +67,14 @@ export default class ChatView {
     }
 
     msg.className = cssClass;
-    msg.innerHTML = `<strong>${role}</strong><br>${text}`;
+
+    const rendered =
+      role === "You"
+        ? text.replace(/\n/g, "<br>")
+        : parseMarkdown(text);
+
+    msg.innerHTML =
+      `<strong>${role}</strong><br>${rendered}`;
 
     box.appendChild(msg);
     box.scrollTop = box.scrollHeight;
@@ -75,7 +88,9 @@ export default class ChatView {
   }
 
   async sendMessage() {
-    const input = this.container.querySelector("#chat-input");
+    const input =
+      this.container.querySelector("#chat-input");
+
     const text = input.value.trim();
 
     if (!text) return;
@@ -87,19 +102,27 @@ export default class ChatView {
 
     this.appendMessage("Nexus", "Thinking...");
 
-    const box = this.container.querySelector("#chat-messages");
+    const box =
+      this.container.querySelector("#chat-messages");
+
     const thinkingNode = box.lastChild;
 
     try {
-      const response = await AIService.sendMessage(text);
+      const response =
+        await AIService.sendMessage(text);
+
+      const rendered =
+        parseMarkdown(response);
 
       thinkingNode.innerHTML =
-        `<strong>Nexus</strong><br>${response}`;
+        `<strong>Nexus</strong><br>${rendered}`;
 
       const data = SessionService.load();
-      const session = data.sessions.find(
-        s => s.id === data.currentSessionId
-      );
+
+      const session =
+        data.sessions.find(
+          s => s.id === data.currentSessionId
+        );
 
       if (session && session.messages.length > 0) {
         session.messages.pop();
