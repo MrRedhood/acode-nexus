@@ -51,6 +51,10 @@ export default class SessionService {
             msg.createdAt = Date.now();
           }
 
+          if (!msg.content) {
+            msg.content = "";
+          }
+
           return msg;
         });
     });
@@ -99,8 +103,14 @@ export default class SessionService {
       console.error(error);
 
       return {
-        currentSessionId: null,
-        sessions: []
+        currentSessionId: "session_1",
+        sessions: [
+          {
+            id: "session_1",
+            title: "New Chat",
+            messages: []
+          }
+        ]
       };
     }
   }
@@ -132,6 +142,10 @@ export default class SessionService {
     return session
       ? session.messages
       : [];
+  }
+
+  static getActiveSessionId() {
+    return this.load().currentSessionId;
   }
 
   static setActiveSession(id) {
