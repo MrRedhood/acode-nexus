@@ -350,3 +350,9 @@
   background: rgba(255,255,255,0.03);
   border: 1px solid var(--nx-border);
 }
+
+.nexus-input-area {
+  flex-shrink: 0;
+  padding-top: 12px;
+  background: var(--nx-bg);
+}
