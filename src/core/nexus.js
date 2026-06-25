@@ -8,19 +8,7 @@ export default class Nexus {
     this.sidebar = null;
   }
 
-  async injectStyles() {
-    const response = await fetch(`${this.baseUrl}style.css`);
-    const css = await response.text();
-
-    const style = document.createElement("style");
-    style.id = "nexus-style";
-    style.textContent = css;
-    document.head.appendChild(style);
-  }
-
-  async init() {
-    await this.injectStyles();
-
+  init() {
     this.sidebar = new Sidebar();
     this.sidebar.init();
   }
@@ -28,9 +16,7 @@ export default class Nexus {
   destroy() {
     if (this.sidebar) {
       this.sidebar.destroy();
+      this.sidebar = null;
     }
-
-    const style = document.getElementById("nexus-style");
-    if (style) style.remove();
   }
 }
