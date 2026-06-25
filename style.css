@@ -308,20 +308,25 @@
 }
 
 .nexus-code-block {
-  margin-top: 12px;
-  margin-bottom: 12px;
+  margin: 12px 0;
   padding: 14px;
   border-radius: 14px;
-  overflow-x: auto;
-  overflow-y: hidden;
   background: rgba(0,0,0,0.35);
   border: 1px solid rgba(255,255,255,0.08);
+  overflow-x: auto;
+  overflow-y: hidden;
   max-width: 100%;
+}
+
+.nexus-code-block pre {
+  margin: 0;
+  overflow-x: auto;
 }
 
 .nexus-code-block code {
   display: block;
-  min-width: max-content;
+  width: max-content;
+  min-width: 100%;
   white-space: pre;
   font-family: monospace;
   font-size: 13px;
