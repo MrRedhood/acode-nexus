@@ -38,6 +38,9 @@
 
   display: flex !important;
   flex-direction: column !important;
+
+  overflow: hidden;
+position: fixed;
 }
 
 .nexus-panel.open {
