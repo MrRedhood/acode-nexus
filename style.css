@@ -142,3 +142,37 @@
 .nexus-sessions-header {
   margin-bottom: 12px;
 }
+
+.nexus-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.nexus-icon-btn {
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  color: white;
+  font-size: 18px;
+}
+
+.nexus-layout {
+  display: flex;
+  gap: 14px;
+  margin-top: 16px;
+  height: calc(100vh - 140px);
+}
+
+.nexus-sessions-panel {
+  width: 120px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.nexus-chat-panel {
+  flex: 1;
+  min-width: 0;
+}
