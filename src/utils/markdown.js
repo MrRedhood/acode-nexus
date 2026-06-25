@@ -3,7 +3,6 @@ export default function parseMarkdown(text) {
 
   let html = text;
 
-  // Escape HTML
   html = html
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -14,11 +13,10 @@ export default function parseMarkdown(text) {
   html = html.replace(
     /```([\w-]*)\n([\s\S]*?)```/g,
     (_, lang, code) => {
-      const rawCode = code;
-
-      const escapedRawCode = rawCode
-        .replace(/"/g, "&quot;")
-        .replace(/\n/g, "&#10;");
+      const safeTextarea = code
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 
       const block = `
         <div class="nexus-code-block">
@@ -27,20 +25,24 @@ export default function parseMarkdown(text) {
               ${(lang || "code").toUpperCase()}
             </div>
 
-            <button
-              class="nexus-code-copy"
-              data-code="${escapedRawCode}"
-            >
+            <button class="nexus-code-copy">
               Copy
             </button>
           </div>
+
+          <textarea
+            class="nexus-hidden-code"
+            style="display:none;"
+          >${safeTextarea}</textarea>
 
           <pre><code>${code}</code></pre>
         </div>
       `;
 
       const token =
-        `__CODE_BLOCK_${codeBlocks.length}__`;
+        "__CODE_BLOCK_" +
+        codeBlocks.length +
+        "__";
 
       codeBlocks.push(block);
 
@@ -48,19 +50,16 @@ export default function parseMarkdown(text) {
     }
   );
 
-  // Inline code
   html = html.replace(
     /`([^`]+)`/g,
     `<code class="nexus-inline-code">$1</code>`
   );
 
-  // Bold
   html = html.replace(
     /\*\*(.*?)\*\*/g,
     `<strong>$1</strong>`
   );
 
-  // Headings
   html = html.replace(
     /^### (.*)$/gm,
     `<h3>$1</h3>`
