@@ -370,3 +370,19 @@
   font-size: 14px;
   z-index: 2147483650;
 }
+
+.nexus-code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.nexus-code-copy {
+  border: none;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-size: 12px;
+}
