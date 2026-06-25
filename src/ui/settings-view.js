@@ -18,8 +18,19 @@ export default class SettingsView {
     const savedKey =
       StorageService.get("apiKey") || "";
 
-    const savedModel =
+    let savedModel =
       StorageService.get("model") || "";
+
+    if (
+      savedModel &&
+      typeof savedModel === "object"
+    ) {
+      savedModel =
+        savedModel.id ||
+        savedModel.name ||
+        "";
+      StorageService.set("model", savedModel);
+    }
 
     this.modal.innerHTML = `
       <div class="nexus-settings-modal">
