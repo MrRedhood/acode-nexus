@@ -83,7 +83,7 @@ export default class ChatView {
     }, 1500);
   }
 
-  copyMessage(content) {
+  copyText(content) {
     navigator.clipboard
       .writeText(content)
       .then(() => {
@@ -92,6 +92,27 @@ export default class ChatView {
       .catch(() => {
         this.showToast("Copy failed");
       });
+  }
+
+  attachCodeCopyListeners(msgNode) {
+    const buttons =
+      msgNode.querySelectorAll(".nexus-code-copy");
+
+    buttons.forEach(button => {
+      button.addEventListener("click", e => {
+        e.stopPropagation();
+
+        const code =
+          button.dataset.code
+            .replace(/&#10;/g, "\n")
+            .replace(/&quot;/g, '"')
+            .replace(/&amp;/g, "&")
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">");
+
+        this.copyText(code);
+      });
+    });
   }
 
   appendMessageObject(message, persist = true) {
@@ -134,8 +155,10 @@ export default class ChatView {
       msg.querySelector(".nexus-msg-action-btn");
 
     copyBtn.addEventListener("click", () => {
-      this.copyMessage(message.content);
+      this.copyText(message.content);
     });
+
+    this.attachCodeCopyListeners(msg);
 
     box.appendChild(msg);
     box.scrollTop = box.scrollHeight;
