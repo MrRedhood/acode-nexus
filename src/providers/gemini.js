@@ -44,7 +44,12 @@ export default class GeminiProvider {
     }
   }
 
-  static async chat(apiKey, model, messages) {
+  static async chat(
+    apiKey,
+    model,
+    messages,
+    signal = null
+  ) {
     try {
       const contents = messages.map(msg => ({
         role:
@@ -62,6 +67,7 @@ export default class GeminiProvider {
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
           method: "POST",
+          signal,
           headers: {
             "Content-Type": "application/json"
           },
@@ -83,6 +89,10 @@ export default class GeminiProvider {
         "No response returned."
       );
     } catch (error) {
+      if (error.name === "AbortError") {
+        throw error;
+      }
+
       console.error("[Gemini] chat failed:", error);
       throw error;
     }
