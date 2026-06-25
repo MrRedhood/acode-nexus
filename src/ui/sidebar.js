@@ -15,6 +15,12 @@ export default class Sidebar {
   init() {
     this.createFab();
     this.createPanel();
+
+    window.addEventListener("resize", () => {
+      this.updatePanelHeight();
+    });
+
+    this.updatePanelHeight();
   }
 
   createFab() {
@@ -91,14 +97,27 @@ export default class Sidebar {
       });
   }
 
+  updatePanelHeight() {
+    if (!this.panel) return;
+
+    this.panel.style.height =
+      window.innerHeight + "px";
+
+    this.panel.style.maxHeight =
+      window.innerHeight + "px";
+  }
+
   togglePanel() {
-    this.isOpen ? this.closePanel() : this.openPanel();
+    this.isOpen
+      ? this.closePanel()
+      : this.openPanel();
   }
 
   openPanel() {
     this.panel.classList.add("open");
     this.fab.style.display = "none";
     this.isOpen = true;
+    this.updatePanelHeight();
   }
 
   closePanel() {
