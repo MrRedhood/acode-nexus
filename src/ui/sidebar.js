@@ -15,77 +15,47 @@ export default class Sidebar {
 
   createFab() {
     this.fab = document.createElement("button");
+    this.fab.className = "nexus-fab";
     this.fab.textContent = "N";
 
-    Object.assign(this.fab.style, {
-      position: "fixed",
-      right: "20px",
-      bottom: "80px",
-      width: "56px",
-      height: "56px",
-      borderRadius: "50%",
-      border: "none",
-      background: "#4f46e5",
-      color: "white",
-      fontSize: "24px",
-      zIndex: "999999"
+    this.fab.addEventListener("click", () => {
+      this.togglePanel();
     });
 
-    this.fab.onclick = () => this.togglePanel();
     document.body.appendChild(this.fab);
   }
 
   createPanel() {
     this.panel = document.createElement("div");
-
-    Object.assign(this.panel.style, {
-      position: "fixed",
-      top: "0",
-      right: "-90vw",
-      width: "85vw",
-      maxWidth: "360px",
-      height: "100%",
-      background: "#1e1e1e",
-      color: "white",
-      zIndex: "999998",
-      transition: "right 0.25s ease",
-      padding: "12px",
-      boxSizing: "border-box",
-      overflow: "auto"
-    });
+    this.panel.className = "nexus-panel";
 
     this.panel.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:20px;font-weight:bold;">Acode Nexus</span>
-        <button id="nexus-close">×</button>
+      <div class="nexus-header">
+        <span class="nexus-title">Nexus</span>
+        <button id="nexus-close" class="nexus-close">×</button>
       </div>
 
-      <div style="margin-top:16px;">
-        <label>Provider</label>
-        <select id="provider-select" style="width:100%;margin-top:6px;">
-          <option value="openrouter">OpenRouter</option>
-          <option value="gemini">Gemini</option>
-          <option value="deepinfra">DeepInfra</option>
-        </select>
-      </div>
+      <label class="nexus-label">Provider</label>
+      <select id="provider-select" class="nexus-select">
+        <option value="openrouter">OpenRouter</option>
+        <option value="gemini">Gemini</option>
+        <option value="deepinfra">DeepInfra</option>
+      </select>
 
-      <div style="margin-top:12px;">
-        <label>API Key</label>
-        <input id="api-key"
-          type="password"
-          placeholder="Enter API key"
-          style="width:100%;margin-top:6px;" />
-      </div>
+      <label class="nexus-label">API Key</label>
+      <input
+        id="api-key"
+        class="nexus-input"
+        type="password"
+        placeholder="Enter API key"
+      />
 
-      <div style="margin-top:12px;">
-        <label>Model</label>
-        <select id="model-select" style="width:100%;margin-top:6px;">
-          <option>Choose provider first</option>
-        </select>
-      </div>
+      <label class="nexus-label">Model</label>
+      <select id="model-select" class="nexus-select">
+        <option>Select provider first</option>
+      </select>
 
-      <button id="save-config"
-        style="width:100%;margin-top:12px;">
+      <button id="save-config" class="nexus-button">
         Save
       </button>
 
@@ -145,12 +115,14 @@ export default class Sidebar {
   }
 
   openPanel() {
-    this.panel.style.right = "0";
+    this.panel.classList.add("open");
+    this.fab.style.display = "none";
     this.isOpen = true;
   }
 
   closePanel() {
-    this.panel.style.right = "-90vw";
+    this.panel.classList.remove("open");
+    this.fab.style.display = "block";
     this.isOpen = false;
   }
 
