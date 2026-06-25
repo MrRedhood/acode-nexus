@@ -86,12 +86,8 @@ export default class ChatView {
   copyText(content) {
     navigator.clipboard
       .writeText(content)
-      .then(() => {
-        this.showToast("Copied!");
-      })
-      .catch(() => {
-        this.showToast("Copy failed");
-      });
+      .then(() => this.showToast("Copied!"))
+      .catch(() => this.showToast("Copy failed"));
   }
 
   attachCodeCopyListeners(msgNode) {
@@ -141,6 +137,15 @@ export default class ChatView {
         ? "You"
         : "Nexus";
 
+    const extraButtons =
+      message.role === "assistant"
+        ? `
+          <button class="nexus-msg-action-btn nexus-regen-btn">
+            ↻
+          </button>
+        `
+        : "";
+
     msg.innerHTML = `
       <strong>${label}</strong><br>
       ${rendered}
@@ -148,6 +153,7 @@ export default class ChatView {
         <button class="nexus-msg-action-btn">
           Copy
         </button>
+        ${extraButtons}
       </div>
     `;
 
@@ -157,6 +163,15 @@ export default class ChatView {
     copyBtn.addEventListener("click", () => {
       this.copyText(message.content);
     });
+
+    const regenBtn =
+      msg.querySelector(".nexus-regen-btn");
+
+    if (regenBtn) {
+      regenBtn.addEventListener("click", () => {
+        this.regenerateResponse();
+      });
+    }
 
     this.attachCodeCopyListeners(msg);
 
@@ -173,55 +188,51 @@ export default class ChatView {
     return msg;
   }
 
-  async sendMessage() {
+  async regenerateResponse() {
     if (this.isGenerating) return;
 
+    SessionService.removeLastAssistantMessage();
+    this.renderMessages();
+
+    const lastUser =
+      SessionService.getLastUserMessage();
+
+    if (!lastUser) return;
+
+    await this.generateAssistantReply(
+      lastUser.content
+    );
+  }
+
+  async generateAssistantReply(prompt) {
     const input =
       this.container.querySelector("#chat-input");
 
     const sendBtn =
       this.container.querySelector("#send-btn");
 
-    const text = input.value.trim();
-
-    if (!text) return;
-
     this.isGenerating = true;
 
     input.disabled = true;
     sendBtn.disabled = true;
 
-    const userMessage = {
-      id: "msg_" + Date.now(),
-      role: "user",
-      content: text
-    };
-
-    this.appendMessageObject(userMessage);
-    input.value = "";
-
-    const assistantMessage = {
-      id: "msg_" + (Date.now() + 1),
-      role: "assistant",
-      content: "Thinking..."
-    };
-
-    const assistantNode =
+    const thinkingNode =
       this.appendMessageObject(
-        assistantMessage,
+        {
+          id: "thinking",
+          role: "assistant",
+          content: "Thinking..."
+        },
         false
       );
 
     try {
       const response =
-        await AIService.sendMessage(text);
+        await AIService.sendMessage(prompt);
 
-      assistantMessage.content = response;
-
-      assistantNode.remove();
+      thinkingNode.remove();
 
       this.appendMessageObject({
-        id: assistantMessage.id,
         role: "assistant",
         content: response
       });
@@ -229,20 +240,33 @@ export default class ChatView {
     } catch (error) {
       console.error(error);
 
-      assistantNode.innerHTML =
+      thinkingNode.innerHTML =
         `<strong>Error</strong><br>${error.message}`;
     } finally {
-      SessionService.addMessage(
-        "assistant",
-        assistantMessage.content
-      );
-
       this.isGenerating = false;
-
       input.disabled = false;
       sendBtn.disabled = false;
-
       input.focus();
     }
+  }
+
+  async sendMessage() {
+    if (this.isGenerating) return;
+
+    const input =
+      this.container.querySelector("#chat-input");
+
+    const text = input.value.trim();
+
+    if (!text) return;
+
+    this.appendMessageObject({
+      role: "user",
+      content: text
+    });
+
+    input.value = "";
+
+    await this.generateAssistantReply(text);
   }
 }
