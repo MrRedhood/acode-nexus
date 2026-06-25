@@ -24,7 +24,7 @@ export default class Nexus {
   async init() {
     await this.injectStyles();
 
-    this.sidebar = new Sidebar();
+    this.sidebar = new Sidebar(this.page);
     this.sidebar.init();
   }
 
