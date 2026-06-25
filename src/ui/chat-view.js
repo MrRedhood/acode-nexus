@@ -101,9 +101,7 @@ export default class ChatView {
         e.stopPropagation();
 
         const wrapper =
-          button.closest(
-            ".nexus-code-block"
-          );
+          button.closest(".nexus-code-block");
 
         if (!wrapper) return;
 
@@ -213,12 +211,10 @@ export default class ChatView {
 
     if (!lastUser) return;
 
-    await this.generateAssistantReply(
-      lastUser.content
-    );
+    await this.generateAssistantReply();
   }
 
-  async generateAssistantReply(prompt) {
+  async generateAssistantReply() {
     const input =
       this.container.querySelector("#chat-input");
 
@@ -242,7 +238,7 @@ export default class ChatView {
 
     try {
       const response =
-        await AIService.sendMessage(prompt);
+        await AIService.sendMessage();
 
       thinkingNode.remove();
 
@@ -281,6 +277,6 @@ export default class ChatView {
 
     input.value = "";
 
-    await this.generateAssistantReply(text);
+    await this.generateAssistantReply();
   }
 }
