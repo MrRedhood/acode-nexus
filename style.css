@@ -214,3 +214,60 @@
   color: white;
   outline: none;
 }
+
+.nexus-left-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nexus-chat-full {
+  height: calc(100% - 72px);
+}
+
+.nexus-drawer {
+  position: absolute;
+  top: 72px;
+  left: -320px;
+  width: 300px;
+  height: calc(100% - 72px);
+  background: rgba(20,20,28,0.98);
+  border-right: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(16px);
+  transition: left 0.28s ease;
+  z-index: 10;
+}
+
+.nexus-drawer.open {
+  left: 0;
+}
+
+.nexus-drawer-inner {
+  padding: 18px;
+}
+
+.nexus-session-list {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nexus-session-item {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 18px;
+  text-align: left;
+  color: white;
+  background: rgba(255,255,255,0.05);
+}
+
+.nexus-session-item.active {
+  background: rgba(99,102,241,0.32);
+}
+
+.nexus-empty {
+  opacity: 0.65;
+  padding: 12px;
+}
