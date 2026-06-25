@@ -1,0 +1,12 @@
+{
+  "name": "acode-nexus",
+  "version": "0.0.1",
+  "description": "AI coding assistant plugin for Acode",
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.8"
+  }
+}
