@@ -334,3 +334,39 @@
   opacity: 0.7;
   text-transform: uppercase;
 }
+
+.nexus-msg {
+  position: relative;
+}
+
+.nexus-msg-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.nexus-msg-action-btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-size: 12px;
+}
+
+.nexus-msg-action-btn:active {
+  transform: scale(0.96);
+}
+
+.nexus-copy-toast {
+  position: fixed;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(20,20,28,0.96);
+  color: white;
+  font-size: 14px;
+  z-index: 2147483650;
+}
