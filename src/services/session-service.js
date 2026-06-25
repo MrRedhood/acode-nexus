@@ -1,44 +1,38 @@
 const STORAGE_KEY = "acode_nexus_sessions";
 
 export default class SessionService {
-  static createDefaultData() {
-    const session = {
-      id: "session_1",
-      title: "New Chat",
-      pinned: false,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      messages: []
-    };
-
-    return {
-      currentSessionId: session.id,
-      sessions: [session]
-    };
-  }
-
   static load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
 
       if (!raw) {
-        const data = this.createDefaultData();
-        this.save(data);
-        return data;
+        const defaultData = {
+          currentSessionId: "session_1",
+          sessions: [
+            {
+              id: "session_1",
+              title: "New Chat",
+              messages: []
+            }
+          ]
+        };
+
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(defaultData)
+        );
+
+        return defaultData;
       }
 
-      const data = JSON.parse(raw);
-
-      if (!data.sessions?.length) {
-        const fallback = this.createDefaultData();
-        this.save(fallback);
-        return fallback;
-      }
-
-      return data;
+      return JSON.parse(raw);
     } catch (error) {
       console.error(error);
-      return this.createDefaultData();
+
+      return {
+        currentSessionId: null,
+        sessions: []
+      };
     }
   }
 
@@ -53,10 +47,6 @@ export default class SessionService {
     return this.load().sessions;
   }
 
-  static getActiveSessionId() {
-    return this.load().currentSessionId;
-  }
-
   static getCurrentSession() {
     const data = this.load();
 
@@ -65,14 +55,15 @@ export default class SessionService {
     );
   }
 
+  static getMessages() {
+    const session = this.getCurrentSession();
+    return session ? session.messages : [];
+  }
+
   static setActiveSession(id) {
     const data = this.load();
     data.currentSessionId = id;
     this.save(data);
-  }
-
-  static switchSession(id) {
-    this.setActiveSession(id);
   }
 
   static createSession() {
@@ -81,9 +72,6 @@ export default class SessionService {
     const newSession = {
       id: "session_" + Date.now(),
       title: "New Chat",
-      pinned: false,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
       messages: []
     };
 
@@ -99,21 +87,19 @@ export default class SessionService {
     const data = this.load();
 
     const session = data.sessions.find(
-      session => session.id === data.currentSessionId
+      s => s.id === data.currentSessionId
     );
 
     if (!session) return null;
 
     const message = {
-      id: "msg_" + Date.now(),
+      id: "msg_" + Date.now() + "_" + Math.random(),
       role,
       content,
-      createdAt: Date.now(),
-      status: "done"
+      createdAt: Date.now()
     };
 
     session.messages.push(message);
-    session.updatedAt = Date.now();
 
     if (
       session.title === "New Chat" &&
@@ -127,8 +113,40 @@ export default class SessionService {
     return message;
   }
 
-  static getMessages() {
-    const session = this.getCurrentSession();
-    return session ? session.messages : [];
+  static removeLastAssistantMessage() {
+    const data = this.load();
+
+    const session = data.sessions.find(
+      s => s.id === data.currentSessionId
+    );
+
+    if (!session) return;
+
+    for (
+      let i = session.messages.length - 1;
+      i >= 0;
+      i--
+    ) {
+      if (
+        session.messages[i].role === "assistant"
+      ) {
+        session.messages.splice(i, 1);
+        break;
+      }
+    }
+
+    this.save(data);
+  }
+
+  static getLastUserMessage() {
+    const messages = this.getMessages();
+
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        return messages[i];
+      }
+    }
+
+    return null;
   }
 }
