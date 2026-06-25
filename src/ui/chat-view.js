@@ -5,6 +5,8 @@ import parseMarkdown from "../utils/markdown.js";
 export default class ChatView {
   constructor(container) {
     this.container = container;
+    this.activeController = null;
+    this.isGenerating = false;
   }
 
   render() {
@@ -56,107 +58,116 @@ export default class ChatView {
       SessionService.getMessages();
 
     messages.forEach(msg => {
-      this.appendMessage(
-        msg.role === "user" ? "You" : "Nexus",
-        msg.content,
-        false
-      );
+      this.appendMessageObject(msg, false);
     });
 
     box.scrollTop = box.scrollHeight;
   }
 
-  appendMessage(role, text, persist = true) {
+  appendMessageObject(message, persist = true) {
     const box =
       this.container.querySelector("#chat-messages");
 
     if (!box) return;
 
     const msg = document.createElement("div");
+    msg.className =
+      "nexus-msg " +
+      (message.role === "user"
+        ? "nexus-user"
+        : "nexus-ai");
 
-    let cssClass = "nexus-msg ";
-
-    if (role === "You") {
-      cssClass += "nexus-user";
-    } else {
-      cssClass += "nexus-ai";
-    }
-
-    msg.className = cssClass;
+    msg.dataset.messageId = message.id;
 
     const rendered =
-      role === "You"
-        ? text.replace(/\n/g, "<br>")
-        : parseMarkdown(text);
+      message.role === "user"
+        ? message.content.replace(/\n/g, "<br>")
+        : parseMarkdown(message.content);
+
+    const label =
+      message.role === "user"
+        ? "You"
+        : "Nexus";
 
     msg.innerHTML =
-      `<strong>${role}</strong><br>${rendered}`;
+      `<strong>${label}</strong><br>${rendered}`;
 
     box.appendChild(msg);
     box.scrollTop = box.scrollHeight;
 
     if (persist) {
       SessionService.addMessage(
-        role === "You" ? "user" : "assistant",
-        text
+        message.role,
+        message.content
       );
     }
+
+    return msg;
   }
 
   async sendMessage() {
+    if (this.isGenerating) return;
+
     const input =
       this.container.querySelector("#chat-input");
+
+    const sendBtn =
+      this.container.querySelector("#send-btn");
 
     const text = input.value.trim();
 
     if (!text) return;
 
-    input.disabled = true;
+    this.isGenerating = true;
 
-    this.appendMessage("You", text);
+    input.disabled = true;
+    sendBtn.disabled = true;
+
+    const userMessage = {
+      id: "msg_" + Date.now(),
+      role: "user",
+      content: text
+    };
+
+    this.appendMessageObject(userMessage);
     input.value = "";
 
-    this.appendMessage("Nexus", "Thinking...");
+    const assistantMessage = {
+      id: "msg_" + (Date.now() + 1),
+      role: "assistant",
+      content: "Thinking..."
+    };
 
-    const box =
-      this.container.querySelector("#chat-messages");
-
-    const thinkingNode = box.lastChild;
+    const assistantNode =
+      this.appendMessageObject(
+        assistantMessage,
+        false
+      );
 
     try {
       const response =
         await AIService.sendMessage(text);
 
-      const rendered =
-        parseMarkdown(response);
+      assistantMessage.content = response;
 
-      thinkingNode.innerHTML =
-        `<strong>Nexus</strong><br>${rendered}`;
+      assistantNode.innerHTML =
+        `<strong>Nexus</strong><br>${parseMarkdown(response)}`;
 
-      const data = SessionService.load();
-
-      const session =
-        data.sessions.find(
-          s => s.id === data.currentSessionId
-        );
-
-      if (session && session.messages.length > 0) {
-        session.messages.pop();
-
-        session.messages.push({
-          role: "assistant",
-          content: response
-        });
-
-        SessionService.save(data);
-      }
+      SessionService.addMessage(
+        "assistant",
+        response
+      );
     } catch (error) {
       console.error(error);
 
-      thinkingNode.innerHTML =
+      assistantNode.innerHTML =
         `<strong>Error</strong><br>${error.message}`;
     } finally {
+      this.isGenerating = false;
+
       input.disabled = false;
+      sendBtn.disabled = false;
+
       input.focus();
 
       const box =
