@@ -2,9 +2,8 @@ import AIService from "../services/ai-service.js";
 import StorageService from "../services/storage-service.js";
 
 export default class SettingsView {
-  constructor(parent = document.body) {
+  constructor() {
     this.modal = null;
-    this.parent = parent;
   }
 
   open() {
@@ -31,10 +30,7 @@ export default class SettingsView {
         savedModel.name ||
         "";
 
-      StorageService.set(
-        "model",
-        savedModel
-      );
+      StorageService.set("model", savedModel);
     }
 
     this.modal.innerHTML = `
@@ -73,12 +69,7 @@ export default class SettingsView {
       </div>
     `;
 
-    try {
-      this.parent.appendChild(this.modal);
-    } catch (err) {
-      console.error("Settings append failed:", err);
-      document.body.appendChild(this.modal);
-    }
+    document.documentElement.appendChild(this.modal);
 
     const providerEl =
       this.modal.querySelector("#settings-provider");
@@ -113,20 +104,9 @@ export default class SettingsView {
     this.modal
       .querySelector("#settings-save")
       .addEventListener("click", () => {
-        StorageService.set(
-          "provider",
-          providerEl.value
-        );
-
-        StorageService.set(
-          "apiKey",
-          keyEl.value
-        );
-
-        StorageService.set(
-          "model",
-          modelEl.value
-        );
+        StorageService.set("provider", providerEl.value);
+        StorageService.set("apiKey", keyEl.value);
+        StorageService.set("model", modelEl.value);
 
         alert("Settings saved");
         this.close();
@@ -179,7 +159,6 @@ export default class SettingsView {
       });
     } catch (error) {
       console.error(error);
-
       modelEl.innerHTML =
         `<option>Failed to load</option>`;
     }
