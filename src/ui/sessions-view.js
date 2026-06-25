@@ -1,56 +1,62 @@
 import SessionService from "../services/session-service.js";
 
 export default class SessionsView {
-  constructor(container, onSessionChange) {
+  constructor(container, onSelect) {
     this.container = container;
-    this.onSessionChange = onSessionChange;
+    this.onSelect = onSelect;
   }
 
   render() {
     const sessions = SessionService.getSessions();
-    const current = SessionService.getCurrentSession();
+    const activeId = SessionService.getActiveSessionId();
 
     this.container.innerHTML = `
-      <div class="nexus-sessions-header">
-        <button id="new-session-btn" class="nexus-button">
+      <div class="nexus-drawer-inner">
+        <button id="new-chat-btn" class="nexus-button">
           + New Chat
         </button>
-      </div>
 
-      <div id="sessions-list"></div>
+        <div class="nexus-session-list">
+          ${
+            sessions.length
+              ? sessions.map(session => `
+                <button
+                  class="nexus-session-item ${
+                    session.id === activeId ? "active" : ""
+                  }"
+                  data-id="${session.id}"
+                >
+                  ${session.title || "New Chat"}
+                </button>
+              `).join("")
+              : `<div class="nexus-empty">No sessions</div>`
+          }
+        </div>
+      </div>
     `;
 
-    const list = this.container.querySelector("#sessions-list");
+    const newBtn =
+      this.container.querySelector("#new-chat-btn");
 
-    sessions.forEach(session => {
-      const item = document.createElement("div");
-      item.className = "nexus-session-item";
-
-      if (current && current.id === session.id) {
-        item.classList.add("active");
-      }
-
-      item.textContent = session.title;
-
-      item.addEventListener("click", () => {
-        SessionService.switchSession(session.id);
-
-        if (this.onSessionChange) {
-          this.onSessionChange();
-        }
-      });
-
-      list.appendChild(item);
+    newBtn?.addEventListener("click", () => {
+      SessionService.createSession();
+      this.render();
+      this.onSelect?.();
     });
 
     this.container
-      .querySelector("#new-session-btn")
-      .addEventListener("click", () => {
-        SessionService.createSession();
+      .querySelectorAll(".nexus-session-item")
+      .forEach(item => {
+        item.addEventListener("click", () => {
+          const id = item.dataset.id;
 
-        if (this.onSessionChange) {
-          this.onSessionChange();
-        }
+          SessionService.setActiveSession(id);
+
+          this.container.classList.remove("open");
+
+          this.render();
+          this.onSelect?.();
+        });
       });
   }
 }
