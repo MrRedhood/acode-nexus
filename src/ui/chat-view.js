@@ -35,11 +35,19 @@ export default class ChatView {
       this.container.querySelector("#chat-input");
 
     sendBtn.addEventListener("click", () => {
-      this.sendMessage();
+      if (this.isGenerating) {
+        this.stopGeneration();
+      } else {
+        this.sendMessage();
+      }
     });
 
     input.addEventListener("keydown", e => {
-      if (e.key === "Enter" && !e.shiftKey) {
+      if (
+        e.key === "Enter" &&
+        !e.shiftKey &&
+        !this.isGenerating
+      ) {
         e.preventDefault();
         this.sendMessage();
       }
@@ -88,6 +96,12 @@ export default class ChatView {
       .writeText(content)
       .then(() => this.showToast("Copied!"))
       .catch(() => this.showToast("Copy failed"));
+  }
+
+  stopGeneration() {
+    if (this.activeController) {
+      this.activeController.abort();
+    }
   }
 
   attachCodeCopyListeners(msgNode) {
@@ -222,9 +236,11 @@ export default class ChatView {
       this.container.querySelector("#send-btn");
 
     this.isGenerating = true;
+    this.activeController =
+      new AbortController();
 
     input.disabled = true;
-    sendBtn.disabled = true;
+    sendBtn.textContent = "Stop";
 
     const thinkingNode =
       this.appendMessageObject(
@@ -238,7 +254,9 @@ export default class ChatView {
 
     try {
       const response =
-        await AIService.sendMessage();
+        await AIService.sendMessage(
+          this.activeController.signal
+        );
 
       thinkingNode.remove();
 
@@ -250,12 +268,20 @@ export default class ChatView {
     } catch (error) {
       console.error(error);
 
-      thinkingNode.innerHTML =
-        `<strong>Error</strong><br>${error.message}`;
+      if (error.name === "AbortError") {
+        thinkingNode.innerHTML =
+          `<strong>Nexus</strong><br>Generation stopped`;
+      } else {
+        thinkingNode.innerHTML =
+          `<strong>Error</strong><br>${error.message}`;
+      }
     } finally {
+      this.activeController = null;
       this.isGenerating = false;
+
       input.disabled = false;
-      sendBtn.disabled = false;
+      sendBtn.textContent = "Send";
+
       input.focus();
     }
   }
