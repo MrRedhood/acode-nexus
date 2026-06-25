@@ -22,9 +22,7 @@ export default class Sidebar {
     this.fab.className = "nexus-fab";
     this.fab.textContent = "N";
 
-    this.fab.addEventListener("click", () => {
-      this.togglePanel();
-    });
+    this.fab.onclick = () => this.togglePanel();
 
     document.body.appendChild(this.fab);
   }
@@ -35,7 +33,10 @@ export default class Sidebar {
 
     this.panel.innerHTML = `
       <div class="nexus-header">
-        <span class="nexus-title">Nexus</span>
+        <div class="nexus-left-actions">
+          <button id="drawer-btn" class="nexus-icon-btn">☰</button>
+          <span class="nexus-title">Nexus</span>
+        </div>
 
         <div class="nexus-header-actions">
           <button id="settings-btn" class="nexus-icon-btn">⚙</button>
@@ -43,28 +44,17 @@ export default class Sidebar {
         </div>
       </div>
 
-      <div class="nexus-layout">
-        <div id="sessions-root" class="nexus-sessions-panel"></div>
-        <div id="chat-root" class="nexus-chat-panel"></div>
-      </div>
+      <div id="sessions-drawer" class="nexus-drawer"></div>
+
+      <div id="chat-root" class="nexus-chat-full"></div>
     `;
 
     document.body.appendChild(this.panel);
 
     this.settingsView = new SettingsView();
 
-    this.panel
-      .querySelector("#nexus-close")
-      .addEventListener("click", () => this.closePanel());
-
-    this.panel
-      .querySelector("#settings-btn")
-      .addEventListener("click", () => {
-        this.settingsView.open();
-      });
-
-    const sessionsRoot =
-      this.panel.querySelector("#sessions-root");
+    const drawer =
+      this.panel.querySelector("#sessions-drawer");
 
     const chatRoot =
       this.panel.querySelector("#chat-root");
@@ -72,7 +62,7 @@ export default class Sidebar {
     this.chatView = new ChatView(chatRoot);
 
     this.sessionsView = new SessionsView(
-      sessionsRoot,
+      drawer,
       () => {
         this.sessionsView.render();
         this.chatView.render();
@@ -81,6 +71,24 @@ export default class Sidebar {
 
     this.sessionsView.render();
     this.chatView.render();
+
+    this.panel
+      .querySelector("#drawer-btn")
+      .addEventListener("click", () => {
+        drawer.classList.toggle("open");
+      });
+
+    this.panel
+      .querySelector("#settings-btn")
+      .addEventListener("click", () => {
+        this.settingsView.open();
+      });
+
+    this.panel
+      .querySelector("#nexus-close")
+      .addEventListener("click", () => {
+        this.closePanel();
+      });
   }
 
   togglePanel() {
