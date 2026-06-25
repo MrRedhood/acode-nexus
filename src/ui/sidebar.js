@@ -1,4 +1,6 @@
 import ChatView from "./chat-view.js";
+import StorageService from "../services/storage-service.js";
+import AIService from "../services/ai-service.js";
 
 export default class Sidebar {
   constructor() {
