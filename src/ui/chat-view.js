@@ -1,3 +1,5 @@
+import AIService from "../services/ai-service.js";
+
 export default class ChatView {
   constructor(container) {
     this.container = container;
@@ -45,24 +47,35 @@ export default class ChatView {
     box.scrollTop = box.scrollHeight;
   }
 
-  sendMessage() {
+  async sendMessage() {
     const input = this.container.querySelector("#chat-input");
     const text = input.value.trim();
 
     if (!text) return;
 
+    input.disabled = true;
+
     this.appendMessage("You", text);
-
-    const provider = document.getElementById("provider-select").value;
-    const model = document.getElementById("model-select").value;
-
-    setTimeout(() => {
-      this.appendMessage(
-        "Nexus",
-        `[${provider} | ${model}] Nexus received: ${text}`
-      );
-    }, 300);
-
     input.value = "";
+
+    this.appendMessage("Nexus", "Thinking...");
+
+    const box = this.container.querySelector("#chat-messages");
+    const thinkingNode = box.lastChild;
+
+    try {
+      const response = await AIService.sendMessage(text);
+
+      thinkingNode.innerHTML =
+        `<strong>Nexus</strong><br>${response}`;
+    } catch (error) {
+      console.error(error);
+
+      thinkingNode.innerHTML =
+        `<strong>Error</strong><br>${error.message}`;
+    } finally {
+      input.disabled = false;
+      input.focus();
+    }
   }
 }
