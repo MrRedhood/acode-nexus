@@ -75,7 +75,7 @@ export default class Sidebar {
     document.body.appendChild(this.panel);
     console.log("Panel appended to body");
 
-    this.settingsView = new SettingsView();
+    this.settingsView = new SettingsView(this.page);
 
     this.drawer =
       this.panel.querySelector("#sessions-drawer");
