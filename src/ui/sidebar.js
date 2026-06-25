@@ -4,8 +4,6 @@ import SettingsView from "./settings-view.js";
 
 export default class Sidebar {
   constructor(page) {
-    console.log("Sidebar constructor page:", page);
-
     this.page = page;
     this.fab = null;
     this.panel = null;
@@ -17,8 +15,6 @@ export default class Sidebar {
   }
 
   init() {
-    console.log("Sidebar init");
-
     try {
       this.createFab();
       this.createPanel();
@@ -34,24 +30,18 @@ export default class Sidebar {
   }
 
   createFab() {
-    console.log("Creating FAB");
-
     this.fab = document.createElement("button");
     this.fab.className = "nexus-fab";
     this.fab.textContent = "N";
 
     this.fab.addEventListener("click", () => {
-      console.log("FAB clicked");
       this.togglePanel();
     });
 
     document.body.appendChild(this.fab);
-    console.log("FAB appended to body");
   }
 
   createPanel() {
-    console.log("Creating panel");
-
     this.panel = document.createElement("div");
     this.panel.className = "nexus-panel";
 
@@ -68,17 +58,17 @@ export default class Sidebar {
         </div>
       </div>
 
-      <div id="sessions-drawer" class="nexus-drawer"></div>
       <div id="chat-root" class="nexus-chat-full"></div>
     `;
 
     document.body.appendChild(this.panel);
-    console.log("Panel appended to body");
+
+    /* CREATE DRAWER SEPARATELY */
+    this.drawer = document.createElement("div");
+    this.drawer.className = "nexus-drawer";
+    document.body.appendChild(this.drawer);
 
     this.settingsView = new SettingsView(this.page);
-
-    this.drawer =
-      this.panel.querySelector("#sessions-drawer");
 
     const chatRoot =
       this.panel.querySelector("#chat-root");
@@ -90,6 +80,7 @@ export default class Sidebar {
       () => {
         this.sessionsView.render();
         this.chatView.render();
+        this.closeDrawer();
       }
     );
 
@@ -99,41 +90,51 @@ export default class Sidebar {
     this.panel
       .querySelector("#drawer-btn")
       .addEventListener("click", () => {
-        console.log("Drawer clicked");
-
-        if (this.drawer) {
-          this.drawer.classList.toggle("open");
-        }
+        this.toggleDrawer();
       });
 
     this.panel
       .querySelector("#settings-btn")
       .addEventListener("click", () => {
-        console.log("Settings clicked");
         this.settingsView.open();
       });
 
     this.panel
       .querySelector("#nexus-close")
       .addEventListener("click", () => {
-        console.log("Close clicked");
         this.closePanel();
       });
   }
 
   updatePanelHeight() {
-    if (!this.panel) return;
+    if (this.panel) {
+      this.panel.style.height =
+        window.innerHeight + "px";
+    }
 
-    this.panel.style.height =
-      window.innerHeight + "px";
+    if (this.drawer) {
+      this.drawer.style.height =
+        window.innerHeight + "px";
+    }
+  }
 
-    this.panel.style.maxHeight =
-      window.innerHeight + "px";
+  toggleDrawer() {
+    if (!this.drawer) return;
+
+    if (this.drawer.classList.contains("open")) {
+      this.closeDrawer();
+    } else {
+      this.drawer.classList.add("open");
+    }
+  }
+
+  closeDrawer() {
+    if (this.drawer) {
+      this.drawer.classList.remove("open");
+    }
   }
 
   togglePanel() {
-    console.log("togglePanel:", this.isOpen);
-
     if (this.isOpen) {
       this.closePanel();
     } else {
@@ -144,8 +145,6 @@ export default class Sidebar {
   openPanel() {
     if (!this.panel || !this.fab) return;
 
-    console.log("Opening panel");
-
     this.panel.classList.add("open");
     this.fab.style.display = "none";
     this.isOpen = true;
@@ -154,21 +153,14 @@ export default class Sidebar {
   closePanel() {
     if (!this.panel || !this.fab) return;
 
-    console.log("Closing panel");
-
     this.panel.classList.remove("open");
-
-    if (this.drawer) {
-      this.drawer.classList.remove("open");
-    }
+    this.closeDrawer();
 
     this.fab.style.display = "block";
     this.isOpen = false;
   }
 
   destroy() {
-    console.log("Destroy sidebar");
-
     if (this.fab) {
       this.fab.remove();
       this.fab = null;
@@ -177,6 +169,11 @@ export default class Sidebar {
     if (this.panel) {
       this.panel.remove();
       this.panel = null;
+    }
+
+    if (this.drawer) {
+      this.drawer.remove();
+      this.drawer = null;
     }
   }
 }
