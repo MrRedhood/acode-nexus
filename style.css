@@ -88,8 +88,11 @@
 }
 
 .nexus-textarea {
-  height: 90px;
+  width: 100%;
+  min-height: 70px;
+  max-height: 140px;
   resize: none;
+  margin-top: 12px;
 }
 
 .nexus-button {
