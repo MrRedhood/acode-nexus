@@ -55,6 +55,20 @@ export default class SessionService {
     );
   }
 
+  static getActiveSessionId() {
+    return this.load().currentSessionId;
+  }
+
+  static setActiveSession(id) {
+    const data = this.load();
+    data.currentSessionId = id;
+    this.save(data);
+  }
+
+  static switchSession(id) {
+    this.setActiveSession(id);
+  }
+
   static createSession() {
     const data = this.load();
 
@@ -70,12 +84,6 @@ export default class SessionService {
     this.save(data);
 
     return newSession;
-  }
-
-  static switchSession(id) {
-    const data = this.load();
-    data.currentSessionId = id;
-    this.save(data);
   }
 
   static addMessage(role, content) {
