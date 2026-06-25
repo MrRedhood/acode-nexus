@@ -28,6 +28,12 @@ export default class Sidebar {
   }
 
   createPanel() {
+    const savedProvider =
+      StorageService.get("provider") || "gemini";
+
+    const savedApiKey =
+      StorageService.get("apiKey") || "";
+
     this.panel = document.createElement("div");
     this.panel.className = "nexus-panel";
 
@@ -39,9 +45,17 @@ export default class Sidebar {
 
       <label class="nexus-label">Provider</label>
       <select id="provider-select" class="nexus-select">
-        <option value="openrouter">OpenRouter</option>
-        <option value="gemini">Gemini</option>
-        <option value="deepinfra">DeepInfra</option>
+        <option value="openrouter" ${
+          savedProvider === "openrouter" ? "selected" : ""
+        }>OpenRouter</option>
+
+        <option value="gemini" ${
+          savedProvider === "gemini" ? "selected" : ""
+        }>Gemini</option>
+
+        <option value="deepinfra" ${
+          savedProvider === "deepinfra" ? "selected" : ""
+        }>DeepInfra</option>
       </select>
 
       <label class="nexus-label">API Key</label>
@@ -50,6 +64,7 @@ export default class Sidebar {
         class="nexus-input"
         type="password"
         placeholder="Enter API key"
+        value="${savedApiKey}"
       />
 
       <label class="nexus-label">Model</label>
@@ -58,7 +73,7 @@ export default class Sidebar {
       </select>
 
       <button id="save-config" class="nexus-button">
-        Save
+        Load Models
       </button>
 
       <div id="chat-root"></div>
@@ -74,42 +89,68 @@ export default class Sidebar {
       .querySelector("#save-config")
       .addEventListener("click", () => this.loadModels());
 
+    const modelSelect =
+      this.panel.querySelector("#model-select");
+
+    modelSelect.addEventListener("change", () => {
+      StorageService.set("model", modelSelect.value);
+    });
+
     const chatRoot = this.panel.querySelector("#chat-root");
     this.chatView = new ChatView(chatRoot);
     this.chatView.render();
   }
 
-  loadModels() {
-    const provider = document.getElementById("provider-select").value;
-    const modelSelect = document.getElementById("model-select");
+  async loadModels() {
+    const provider =
+      document.getElementById("provider-select").value;
 
-    modelSelect.innerHTML = "";
+    const apiKey =
+      document.getElementById("api-key").value.trim();
 
-    let models = [];
+    const modelSelect =
+      document.getElementById("model-select");
 
-    if (provider === "openrouter") {
-      models = [
-        "deepseek/deepseek-chat",
-        "google/gemini-flash-1.5",
-        "meta-llama/llama-3"
-      ];
-    } else if (provider === "gemini") {
-      models = [
-        "gemini-2.5-pro",
-        "gemini-2.5-flash"
-      ];
-    } else {
-      models = [
-        "meta-llama/llama-3.3-70b"
-      ];
+    if (!apiKey) {
+      alert("API key required");
+      return;
     }
 
-    models.forEach(model => {
-      const option = document.createElement("option");
-      option.value = model;
-      option.textContent = model;
-      modelSelect.appendChild(option);
-    });
+    StorageService.set("provider", provider);
+    StorageService.set("apiKey", apiKey);
+
+    modelSelect.innerHTML =
+      "<option>Loading models...</option>";
+
+    try {
+      const models = await AIService.getModels();
+
+      modelSelect.innerHTML = "";
+
+      if (!models.length) {
+        modelSelect.innerHTML =
+          "<option>No models found</option>";
+        return;
+      }
+
+      models.forEach(model => {
+        const option = document.createElement("option");
+        option.value = model.id;
+        option.textContent = model.name;
+        modelSelect.appendChild(option);
+      });
+
+      const savedModel = StorageService.get("model");
+
+      if (savedModel) {
+        modelSelect.value = savedModel;
+      }
+    } catch (error) {
+      console.error(error);
+      modelSelect.innerHTML =
+        "<option>Failed to load</option>";
+      alert(error.message);
+    }
   }
 
   togglePanel() {
