@@ -1,7 +1,10 @@
+import ChatView from "./chat-view.js";
+
 export default class Sidebar {
   constructor() {
     this.fab = null;
     this.panel = null;
+    this.chatView = null;
     this.isOpen = false;
   }
 
@@ -17,7 +20,7 @@ export default class Sidebar {
     Object.assign(this.fab.style, {
       position: "fixed",
       right: "20px",
-      bottom: "24px",
+      bottom: "80px",
       width: "56px",
       height: "56px",
       borderRadius: "50%",
@@ -38,23 +41,55 @@ export default class Sidebar {
     Object.assign(this.panel.style, {
       position: "fixed",
       top: "0",
-      right: "-340px",
-      width: "340px",
+      right: "-90vw",
+      width: "85vw",
+      maxWidth: "360px",
       height: "100%",
       background: "#1e1e1e",
       color: "white",
       zIndex: "999998",
-      transition: "right 0.25s ease"
+      transition: "right 0.25s ease",
+      padding: "12px",
+      boxSizing: "border-box",
+      overflow: "auto"
     });
 
     this.panel.innerHTML = `
-      <div style="padding:16px;display:flex;justify-content:space-between;">
-        <span>Acode Nexus</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:20px;font-weight:bold;">Acode Nexus</span>
         <button id="nexus-close">×</button>
       </div>
-      <div style="padding:16px;">
-        Nexus panel ready.
+
+      <div style="margin-top:16px;">
+        <label>Provider</label>
+        <select id="provider-select" style="width:100%;margin-top:6px;">
+          <option value="openrouter">OpenRouter</option>
+          <option value="gemini">Gemini</option>
+          <option value="deepinfra">DeepInfra</option>
+        </select>
       </div>
+
+      <div style="margin-top:12px;">
+        <label>API Key</label>
+        <input id="api-key"
+          type="password"
+          placeholder="Enter API key"
+          style="width:100%;margin-top:6px;" />
+      </div>
+
+      <div style="margin-top:12px;">
+        <label>Model</label>
+        <select id="model-select" style="width:100%;margin-top:6px;">
+          <option>Choose provider first</option>
+        </select>
+      </div>
+
+      <button id="save-config"
+        style="width:100%;margin-top:12px;">
+        Save
+      </button>
+
+      <div id="chat-root"></div>
     `;
 
     document.body.appendChild(this.panel);
@@ -62,6 +97,47 @@ export default class Sidebar {
     this.panel
       .querySelector("#nexus-close")
       .addEventListener("click", () => this.closePanel());
+
+    this.panel
+      .querySelector("#save-config")
+      .addEventListener("click", () => this.loadModels());
+
+    const chatRoot = this.panel.querySelector("#chat-root");
+    this.chatView = new ChatView(chatRoot);
+    this.chatView.render();
+  }
+
+  loadModels() {
+    const provider = document.getElementById("provider-select").value;
+    const modelSelect = document.getElementById("model-select");
+
+    modelSelect.innerHTML = "";
+
+    let models = [];
+
+    if (provider === "openrouter") {
+      models = [
+        "deepseek/deepseek-chat",
+        "google/gemini-flash-1.5",
+        "meta-llama/llama-3"
+      ];
+    } else if (provider === "gemini") {
+      models = [
+        "gemini-2.5-pro",
+        "gemini-2.5-flash"
+      ];
+    } else {
+      models = [
+        "meta-llama/llama-3.3-70b"
+      ];
+    }
+
+    models.forEach(model => {
+      const option = document.createElement("option");
+      option.value = model;
+      option.textContent = model;
+      modelSelect.appendChild(option);
+    });
   }
 
   togglePanel() {
@@ -74,7 +150,7 @@ export default class Sidebar {
   }
 
   closePanel() {
-    this.panel.style.right = "-340px";
+    this.panel.style.right = "-90vw";
     this.isOpen = false;
   }
 
