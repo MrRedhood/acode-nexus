@@ -2,9 +2,9 @@ import GeminiProvider from "../providers/gemini.js";
 import StorageService from "./storage-service.js";
 
 export default class AIService {
-  static async getModels() {
-    const provider = StorageService.get("provider");
-    const apiKey = StorageService.get("apiKey");
+  static async getModels(provider = null, apiKey = null) {
+    provider ??= StorageService.get("provider");
+    apiKey ??= StorageService.get("apiKey");
 
     if (!provider || !apiKey) {
       throw new Error("Provider or API key missing");
