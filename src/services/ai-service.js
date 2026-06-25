@@ -18,7 +18,7 @@ export default class AIService {
     throw new Error("Unsupported provider");
   }
 
-  static async sendMessage() {
+  static async sendMessage(signal = null) {
     const provider =
       StorageService.get("provider");
 
@@ -64,7 +64,8 @@ export default class AIService {
       return await GeminiProvider.chat(
         apiKey,
         model,
-        cleanedMessages
+        cleanedMessages,
+        signal
       );
     }
 
