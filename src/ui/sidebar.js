@@ -1,28 +1,69 @@
 export default class Sidebar {
   constructor() {
-    this.container = null;
+    this.fab = null;
+    this.panel = null;
+    this.isOpen = false;
   }
 
   init() {
-    this.container = document.createElement("div");
+    this.createFab();
+    this.createPanel();
+  }
 
-    this.container.innerText = "Acode Nexus Loaded";
-    this.container.style.position = "fixed";
-    this.container.style.bottom = "20px";
-    this.container.style.right = "20px";
-    this.container.style.padding = "12px 16px";
-    this.container.style.background = "#222";
-    this.container.style.color = "#fff";
-    this.container.style.borderRadius = "12px";
-    this.container.style.zIndex = "99999";
+  createFab() {
+    this.fab = document.createElement("button");
+    this.fab.textContent = "N";
+    this.fab.className = "nexus-fab";
 
-    document.body.appendChild(this.container);
+    this.fab.addEventListener("click", () => {
+      this.togglePanel();
+    });
+
+    document.body.appendChild(this.fab);
+  }
+
+  createPanel() {
+    this.panel = document.createElement("div");
+    this.panel.className = "nexus-panel";
+
+    this.panel.innerHTML = `
+      <div class="nexus-header">
+        <span>Acode Nexus</span>
+        <button id="nexus-close-btn">×</button>
+      </div>
+      <div class="nexus-body">
+        Nexus panel ready.
+      </div>
+    `;
+
+    document.body.appendChild(this.panel);
+
+    const closeBtn = this.panel.querySelector("#nexus-close-btn");
+    closeBtn.addEventListener("click", () => {
+      this.closePanel();
+    });
+  }
+
+  togglePanel() {
+    if (this.isOpen) {
+      this.closePanel();
+    } else {
+      this.openPanel();
+    }
+  }
+
+  openPanel() {
+    this.panel.classList.add("open");
+    this.isOpen = true;
+  }
+
+  closePanel() {
+    this.panel.classList.remove("open");
+    this.isOpen = false;
   }
 
   destroy() {
-    if (this.container) {
-      this.container.remove();
-      this.container = null;
-    }
+    if (this.fab) this.fab.remove();
+    if (this.panel) this.panel.remove();
   }
 }
