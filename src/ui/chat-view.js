@@ -180,6 +180,21 @@ export default class ChatView {
     });
   }
 
+  animateMessage(node) {
+    node.style.opacity = "0";
+    node.style.transform = "translateY(-18px)";
+    node.style.transition = "none";
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        node.style.transition =
+          "opacity 0.35s ease, transform 0.35s ease";
+        node.style.opacity = "1";
+        node.style.transform = "translateY(0)";
+      });
+    });
+  }
+
   appendMessageObject(
     message,
     persist = true,
@@ -202,10 +217,6 @@ export default class ChatView {
       (message.role === "user"
         ? "nexus-user"
         : "nexus-ai");
-
-    if (animate) {
-      msg.classList.add("nexus-msg-enter");
-    }
 
     const rendered =
       message.role === "user"
@@ -273,6 +284,11 @@ export default class ChatView {
     this.attachCodeCopyListeners(msg);
 
     box.appendChild(msg);
+
+    if (animate) {
+      this.animateMessage(msg);
+    }
+
     box.scrollTop = box.scrollHeight;
 
     return msg;
@@ -411,7 +427,7 @@ export default class ChatView {
       },
       true,
       false,
-      true
+      false
     );
 
     input.value = "";
