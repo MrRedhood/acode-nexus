@@ -105,7 +105,8 @@ export default class SessionService {
 
     if (!data.currentSessionId) {
       data.currentSessionId =
-        data.sessions[0]?.id || null;
+        data.sessions[0]?.id ||
+        null;
     }
 
     return data;
@@ -401,7 +402,7 @@ export default class SessionService {
     return output;
   }
 
-    static addAttachment(
+  static addAttachment(
     attachment
   ) {
     const data = this.load();
@@ -458,7 +459,7 @@ export default class SessionService {
       .filter(Boolean);
   }
 
-  static addMessage(
+    static addMessage(
     role,
     content,
     attachmentIds = []
@@ -546,6 +547,38 @@ export default class SessionService {
     msg.content = newContent;
 
     this.save(data);
+  }
+
+  static updateMessageWithAttachments(
+    messageId,
+    newContent,
+    attachmentIds = []
+  ) {
+    const data = this.load();
+
+    const session =
+      data.sessions.find(
+        s =>
+          s.id ===
+          data.currentSessionId
+      );
+
+    if (!session) return false;
+
+    const msg =
+      session.messages.find(
+        m => m.id === messageId
+      );
+
+    if (!msg) return false;
+
+    msg.content = newContent;
+    msg.attachmentIds =
+      attachmentIds;
+
+    this.save(data);
+
+    return true;
   }
 
   static removeMessagesAfter(
