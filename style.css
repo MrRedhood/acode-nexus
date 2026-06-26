@@ -422,5 +422,5 @@
 }
 
 .nexus-msg-enter {
-  animation: nexusMessageEnter 280ms ease;
+  animation: nexusMessageEnter 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
