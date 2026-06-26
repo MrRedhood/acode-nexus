@@ -406,3 +406,19 @@
   font-size: 14px;
   z-index: 2147483650;
 }
+
+@keyframes nexusMessageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.nexus-msg-enter {
+  animation: nexusMessageEnter 280ms ease;
+}
