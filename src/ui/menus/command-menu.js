@@ -1,32 +1,28 @@
 export default class CommandMenu {
   constructor(chatView) {
     this.chatView = chatView;
+    this.menu = null;
 
     this.commands = [
       {
         name: "explain",
-        description:
-          "Explain code or concepts"
+        description: "Explain code or concepts"
       },
       {
         name: "fix",
-        description:
-          "Debug and fix issues"
+        description: "Debug and fix issues"
       },
       {
         name: "refactor",
-        description:
-          "Improve structure"
+        description: "Improve structure"
       },
       {
         name: "optimize",
-        description:
-          "Improve performance"
+        description: "Improve performance"
       },
       {
         name: "summarize",
-        description:
-          "Summarize content"
+        description: "Summarize content"
       }
     ];
   }
@@ -34,21 +30,15 @@ export default class CommandMenu {
   update(text) {
     this.hide();
 
-    if (!text.startsWith("/")) {
-      return;
-    }
+    if (!text.startsWith("/")) return;
 
-    const query =
-      text.slice(1).toLowerCase();
+    const query = text.slice(1).toLowerCase();
 
-    const filtered =
-      this.commands.filter(cmd =>
-        cmd.name.includes(query)
-      );
+    const filtered = this.commands.filter(cmd =>
+      cmd.name.includes(query)
+    );
 
-    if (!filtered.length) {
-      return;
-    }
+    if (!filtered.length) return;
 
     const menu =
       document.createElement("div");
@@ -63,14 +53,23 @@ export default class CommandMenu {
             class="nexus-command-item"
             data-command="${cmd.name}"
           >
-            <strong>/${cmd.name}</strong><br>
-            <small>${cmd.description}</small>
+            <div class="nexus-command-name">
+              /${cmd.name}
+            </div>
+            <div class="nexus-command-desc">
+              ${cmd.description}
+            </div>
           </button>
         `
       )
       .join("");
 
-    document.body.appendChild(menu);
+    const panel =
+      document.querySelector(".nexus-panel");
+
+    if (!panel) return;
+
+    panel.appendChild(menu);
 
     menu
       .querySelectorAll(
@@ -83,7 +82,6 @@ export default class CommandMenu {
             this.chatView.insertCommand(
               btn.dataset.command
             );
-
             this.hide();
           }
         );
