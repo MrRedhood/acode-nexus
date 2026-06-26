@@ -16,15 +16,25 @@ export default class ChatView {
       <div id="chat-messages" class="nexus-chat"></div>
 
       <div class="nexus-input-area">
-        <textarea
-          id="chat-input"
-          class="nexus-textarea"
-          placeholder="Ask Nexus anything..."
-        ></textarea>
+        <div class="nexus-token-bar">
+          <span id="token-counter">Used: 0 / 128K</span>
+        </div>
 
-        <button id="send-btn" class="nexus-button">
-          Send
-        </button>
+        <div class="nexus-input-row">
+          <button id="attach-btn" class="nexus-circle-btn">
+            +
+          </button>
+
+          <textarea
+            id="chat-input"
+            class="nexus-textarea"
+            placeholder="Ask Nexus anything..."
+          ></textarea>
+
+          <button id="send-btn" class="nexus-circle-btn nexus-send-btn">
+            ↑
+          </button>
+        </div>
       </div>
     `;
 
@@ -36,12 +46,24 @@ export default class ChatView {
     const input =
       this.container.querySelector("#chat-input");
 
+    const attachBtn =
+      this.container.querySelector("#attach-btn");
+
     sendBtn.addEventListener("click", () => {
       if (this.isGenerating) {
         this.stopGeneration();
       } else {
         this.sendMessage();
       }
+    });
+
+    attachBtn.addEventListener("click", () => {
+      this.showToast("Files coming soon");
+    });
+
+    input.addEventListener("input", () => {
+      this.autoResizeTextarea(input);
+      this.updateTokenCounter();
     });
 
     input.addEventListener("keydown", e => {
@@ -54,6 +76,63 @@ export default class ChatView {
         this.sendMessage();
       }
     });
+
+    this.autoResizeTextarea(input);
+    this.updateTokenCounter();
+  }
+
+  autoResizeTextarea(input) {
+    input.style.height = "auto";
+
+    const maxHeight = 180;
+    const newHeight = Math.min(
+      input.scrollHeight,
+      maxHeight
+    );
+
+    input.style.height = newHeight + "px";
+    input.style.overflowY =
+      input.scrollHeight > maxHeight
+        ? "auto"
+        : "hidden";
+  }
+
+  estimateTokens(text) {
+    return Math.ceil(text.length / 4);
+  }
+
+  updateTokenCounter() {
+    const counter =
+      this.container.querySelector(
+        "#token-counter"
+      );
+
+    const input =
+      this.container.querySelector("#chat-input");
+
+    if (!counter || !input) return;
+
+    const messages =
+      SessionService.getMessages();
+
+    let totalChars = input.value.length;
+
+    messages.forEach(msg => {
+      totalChars += msg.content.length;
+    });
+
+    const tokens =
+      this.estimateTokens(
+        "x".repeat(totalChars)
+      );
+
+    const display =
+      tokens >= 1000
+        ? (tokens / 1000).toFixed(1) + "K"
+        : tokens;
+
+    counter.textContent =
+      `Used: ${display} / 128K`;
   }
 
   renderMessages() {
@@ -86,6 +165,7 @@ export default class ChatView {
     });
 
     box.scrollTop = box.scrollHeight;
+    this.updateTokenCounter();
   }
 
   startThinkingAnimation(node) {
@@ -145,14 +225,12 @@ export default class ChatView {
     const input =
       this.container.querySelector("#chat-input");
 
-    const sendBtn =
-      this.container.querySelector("#send-btn");
-
     this.editingMessageId = message.id;
     input.value = message.content;
     input.focus();
 
-    sendBtn.textContent = "Save & Regenerate";
+    this.autoResizeTextarea(input);
+    this.updateTokenCounter();
   }
 
   attachCodeCopyListeners(msgNode) {
@@ -235,15 +313,11 @@ export default class ChatView {
       showRegen
     ) {
       extraButtons = `
-        <button class="nexus-msg-action-btn nexus-regen-btn">
-          ↻
-        </button>
+        <button class="nexus-msg-action-btn nexus-regen-btn">↻</button>
       `;
     } else if (message.role === "user") {
       extraButtons = `
-        <button class="nexus-msg-action-btn nexus-edit-btn">
-          Edit
-        </button>
+        <button class="nexus-msg-action-btn nexus-edit-btn">Edit</button>
       `;
     }
 
@@ -290,6 +364,7 @@ export default class ChatView {
     }
 
     box.scrollTop = box.scrollHeight;
+    this.updateTokenCounter();
 
     return msg;
   }
@@ -311,7 +386,7 @@ export default class ChatView {
     this.activeController =
       new AbortController();
 
-    sendBtn.textContent = "Stop";
+    sendBtn.textContent = "■";
 
     const thinkingNode =
       this.appendMessageObject(
@@ -365,11 +440,7 @@ export default class ChatView {
     } finally {
       this.activeController = null;
       this.isGenerating = false;
-
-      sendBtn.textContent =
-        this.editingMessageId
-          ? "Save & Regenerate"
-          : "Send";
+      sendBtn.textContent = "↑";
     }
   }
 
@@ -378,9 +449,6 @@ export default class ChatView {
 
     const input =
       this.container.querySelector("#chat-input");
-
-    const sendBtn =
-      this.container.querySelector("#send-btn");
 
     const text = input.value.trim();
 
@@ -397,10 +465,11 @@ export default class ChatView {
       );
 
       this.editingMessageId = null;
-      sendBtn.textContent = "Send";
 
       this.renderMessages();
       input.value = "";
+      this.autoResizeTextarea(input);
+      this.updateTokenCounter();
 
       await this.generateAssistantReply();
       return;
@@ -424,6 +493,8 @@ export default class ChatView {
     );
 
     input.value = "";
+    this.autoResizeTextarea(input);
+    this.updateTokenCounter();
 
     await this.generateAssistantReply();
   }
