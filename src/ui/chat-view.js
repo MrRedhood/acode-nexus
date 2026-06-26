@@ -21,9 +21,7 @@ export default class ChatView {
         </div>
 
         <div class="nexus-input-row">
-          <button id="attach-btn" class="nexus-circle-btn">
-            +
-          </button>
+          <button id="attach-btn" class="nexus-circle-btn">+</button>
 
           <textarea
             id="chat-input"
@@ -31,7 +29,10 @@ export default class ChatView {
             placeholder="Ask Nexus anything..."
           ></textarea>
 
-          <button id="send-btn" class="nexus-circle-btn nexus-send-btn">
+          <button
+            id="send-btn"
+            class="nexus-circle-btn nexus-send-btn"
+          >
             ↑
           </button>
         </div>
@@ -58,7 +59,7 @@ export default class ChatView {
     });
 
     attachBtn.addEventListener("click", () => {
-      this.showToast("Files coming soon");
+      this.openAttachmentMenu();
     });
 
     input.addEventListener("input", () => {
@@ -97,8 +98,8 @@ export default class ChatView {
         : "hidden";
   }
 
-  estimateTokens(text) {
-    return Math.ceil(text.length / 4);
+  estimateTokens(charCount) {
+    return Math.ceil(charCount / 4);
   }
 
   updateTokenCounter() {
@@ -122,9 +123,7 @@ export default class ChatView {
     });
 
     const tokens =
-      this.estimateTokens(
-        "x".repeat(totalChars)
-      );
+      this.estimateTokens(totalChars);
 
     const display =
       tokens >= 1000
@@ -313,11 +312,15 @@ export default class ChatView {
       showRegen
     ) {
       extraButtons = `
-        <button class="nexus-msg-action-btn nexus-regen-btn">↻</button>
+        <button class="nexus-msg-action-btn nexus-regen-btn">
+          ↻
+        </button>
       `;
     } else if (message.role === "user") {
       extraButtons = `
-        <button class="nexus-msg-action-btn nexus-edit-btn">Edit</button>
+        <button class="nexus-msg-action-btn nexus-edit-btn">
+          Edit
+        </button>
       `;
     }
 
@@ -367,6 +370,48 @@ export default class ChatView {
     this.updateTokenCounter();
 
     return msg;
+  }
+
+    openAttachmentMenu() {
+    const overlay = document.createElement("div");
+    overlay.className = "nexus-action-overlay";
+
+    overlay.innerHTML = `
+      <div class="nexus-action-sheet">
+        <button data-type="image">Upload Image</button>
+        <button data-type="txt">Upload Text File</button>
+        <button data-type="pdf">Upload PDF</button>
+        <button data-type="code">Upload Code File</button>
+        <button data-type="cancel">Cancel</button>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener("click", e => {
+      if (e.target === overlay) {
+        overlay.remove();
+      }
+    });
+
+    overlay.querySelectorAll("button")
+      .forEach(btn => {
+        btn.addEventListener("click", () => {
+          const type = btn.dataset.type;
+          overlay.remove();
+
+          if (type === "cancel") return;
+
+          const labels = {
+            image: "Image upload coming soon",
+            txt: "Text upload coming soon",
+            pdf: "PDF upload coming soon",
+            code: "Code upload coming soon"
+          };
+
+          this.showToast(labels[type]);
+        });
+      });
   }
 
   async regenerateResponse() {
@@ -440,6 +485,7 @@ export default class ChatView {
     } finally {
       this.activeController = null;
       this.isGenerating = false;
+
       sendBtn.textContent = "↑";
     }
   }
@@ -467,6 +513,7 @@ export default class ChatView {
       this.editingMessageId = null;
 
       this.renderMessages();
+
       input.value = "";
       this.autoResizeTextarea(input);
       this.updateTokenCounter();
