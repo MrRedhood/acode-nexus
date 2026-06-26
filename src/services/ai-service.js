@@ -1,6 +1,7 @@
 import GeminiProvider from "../providers/gemini.js";
 import StorageService from "./storage-service.js";
 import SessionService from "./session-service.js";
+import AttachmentStorage from "./attachment-storage.js";
 
 const COMMANDS = {
   explain: {
@@ -83,7 +84,8 @@ export default class AIService {
     const command =
       match[1].toLowerCase();
 
-    const remaining = match[2] || "";
+    const remaining =
+      match[2] || "";
 
     if (!COMMANDS[command]) {
       return null;
@@ -95,12 +97,16 @@ export default class AIService {
     };
   }
 
-  static attachmentToText(attachment) {
+  static attachmentToText(
+    attachment
+  ) {
     if (!attachment) {
       return "";
     }
 
-    if (attachment.type === "image") {
+    if (
+      attachment.type === "image"
+    ) {
       return `[IMAGE ATTACHMENT]
 Name: ${attachment.name}
 Size: ${attachment.size} bytes
@@ -110,7 +116,9 @@ Image vision is not enabled yet.
 Only metadata is available.`;
     }
 
-    if (attachment.type === "pdf") {
+    if (
+      attachment.type === "pdf"
+    ) {
       return `[PDF ATTACHMENT]
 Name: ${attachment.name}
 Size: ${attachment.size} bytes
@@ -127,16 +135,19 @@ Content:
 ${attachment.content || ""}`;
   }
 
-  static injectAttachments(message) {
+  static async injectAttachments(
+    message
+  ) {
     if (
       !message.attachmentIds ||
-      message.attachmentIds.length === 0
+      message.attachmentIds
+        .length === 0
     ) {
       return message.content;
     }
 
     const attachments =
-      SessionService.getAttachments(
+      await AttachmentStorage.getAttachments(
         message.attachmentIds
       );
 
@@ -147,7 +158,9 @@ ${attachment.content || ""}`;
     const attachmentText =
       attachments
         .map(att =>
-          this.attachmentToText(att)
+          this.attachmentToText(
+            att
+          )
         )
         .join("\n\n");
 
@@ -157,20 +170,25 @@ User Message:
 ${message.content}`;
   }
 
-  static preprocessMessages(messages) {
+  static preprocessMessages(
+    messages
+  ) {
     const processed =
       messages.map(msg => ({
         ...msg
       }));
 
     for (
-      let i = processed.length - 1;
+      let i =
+        processed.length - 1;
       i >= 0;
       i--
     ) {
       const msg = processed[i];
 
-      if (msg.role !== "user") {
+      if (
+        msg.role !== "user"
+      ) {
         continue;
       }
 
@@ -207,18 +225,27 @@ ${message.content}`;
     apiKey = null
   ) {
     provider ??=
-      StorageService.get("provider");
+      StorageService.get(
+        "provider"
+      );
 
     apiKey ??=
-      StorageService.get("apiKey");
+      StorageService.get(
+        "apiKey"
+      );
 
-    if (!provider || !apiKey) {
+    if (
+      !provider ||
+      !apiKey
+    ) {
       throw new Error(
         "Provider or API key missing"
       );
     }
 
-    if (provider === "gemini") {
+    if (
+      provider === "gemini"
+    ) {
       return await GeminiProvider.getModels(
         apiKey
       );
@@ -233,13 +260,19 @@ ${message.content}`;
     signal = null
   ) {
     const provider =
-      StorageService.get("provider");
+      StorageService.get(
+        "provider"
+      );
 
     const apiKey =
-      StorageService.get("apiKey");
+      StorageService.get(
+        "apiKey"
+      );
 
     const model =
-      StorageService.get("model");
+      StorageService.get(
+        "model"
+      );
 
     if (!provider) {
       throw new Error(
@@ -269,30 +302,38 @@ ${message.content}`;
     }
 
     const cleanedMessages =
-      messages
-        .filter(
-          msg =>
-            msg &&
-            msg.role &&
-            typeof msg.content ===
-              "string"
-        )
-        .map(msg => ({
-          role: msg.role,
-          content:
-            this.injectAttachments(
-              msg
-            ),
-          attachmentIds:
-            msg.attachmentIds || []
-        }));
+      [];
+
+    for (const msg of messages) {
+      if (
+        !msg ||
+        !msg.role ||
+        typeof msg.content !==
+          "string"
+      ) {
+        continue;
+      }
+
+      cleanedMessages.push({
+        role: msg.role,
+        content:
+          await this.injectAttachments(
+            msg
+          ),
+        attachmentIds:
+          msg.attachmentIds ||
+          []
+      });
+    }
 
     const processedMessages =
       this.preprocessMessages(
         cleanedMessages
       );
 
-    if (provider === "gemini") {
+    if (
+      provider === "gemini"
+    ) {
       return await GeminiProvider.chat(
         apiKey,
         model,
