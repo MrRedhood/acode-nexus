@@ -1,6 +1,8 @@
 import AIService from "../services/ai-service.js";
 import SessionService from "../services/session-service.js";
 import parseMarkdown from "../utils/markdown.js";
+import AttachmentMenu from "./menus/attachment-menu.js";
+import CommandMenu from "./menus/command-menu.js";
 
 export default class ChatView {
   constructor(container) {
@@ -9,6 +11,12 @@ export default class ChatView {
     this.isGenerating = false;
     this.editingMessageId = null;
     this.thinkingInterval = null;
+
+    this.attachmentMenu =
+      new AttachmentMenu(this);
+
+    this.commandMenu =
+      new CommandMenu(this);
   }
 
   render() {
@@ -59,12 +67,13 @@ export default class ChatView {
     });
 
     attachBtn.addEventListener("click", () => {
-      this.openAttachmentMenu();
+      this.attachmentMenu.open();
     });
 
     input.addEventListener("input", () => {
       this.autoResizeTextarea(input);
       this.updateTokenCounter();
+      this.commandMenu.update(input.value);
     });
 
     input.addEventListener("keydown", e => {
@@ -77,6 +86,19 @@ export default class ChatView {
         this.sendMessage();
       }
     });
+
+    this.autoResizeTextarea(input);
+    this.updateTokenCounter();
+  }
+
+  insertCommand(command) {
+    const input =
+      this.container.querySelector("#chat-input");
+
+    if (!input) return;
+
+    input.value = "/" + command + " ";
+    input.focus();
 
     this.autoResizeTextarea(input);
     this.updateTokenCounter();
@@ -371,178 +393,3 @@ export default class ChatView {
 
     return msg;
   }
-
-    openAttachmentMenu() {
-    const overlay = document.createElement("div");
-    overlay.className = "nexus-action-overlay";
-
-    overlay.innerHTML = `
-      <div class="nexus-action-sheet">
-        <button data-type="image">Upload Image</button>
-        <button data-type="txt">Upload Text File</button>
-        <button data-type="pdf">Upload PDF</button>
-        <button data-type="code">Upload Code File</button>
-        <button data-type="cancel">Cancel</button>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    overlay.addEventListener("click", e => {
-      if (e.target === overlay) {
-        overlay.remove();
-      }
-    });
-
-    overlay.querySelectorAll("button")
-      .forEach(btn => {
-        btn.addEventListener("click", () => {
-          const type = btn.dataset.type;
-          overlay.remove();
-
-          if (type === "cancel") return;
-
-          const labels = {
-            image: "Image upload coming soon",
-            txt: "Text upload coming soon",
-            pdf: "PDF upload coming soon",
-            code: "Code upload coming soon"
-          };
-
-          this.showToast(labels[type]);
-        });
-      });
-  }
-
-  async regenerateResponse() {
-    if (this.isGenerating) return;
-
-    SessionService.removeLastAssistantMessage();
-    this.renderMessages();
-
-    await this.generateAssistantReply();
-  }
-
-  async generateAssistantReply() {
-    const sendBtn =
-      this.container.querySelector("#send-btn");
-
-    this.isGenerating = true;
-    this.activeController =
-      new AbortController();
-
-    sendBtn.textContent = "■";
-
-    const thinkingNode =
-      this.appendMessageObject(
-        {
-          id: "thinking",
-          role: "assistant",
-          content: "Thinking..."
-        },
-        false,
-        false,
-        true
-      );
-
-    this.startThinkingAnimation(thinkingNode);
-
-    try {
-      const response =
-        await AIService.sendMessage(
-          this.activeController.signal
-        );
-
-      this.stopThinkingAnimation();
-      thinkingNode.remove();
-
-      this.appendMessageObject(
-        {
-          id:
-            "msg_" +
-            Date.now() +
-            "_" +
-            Math.random()
-              .toString(36)
-              .slice(2),
-          role: "assistant",
-          content: response
-        },
-        true,
-        true,
-        true
-      );
-    } catch (error) {
-      this.stopThinkingAnimation();
-
-      if (error.name === "AbortError") {
-        thinkingNode.innerHTML =
-          `<strong>Nexus</strong><br>Generation stopped`;
-      } else {
-        thinkingNode.innerHTML =
-          `<strong>Error</strong><br>${error.message}`;
-      }
-    } finally {
-      this.activeController = null;
-      this.isGenerating = false;
-
-      sendBtn.textContent = "↑";
-    }
-  }
-
-  async sendMessage() {
-    if (this.isGenerating) return;
-
-    const input =
-      this.container.querySelector("#chat-input");
-
-    const text = input.value.trim();
-
-    if (!text) return;
-
-    if (this.editingMessageId) {
-      SessionService.updateMessage(
-        this.editingMessageId,
-        text
-      );
-
-      SessionService.removeMessagesAfter(
-        this.editingMessageId
-      );
-
-      this.editingMessageId = null;
-
-      this.renderMessages();
-
-      input.value = "";
-      this.autoResizeTextarea(input);
-      this.updateTokenCounter();
-
-      await this.generateAssistantReply();
-      return;
-    }
-
-    this.appendMessageObject(
-      {
-        id:
-          "msg_" +
-          Date.now() +
-          "_" +
-          Math.random()
-            .toString(36)
-            .slice(2),
-        role: "user",
-        content: text
-      },
-      true,
-      false,
-      false
-    );
-
-    input.value = "";
-    this.autoResizeTextarea(input);
-    this.updateTokenCounter();
-
-    await this.generateAssistantReply();
-  }
-}
