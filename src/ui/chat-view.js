@@ -340,8 +340,6 @@ export default class ChatView {
         true,
         true
       );
-
-      this.renderMessages();
     } catch (error) {
       this.stopThinkingAnimation();
 
