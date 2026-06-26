@@ -189,6 +189,42 @@ export default class SessionService {
     );
   }
 
+  static collectUsedAttachmentIds() {
+    const data = this.load();
+
+    const usedIds = [];
+
+    data.sessions.forEach(
+      session => {
+        session.messages.forEach(
+          msg => {
+            (
+              msg.attachmentIds || []
+            ).forEach(id => {
+              usedIds.push(id);
+            });
+          }
+        );
+      }
+    );
+
+    return [...new Set(usedIds)];
+  }
+
+  static cleanupUnusedAttachments() {
+    const usedIds =
+      this.collectUsedAttachmentIds();
+
+    AttachmentStorage
+      .cleanupUnused(usedIds)
+      .catch(error => {
+        console.error(
+          "Attachment cleanup failed:",
+          error
+        );
+      });
+  }
+
   static getSessions() {
     return this.load().sessions;
   }
@@ -271,7 +307,7 @@ export default class SessionService {
     return true;
   }
 
-  static duplicateSession(
+    static duplicateSession(
     sessionId
   ) {
     const data = this.load();
@@ -366,11 +402,12 @@ export default class SessionService {
     }
 
     this.save(data);
+    this.cleanupUnusedAttachments();
 
     return true;
   }
 
-    static exportSession(
+  static exportSession(
     sessionId,
     format = "txt"
   ) {
@@ -441,7 +478,7 @@ export default class SessionService {
     return message;
   }
 
-  static addExistingMessage(
+    static addExistingMessage(
     message
   ) {
     const data = this.load();
@@ -554,7 +591,7 @@ export default class SessionService {
     return true;
   }
 
-    static removeMessagesAfter(
+  static removeMessagesAfter(
     messageId
   ) {
     const data = this.load();
@@ -586,6 +623,7 @@ export default class SessionService {
       );
 
     this.save(data);
+    this.cleanupUnusedAttachments();
   }
 
   static removeLastAssistantMessage() {
