@@ -1,4 +1,5 @@
 import SessionService from "../../services/session-service.js";
+
 export default {
   openFilePicker(type) {
     const input =
