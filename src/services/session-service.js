@@ -7,7 +7,9 @@ export default class SessionService {
         "msg_" +
         Date.now() +
         "_" +
-        Math.random().toString(36).slice(2),
+        Math.random()
+          .toString(36)
+          .slice(2),
       role,
       content,
       createdAt: Date.now()
@@ -49,7 +51,7 @@ export default class SessionService {
             msg.createdAt = Date.now();
           }
 
-          if (!msg.content) {
+          if (typeof msg.content !== "string") {
             msg.content = "";
           }
 
@@ -182,7 +184,10 @@ export default class SessionService {
     if (!session) return null;
 
     const message =
-      this.createMessage(role, content);
+      this.createMessage(
+        role,
+        content
+      );
 
     session.messages.push(message);
 
@@ -241,7 +246,10 @@ export default class SessionService {
     if (index === -1) return;
 
     session.messages =
-      session.messages.slice(0, index + 1);
+      session.messages.slice(
+        0,
+        index + 1
+      );
 
     this.save(data);
   }
@@ -280,7 +288,8 @@ export default class SessionService {
       this.getMessages();
 
     for (
-      let i = messages.length - 1;
+      let i =
+        messages.length - 1;
       i >= 0;
       i--
     ) {
