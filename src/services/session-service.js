@@ -147,7 +147,9 @@ export default class SessionService {
         JSON.parse(raw);
 
       const normalized =
-        this.normalizeData(parsed);
+        this.normalizeData(
+          parsed
+        );
 
       this.save(normalized);
 
@@ -220,6 +222,7 @@ export default class SessionService {
     data.sessions.unshift(
       newSession
     );
+
     data.currentSessionId =
       newSession.id;
 
@@ -304,7 +307,10 @@ export default class SessionService {
         )
     };
 
-    data.sessions.unshift(cloned);
+    data.sessions.unshift(
+      cloned
+    );
+
     data.currentSessionId =
       cloned.id;
 
@@ -327,7 +333,10 @@ export default class SessionService {
       return false;
     }
 
-    data.sessions.splice(index, 1);
+    data.sessions.splice(
+      index,
+      1
+    );
 
     if (
       data.sessions.length === 0
@@ -338,6 +347,7 @@ export default class SessionService {
       data.sessions.push(
         newSession
       );
+
       data.currentSessionId =
         newSession.id;
     } else if (
@@ -581,6 +591,48 @@ export default class SessionService {
     return true;
   }
 
+  static cleanupUnusedAttachments() {
+    const data = this.load();
+
+    const session =
+      data.sessions.find(
+        s =>
+          s.id ===
+          data.currentSessionId
+      );
+
+    if (
+      !session ||
+      !session.attachments
+    ) {
+      return;
+    }
+
+    const usedIds = new Set();
+
+    session.messages.forEach(
+      msg => {
+        (
+          msg.attachmentIds || []
+        ).forEach(id =>
+          usedIds.add(id)
+        );
+      }
+    );
+
+    Object.keys(
+      session.attachments
+    ).forEach(id => {
+      if (!usedIds.has(id)) {
+        delete session.attachments[
+          id
+        ];
+      }
+    });
+
+    this.save(data);
+  }
+
   static removeMessagesAfter(
     messageId
   ) {
@@ -609,6 +661,8 @@ export default class SessionService {
       );
 
     this.save(data);
+
+    this.cleanupUnusedAttachments();
   }
 
   static removeLastAssistantMessage() {
@@ -625,8 +679,7 @@ export default class SessionService {
 
     for (
       let i =
-        session.messages.length -
-        1;
+        session.messages.length - 1;
       i >= 0;
       i--
     ) {
