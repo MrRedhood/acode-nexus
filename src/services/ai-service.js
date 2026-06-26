@@ -163,4 +163,172 @@ Content:
 ${attachment.content || ""}`;
   }
 
-  
+    static async preprocessMessages(
+    messages
+  ) {
+    const processed = [];
+
+    for (const msg of messages) {
+      const cloned = {
+        ...msg
+      };
+
+      const attachments =
+        await this.getMessageAttachments(
+          cloned
+        );
+
+      if (
+        cloned.role === "user"
+      ) {
+        const parsed =
+          this.parseSlashCommand(
+            cloned.content
+          );
+
+        if (parsed) {
+          let content =
+            parsed.content;
+
+          if (
+            !content.trim()
+          ) {
+            content =
+              "[No additional content provided]";
+          }
+
+          cloned.content =
+            COMMANDS[
+              parsed.command
+            ].prefix + content;
+        }
+      }
+
+      cloned.attachments =
+        attachments;
+
+      processed.push(
+        cloned
+      );
+    }
+
+    return processed;
+  }
+
+  static async getModels(
+    provider = null,
+    apiKey = null
+  ) {
+    provider ??=
+      StorageService.get(
+        "provider"
+      );
+
+    apiKey ??=
+      StorageService.get(
+        "apiKey"
+      );
+
+    if (
+      !provider ||
+      !apiKey
+    ) {
+      throw new Error(
+        "Provider or API key missing"
+      );
+    }
+
+    if (
+      provider ===
+      "gemini"
+    ) {
+      return await GeminiProvider.getModels(
+        apiKey
+      );
+    }
+
+    throw new Error(
+      "Unsupported provider"
+    );
+  }
+
+    static async sendMessage(
+    signal = null
+  ) {
+    const provider =
+      StorageService.get(
+        "provider"
+      );
+
+    const apiKey =
+      StorageService.get(
+        "apiKey"
+      );
+
+    const model =
+      StorageService.get(
+        "model"
+      );
+
+    if (!provider) {
+      throw new Error(
+        "No provider selected"
+      );
+    }
+
+    if (!apiKey) {
+      throw new Error(
+        "No API key saved"
+      );
+    }
+
+    if (!model) {
+      throw new Error(
+        "No model selected"
+      );
+    }
+
+    const messages =
+      SessionService.getMessages();
+
+    if (!messages.length) {
+      throw new Error(
+        "No messages found"
+      );
+    }
+
+    const cleanedMessages =
+      messages
+        .filter(
+          msg =>
+            msg &&
+            msg.role &&
+            typeof msg.content ===
+              "string"
+        )
+        .map(msg => ({
+          ...msg
+        }));
+
+    const processedMessages =
+      await this.preprocessMessages(
+        cleanedMessages
+      );
+
+    if (
+      provider ===
+      "gemini"
+    ) {
+      return await GeminiProvider.chat(
+        apiKey,
+        model,
+        processedMessages,
+        signal
+      );
+    }
+
+    throw new Error(
+      "Unsupported provider"
+    );
+  }
+}
