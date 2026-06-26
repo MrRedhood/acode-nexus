@@ -1,67 +1,106 @@
 const STORAGE_KEY = "acode_nexus_sessions";
 
 export default class SessionService {
-  static createMessage(role, content) {
+  static createMessage(
+    role,
+    content,
+    attachmentIds = []
+  ) {
     return {
       id:
         "msg_" +
         Date.now() +
         "_" +
-        Math.random().toString(36).slice(2),
+        Math.random()
+          .toString(36)
+          .slice(2),
       role,
       content,
+      attachmentIds,
       createdAt: Date.now()
     };
   }
 
-  static createSessionObject(title = "New Chat") {
+  static createSessionObject(
+    title = "New Chat"
+  ) {
     return {
-      id: "session_" + Date.now() + "_" + Math.random().toString(36).slice(2),
+      id:
+        "session_" +
+        Date.now() +
+        "_" +
+        Math.random()
+          .toString(36)
+          .slice(2),
       title,
-      messages: []
+      messages: [],
+      attachments: {}
     };
   }
 
   static normalizeData(data) {
-    if (!data || !Array.isArray(data.sessions)) {
+    if (
+      !data ||
+      !Array.isArray(data.sessions)
+    ) {
       return {
         currentSessionId: "session_1",
         sessions: [
           {
             id: "session_1",
             title: "New Chat",
-            messages: []
+            messages: [],
+            attachments: {}
           }
         ]
       };
     }
 
     data.sessions.forEach(session => {
-      if (!Array.isArray(session.messages)) {
+      if (
+        !Array.isArray(
+          session.messages
+        )
+      ) {
         session.messages = [];
       }
 
-      session.messages = session.messages.map(msg => {
-        if (!msg.id) {
-          msg.id =
-            "msg_" +
-            Date.now() +
-            "_" +
-            Math.random()
-              .toString(36)
-              .slice(2);
-        }
+      if (!session.attachments) {
+        session.attachments = {};
+      }
 
-        if (!msg.createdAt) {
-          msg.createdAt = Date.now();
-        }
+      session.messages =
+        session.messages.map(msg => {
+          if (!msg.id) {
+            msg.id =
+              "msg_" +
+              Date.now() +
+              "_" +
+              Math.random()
+                .toString(36)
+                .slice(2);
+          }
 
-        if (!msg.content) {
-          msg.content = "";
-        }
+          if (!msg.createdAt) {
+            msg.createdAt =
+              Date.now();
+          }
 
-        return msg;
-      });
+          if (!msg.content) {
+            msg.content = "";
+          }
+
+          if (
+            !Array.isArray(
+              msg.attachmentIds
+            )
+          ) {
+            msg.attachmentIds =
+              [];
+          }
+
+          return msg;
+        });
     });
 
     if (!data.currentSessionId) {
@@ -75,29 +114,37 @@ export default class SessionService {
   static load() {
     try {
       const raw =
-        localStorage.getItem(STORAGE_KEY);
+        localStorage.getItem(
+          STORAGE_KEY
+        );
 
       if (!raw) {
         const defaultData = {
-          currentSessionId: "session_1",
+          currentSessionId:
+            "session_1",
           sessions: [
             {
               id: "session_1",
               title: "New Chat",
-              messages: []
+              messages: [],
+              attachments: {}
             }
           ]
         };
 
         localStorage.setItem(
           STORAGE_KEY,
-          JSON.stringify(defaultData)
+          JSON.stringify(
+            defaultData
+          )
         );
 
         return defaultData;
       }
 
-      const parsed = JSON.parse(raw);
+      const parsed =
+        JSON.parse(raw);
+
       const normalized =
         this.normalizeData(parsed);
 
@@ -108,12 +155,14 @@ export default class SessionService {
       console.error(error);
 
       return {
-        currentSessionId: "session_1",
+        currentSessionId:
+          "session_1",
         sessions: [
           {
             id: "session_1",
             title: "New Chat",
-            messages: []
+            messages: [],
+            attachments: {}
           }
         ]
       };
@@ -136,7 +185,8 @@ export default class SessionService {
 
     return data.sessions.find(
       session =>
-        session.id === data.currentSessionId
+        session.id ===
+        data.currentSessionId
     );
   }
 
@@ -150,7 +200,8 @@ export default class SessionService {
   }
 
   static getActiveSessionId() {
-    return this.load().currentSessionId;
+    return this.load()
+      .currentSessionId;
   }
 
   static setActiveSession(id) {
@@ -159,13 +210,15 @@ export default class SessionService {
     this.save(data);
   }
 
-  static createSession() {
+    static createSession() {
     const data = this.load();
 
     const newSession =
       this.createSessionObject();
 
-    data.sessions.unshift(newSession);
+    data.sessions.unshift(
+      newSession
+    );
     data.currentSessionId =
       newSession.id;
 
@@ -174,12 +227,16 @@ export default class SessionService {
     return newSession;
   }
 
-  static renameSession(sessionId, newTitle) {
+  static renameSession(
+    sessionId,
+    newTitle
+  ) {
     const data = this.load();
 
-    const session = data.sessions.find(
-      s => s.id === sessionId
-    );
+    const session =
+      data.sessions.find(
+        s => s.id === sessionId
+      );
 
     if (!session) return false;
 
@@ -195,7 +252,9 @@ export default class SessionService {
     return true;
   }
 
-  static duplicateSession(sessionId) {
+  static duplicateSession(
+    sessionId
+  ) {
     const data = this.load();
 
     const original =
@@ -204,6 +263,13 @@ export default class SessionService {
       );
 
     if (!original) return null;
+
+    const clonedAttachments =
+      JSON.parse(
+        JSON.stringify(
+          original.attachments || {}
+        )
+      );
 
     const cloned = {
       id:
@@ -215,19 +281,26 @@ export default class SessionService {
           .slice(2),
 
       title:
-        (original.title || "New Chat") +
+        (original.title ||
+          "New Chat") +
         " (Copy)",
 
-      messages: original.messages.map(msg => ({
-        ...msg,
-        id:
-          "msg_" +
-          Date.now() +
-          "_" +
-          Math.random()
-            .toString(36)
-            .slice(2)
-      }))
+      attachments:
+        clonedAttachments,
+
+      messages:
+        original.messages.map(
+          msg => ({
+            ...msg,
+            id:
+              "msg_" +
+              Date.now() +
+              "_" +
+              Math.random()
+                .toString(36)
+                .slice(2)
+          })
+        )
     };
 
     data.sessions.unshift(cloned);
@@ -239,7 +312,9 @@ export default class SessionService {
     return cloned;
   }
 
-  static deleteSession(sessionId) {
+  static deleteSession(
+    sessionId
+  ) {
     const data = this.load();
 
     const index =
@@ -253,15 +328,20 @@ export default class SessionService {
 
     data.sessions.splice(index, 1);
 
-    if (data.sessions.length === 0) {
+    if (
+      data.sessions.length === 0
+    ) {
       const newSession =
         this.createSessionObject();
 
-      data.sessions.push(newSession);
+      data.sessions.push(
+        newSession
+      );
       data.currentSessionId =
         newSession.id;
     } else if (
-      data.currentSessionId === sessionId
+      data.currentSessionId ===
+      sessionId
     ) {
       data.currentSessionId =
         data.sessions[0].id;
@@ -296,11 +376,13 @@ export default class SessionService {
       let output =
         `# ${session.title}\n\n`;
 
-      session.messages.forEach(msg => {
-        output +=
-          `## ${msg.role}\n` +
-          `${msg.content}\n\n`;
-      });
+      session.messages.forEach(
+        msg => {
+          output +=
+            `## ${msg.role}\n` +
+            `${msg.content}\n\n`;
+        }
+      );
 
       return output;
     }
@@ -308,43 +390,130 @@ export default class SessionService {
     let output =
       `${session.title}\n\n`;
 
-    session.messages.forEach(msg => {
-      output +=
-        `${msg.role.toUpperCase()}:\n` +
-        `${msg.content}\n\n`;
-    });
+    session.messages.forEach(
+      msg => {
+        output +=
+          `${msg.role.toUpperCase()}:\n` +
+          `${msg.content}\n\n`;
+      }
+    );
 
     return output;
   }
 
-  static addMessage(role, content) {
-    const message =
-      this.createMessage(role, content);
-
-    this.addExistingMessage(message);
-
-    return message;
-  }
-
-  static addExistingMessage(message) {
+    static addAttachment(
+    attachment
+  ) {
     const data = this.load();
 
     const session =
       data.sessions.find(
         s =>
-          s.id === data.currentSessionId
+          s.id ===
+          data.currentSessionId
       );
 
     if (!session) return null;
 
-    session.messages.push(message);
+    if (!session.attachments) {
+      session.attachments = {};
+    }
+
+    session.attachments[
+      attachment.id
+    ] = attachment;
+
+    this.save(data);
+
+    return attachment.id;
+  }
+
+  static getAttachment(id) {
+    const session =
+      this.getCurrentSession();
+
+    if (!session) return null;
+
+    return (
+      session.attachments?.[id] ||
+      null
+    );
+  }
+
+  static getAttachments(
+    ids = []
+  ) {
+    const session =
+      this.getCurrentSession();
+
+    if (!session) return [];
+
+    return ids
+      .map(
+        id =>
+          session.attachments?.[
+            id
+          ]
+      )
+      .filter(Boolean);
+  }
+
+  static addMessage(
+    role,
+    content,
+    attachmentIds = []
+  ) {
+    const message =
+      this.createMessage(
+        role,
+        content,
+        attachmentIds
+      );
+
+    this.addExistingMessage(
+      message
+    );
+
+    return message;
+  }
+
+  static addExistingMessage(
+    message
+  ) {
+    const data = this.load();
+
+    const session =
+      data.sessions.find(
+        s =>
+          s.id ===
+          data.currentSessionId
+      );
+
+    if (!session) return null;
 
     if (
-      session.title === "New Chat" &&
+      !Array.isArray(
+        message.attachmentIds
+      )
+    ) {
+      message.attachmentIds =
+        [];
+    }
+
+    session.messages.push(
+      message
+    );
+
+    if (
+      session.title ===
+        "New Chat" &&
       message.role === "user"
     ) {
       session.title =
-        message.content.slice(0, 30);
+        message.content.slice(
+          0,
+          30
+        );
     }
 
     this.save(data);
@@ -352,13 +521,17 @@ export default class SessionService {
     return message;
   }
 
-  static updateMessage(messageId, newContent) {
+  static updateMessage(
+    messageId,
+    newContent
+  ) {
     const data = this.load();
 
     const session =
       data.sessions.find(
         s =>
-          s.id === data.currentSessionId
+          s.id ===
+          data.currentSessionId
       );
 
     if (!session) return;
@@ -375,13 +548,16 @@ export default class SessionService {
     this.save(data);
   }
 
-  static removeMessagesAfter(messageId) {
+  static removeMessagesAfter(
+    messageId
+  ) {
     const data = this.load();
 
     const session =
       data.sessions.find(
         s =>
-          s.id === data.currentSessionId
+          s.id ===
+          data.currentSessionId
       );
 
     if (!session) return;
@@ -394,7 +570,10 @@ export default class SessionService {
     if (index === -1) return;
 
     session.messages =
-      session.messages.slice(0, index + 1);
+      session.messages.slice(
+        0,
+        index + 1
+      );
 
     this.save(data);
   }
@@ -405,22 +584,28 @@ export default class SessionService {
     const session =
       data.sessions.find(
         s =>
-          s.id === data.currentSessionId
+          s.id ===
+          data.currentSessionId
       );
 
     if (!session) return;
 
     for (
       let i =
-        session.messages.length - 1;
+        session.messages.length -
+        1;
       i >= 0;
       i--
     ) {
       if (
-        session.messages[i].role ===
+        session.messages[i]
+          .role ===
         "assistant"
       ) {
-        session.messages.splice(i, 1);
+        session.messages.splice(
+          i,
+          1
+        );
         break;
       }
     }
@@ -433,12 +618,14 @@ export default class SessionService {
       this.getMessages();
 
     for (
-      let i = messages.length - 1;
+      let i =
+        messages.length - 1;
       i >= 0;
       i--
     ) {
       if (
-        messages[i].role === "user"
+        messages[i].role ===
+        "user"
       ) {
         return messages[i];
       }
