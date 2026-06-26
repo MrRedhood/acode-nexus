@@ -80,7 +80,9 @@ export default class AIService {
       return null;
     }
 
-    const command = match[1];
+    const command =
+      match[1].toLowerCase();
+
     const remaining = match[2] || "";
 
     if (!COMMANDS[command]) {
@@ -114,13 +116,21 @@ export default class AIService {
         );
 
       if (!parsed) {
-        break;
+        continue;
+      }
+
+      let content =
+        parsed.content;
+
+      if (!content.trim()) {
+        content =
+          "[No additional content provided]";
       }
 
       msg.content =
         COMMANDS[
           parsed.command
-        ].prefix + parsed.content;
+        ].prefix + content;
 
       break;
     }
