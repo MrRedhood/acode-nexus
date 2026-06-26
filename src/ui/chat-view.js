@@ -29,6 +29,11 @@ export default class ChatView {
           <span id="token-counter">Used: 0 / 128K</span>
         </div>
 
+        <div
+          id="attachment-preview"
+          class="nexus-attachment-preview"
+        ></div>
+
         <div class="nexus-input-row">
           <button id="attach-btn" class="nexus-circle-btn">+</button>
 
@@ -49,6 +54,7 @@ export default class ChatView {
     `;
 
     this.renderMessages();
+    this.renderAttachmentPreview();
 
     const sendBtn =
       this.container.querySelector("#send-btn");
@@ -92,6 +98,89 @@ export default class ChatView {
     this.updateTokenCounter();
   }
 
+  renderAttachmentPreview() {
+    const preview =
+      this.container.querySelector(
+        "#attachment-preview"
+      );
+
+    if (!preview) return;
+
+    if (this.pendingAttachments.length === 0) {
+      preview.innerHTML = "";
+      preview.style.display = "none";
+      return;
+    }
+
+    preview.style.display = "flex";
+
+    preview.innerHTML =
+      this.pendingAttachments
+        .map(att => {
+          const icon =
+            att.type === "image"
+              ? "📷"
+              : att.type === "pdf"
+              ? "📕"
+              : "📎";
+
+          return `
+            <div class="nexus-attachment-chip">
+              <span class="nexus-attachment-chip-text">
+                ${icon}
+                ${att.name}
+                (${this.formatFileSize(att.size)})
+              </span>
+              <button
+                class="nexus-attachment-remove"
+                data-id="${att.id}"
+              >
+                ×
+              </button>
+            </div>
+          `;
+        })
+        .join("");
+
+    preview
+      .querySelectorAll(
+        ".nexus-attachment-remove"
+      )
+      .forEach(btn => {
+        btn.addEventListener("click", () => {
+          this.removeAttachment(
+            btn.dataset.id
+          );
+        });
+      });
+  }
+
+  removeAttachment(id) {
+    this.pendingAttachments =
+      this.pendingAttachments.filter(
+        att => att.id !== id
+      );
+
+    this.renderAttachmentPreview();
+  }
+
+  formatFileSize(bytes) {
+    if (bytes < 1024) {
+      return bytes + " B";
+    }
+
+    if (bytes < 1024 * 1024) {
+      return (
+        (bytes / 1024).toFixed(1) + " KB"
+      );
+    }
+
+    return (
+      (bytes / (1024 * 1024)).toFixed(1) +
+      " MB"
+    );
+  }
+
   insertCommand(command) {
     const input =
       this.container.querySelector("#chat-input");
@@ -128,16 +217,20 @@ export default class ChatView {
         ".js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.cs,.html,.css,.json,.xml,.md";
     }
 
-    input.addEventListener("change", async e => {
-      const file = e.target.files?.[0];
+    input.addEventListener(
+      "change",
+      async e => {
+        const file =
+          e.target.files?.[0];
 
-      if (!file) return;
+        if (!file) return;
 
-      await this.handleSelectedFile(
-        file,
-        type
-      );
-    });
+        await this.handleSelectedFile(
+          file,
+          type
+        );
+      }
+    );
 
     input.click();
   }
@@ -166,6 +259,8 @@ export default class ChatView {
     this.pendingAttachments.push(
       attachment
     );
+
+    this.renderAttachmentPreview();
 
     this.showToast(
       `${file.name} attached`
@@ -199,7 +294,9 @@ export default class ChatView {
       );
 
     const input =
-      this.container.querySelector("#chat-input");
+      this.container.querySelector(
+        "#chat-input"
+      );
 
     if (!counter || !input) return;
 
@@ -217,7 +314,8 @@ export default class ChatView {
 
     const display =
       tokens >= 1000
-        ? (tokens / 1000).toFixed(1) + "K"
+        ? (tokens / 1000).toFixed(1) +
+          "K"
         : tokens;
 
     counter.textContent =
@@ -226,7 +324,9 @@ export default class ChatView {
 
   renderMessages() {
     const box =
-      this.container.querySelector("#chat-messages");
+      this.container.querySelector(
+        "#chat-messages"
+      );
 
     if (!box) return;
 
@@ -237,9 +337,17 @@ export default class ChatView {
 
     let latestAssistantId = null;
 
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === "assistant") {
-        latestAssistantId = messages[i].id;
+    for (
+      let i = messages.length - 1;
+      i >= 0;
+      i--
+    ) {
+      if (
+        messages[i].role ===
+        "assistant"
+      ) {
+        latestAssistantId =
+          messages[i].id;
         break;
       }
     }
@@ -248,7 +356,8 @@ export default class ChatView {
       this.appendMessageObject(
         msg,
         false,
-        msg.id === latestAssistantId,
+        msg.id ===
+          latestAssistantId,
         false
       );
     });
@@ -262,46 +371,59 @@ export default class ChatView {
 
     this.stopThinkingAnimation();
 
-    this.thinkingInterval = setInterval(() => {
-      dots++;
-      if (dots > 3) dots = 1;
+    this.thinkingInterval =
+      setInterval(() => {
+        dots++;
+        if (dots > 3) dots = 1;
 
-      node.innerHTML = `
+        node.innerHTML = `
         <strong>Nexus</strong><br>
         Thinking${".".repeat(dots)}
       `;
-    }, 450);
+      }, 450);
   }
 
   stopThinkingAnimation() {
     if (this.thinkingInterval) {
-      clearInterval(this.thinkingInterval);
+      clearInterval(
+        this.thinkingInterval
+      );
       this.thinkingInterval = null;
     }
   }
 
   showToast(text) {
     const old =
-      document.querySelector(".nexus-copy-toast");
+      document.querySelector(
+        ".nexus-copy-toast"
+      );
 
     if (old) old.remove();
 
     const toast =
       document.createElement("div");
 
-    toast.className = "nexus-copy-toast";
+    toast.className =
+      "nexus-copy-toast";
     toast.textContent = text;
 
     document.body.appendChild(toast);
 
-    setTimeout(() => toast.remove(), 1500);
+    setTimeout(
+      () => toast.remove(),
+      1500
+    );
   }
 
   copyText(content) {
     navigator.clipboard
       .writeText(content)
-      .then(() => this.showToast("Copied!"))
-      .catch(() => this.showToast("Copy failed"));
+      .then(() =>
+        this.showToast("Copied!")
+      )
+      .catch(() =>
+        this.showToast("Copy failed")
+      );
   }
 
   stopGeneration() {
@@ -312,9 +434,12 @@ export default class ChatView {
 
   startEditMessage(message) {
     const input =
-      this.container.querySelector("#chat-input");
+      this.container.querySelector(
+        "#chat-input"
+      );
 
-    this.editingMessageId = message.id;
+    this.editingMessageId =
+      message.id;
     input.value = message.content;
     input.focus();
 
@@ -324,32 +449,42 @@ export default class ChatView {
 
   attachCodeCopyListeners(msgNode) {
     const buttons =
-      msgNode.querySelectorAll(".nexus-code-copy");
+      msgNode.querySelectorAll(
+        ".nexus-code-copy"
+      );
 
     buttons.forEach(button => {
-      button.addEventListener("click", e => {
-        e.stopPropagation();
+      button.addEventListener(
+        "click",
+        e => {
+          e.stopPropagation();
 
-        const wrapper =
-          button.closest(".nexus-code-block");
+          const wrapper =
+            button.closest(
+              ".nexus-code-block"
+            );
 
-        if (!wrapper) return;
+          if (!wrapper) return;
 
-        const textarea =
-          wrapper.querySelector(
-            ".nexus-hidden-code"
+          const textarea =
+            wrapper.querySelector(
+              ".nexus-hidden-code"
+            );
+
+          if (!textarea) return;
+
+          this.copyText(
+            textarea.value
           );
-
-        if (!textarea) return;
-
-        this.copyText(textarea.value);
-      });
+        }
+      );
     });
   }
 
   animateMessage(node) {
     node.style.opacity = "0";
-    node.style.transform = "translateY(-18px)";
+    node.style.transform =
+      "translateY(-18px)";
     node.style.transition = "none";
 
     requestAnimationFrame(() => {
@@ -357,7 +492,8 @@ export default class ChatView {
         node.style.transition =
           "opacity 0.35s ease, transform 0.35s ease";
         node.style.opacity = "1";
-        node.style.transform = "translateY(0)";
+        node.style.transform =
+          "translateY(0)";
       });
     });
   }
@@ -369,17 +505,22 @@ export default class ChatView {
     animate = true
   ) {
     const box =
-      this.container.querySelector("#chat-messages");
+      this.container.querySelector(
+        "#chat-messages"
+      );
 
     if (!box) return;
 
     if (persist) {
-      SessionService.addExistingMessage(message);
+      SessionService.addExistingMessage(
+        message
+      );
     }
 
-    const msg = document.createElement("div");
+    const msg =
+      document.createElement("div");
 
-        msg.className =
+    msg.className =
       "nexus-msg " +
       (message.role === "user"
         ? "nexus-user"
@@ -387,8 +528,13 @@ export default class ChatView {
 
     const rendered =
       message.role === "user"
-        ? message.content.replace(/\n/g, "<br>")
-        : parseMarkdown(message.content);
+        ? message.content.replace(
+            /\n/g,
+            "<br>"
+          )
+        : parseMarkdown(
+            message.content
+          );
 
     const label =
       message.role === "user"
@@ -406,7 +552,9 @@ export default class ChatView {
           ↻
         </button>
       `;
-    } else if (message.role === "user") {
+    } else if (
+      message.role === "user"
+    ) {
       extraButtons = `
         <button class="nexus-msg-action-btn nexus-edit-btn">
           Edit
@@ -427,28 +575,44 @@ export default class ChatView {
 
     msg.querySelector(".nexus-copy-btn")
       .addEventListener("click", () => {
-        this.copyText(message.content);
+        this.copyText(
+          message.content
+        );
       });
 
     const regenBtn =
-      msg.querySelector(".nexus-regen-btn");
+      msg.querySelector(
+        ".nexus-regen-btn"
+      );
 
     if (regenBtn) {
-      regenBtn.addEventListener("click", () => {
-        this.regenerateResponse();
-      });
+      regenBtn.addEventListener(
+        "click",
+        () => {
+          this.regenerateResponse();
+        }
+      );
     }
 
     const editBtn =
-      msg.querySelector(".nexus-edit-btn");
+      msg.querySelector(
+        ".nexus-edit-btn"
+      );
 
     if (editBtn) {
-      editBtn.addEventListener("click", () => {
-        this.startEditMessage(message);
-      });
+      editBtn.addEventListener(
+        "click",
+        () => {
+          this.startEditMessage(
+            message
+          );
+        }
+      );
     }
 
-    this.attachCodeCopyListeners(msg);
+    this.attachCodeCopyListeners(
+      msg
+    );
 
     box.appendChild(msg);
 
@@ -473,7 +637,9 @@ export default class ChatView {
 
   async generateAssistantReply() {
     const sendBtn =
-      this.container.querySelector("#send-btn");
+      this.container.querySelector(
+        "#send-btn"
+      );
 
     this.isGenerating = true;
     this.activeController =
@@ -495,7 +661,9 @@ export default class ChatView {
         true
       );
 
-    this.startThinkingAnimation(thinkingNode);
+    this.startThinkingAnimation(
+      thinkingNode
+    );
 
     try {
       const response =
@@ -525,7 +693,10 @@ export default class ChatView {
     } catch (error) {
       this.stopThinkingAnimation();
 
-      if (error.name === "AbortError") {
+      if (
+        error.name ===
+        "AbortError"
+      ) {
         thinkingNode.innerHTML =
           `<strong>Nexus</strong><br>Generation stopped`;
       } else {
@@ -543,35 +714,20 @@ export default class ChatView {
     if (this.isGenerating) return;
 
     const input =
-      this.container.querySelector("#chat-input");
+      this.container.querySelector(
+        "#chat-input"
+      );
 
     const text = input.value.trim();
 
-    if (!text) return;
-
-    this.commandMenu.hide();
-
-    if (this.editingMessageId) {
-      SessionService.updateMessage(
-        this.editingMessageId,
-        text
-      );
-
-      SessionService.removeMessagesAfter(
-        this.editingMessageId
-      );
-
-      this.editingMessageId = null;
-
-      this.renderMessages();
-
-      input.value = "";
-      this.autoResizeTextarea(input);
-      this.updateTokenCounter();
-
-      await this.generateAssistantReply();
+    if (
+      !text &&
+      this.pendingAttachments.length === 0
+    ) {
       return;
     }
+
+    this.commandMenu.hide();
 
     this.appendMessageObject(
       {
@@ -583,7 +739,7 @@ export default class ChatView {
             .toString(36)
             .slice(2),
         role: "user",
-        content: text
+        content: text || "[Attachment]"
       },
       true,
       false,
@@ -592,6 +748,7 @@ export default class ChatView {
 
     input.value = "";
     this.pendingAttachments = [];
+    this.renderAttachmentPreview();
 
     this.autoResizeTextarea(input);
     this.updateTokenCounter();
