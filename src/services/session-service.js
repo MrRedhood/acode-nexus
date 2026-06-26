@@ -1,4 +1,5 @@
-const STORAGE_KEY = "acode_nexus_sessions";
+const STORAGE_KEY =
+  "acode_nexus_sessions";
 
 export default class SessionService {
   static createMessage(
@@ -33,8 +34,7 @@ export default class SessionService {
           .toString(36)
           .slice(2),
       title,
-      messages: [],
-      attachments: {}
+      messages: []
     };
   }
 
@@ -44,66 +44,75 @@ export default class SessionService {
       !Array.isArray(data.sessions)
     ) {
       return {
-        currentSessionId: "session_1",
+        currentSessionId:
+          "session_1",
         sessions: [
           {
             id: "session_1",
             title: "New Chat",
-            messages: [],
-            attachments: {}
+            messages: []
           }
         ]
       };
     }
 
-    data.sessions.forEach(session => {
-      if (
-        !Array.isArray(
-          session.messages
-        )
-      ) {
-        session.messages = [];
+    data.sessions.forEach(
+      session => {
+        if (
+          !Array.isArray(
+            session.messages
+          )
+        ) {
+          session.messages = [];
+        }
+
+        delete session.attachments;
+
+        session.messages =
+          session.messages.map(
+            msg => {
+              if (!msg.id) {
+                msg.id =
+                  "msg_" +
+                  Date.now() +
+                  "_" +
+                  Math.random()
+                    .toString(36)
+                    .slice(2);
+              }
+
+              if (
+                !msg.createdAt
+              ) {
+                msg.createdAt =
+                  Date.now();
+              }
+
+              if (
+                !msg.content
+              ) {
+                msg.content =
+                  "";
+              }
+
+              if (
+                !Array.isArray(
+                  msg.attachmentIds
+                )
+              ) {
+                msg.attachmentIds =
+                  [];
+              }
+
+              return msg;
+            }
+          );
       }
+    );
 
-      if (!session.attachments) {
-        session.attachments = {};
-      }
-
-      session.messages =
-        session.messages.map(msg => {
-          if (!msg.id) {
-            msg.id =
-              "msg_" +
-              Date.now() +
-              "_" +
-              Math.random()
-                .toString(36)
-                .slice(2);
-          }
-
-          if (!msg.createdAt) {
-            msg.createdAt =
-              Date.now();
-          }
-
-          if (!msg.content) {
-            msg.content = "";
-          }
-
-          if (
-            !Array.isArray(
-              msg.attachmentIds
-            )
-          ) {
-            msg.attachmentIds =
-              [];
-          }
-
-          return msg;
-        });
-    });
-
-    if (!data.currentSessionId) {
+    if (
+      !data.currentSessionId
+    ) {
       data.currentSessionId =
         data.sessions[0]?.id ||
         null;
@@ -126,9 +135,9 @@ export default class SessionService {
           sessions: [
             {
               id: "session_1",
-              title: "New Chat",
-              messages: [],
-              attachments: {}
+              title:
+                "New Chat",
+              messages: []
             }
           ]
         };
@@ -164,15 +173,14 @@ export default class SessionService {
           {
             id: "session_1",
             title: "New Chat",
-            messages: [],
-            attachments: {}
+            messages: []
           }
         ]
       };
     }
   }
 
-  static save(data) {
+    static save(data) {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify(data)
@@ -213,7 +221,7 @@ export default class SessionService {
     this.save(data);
   }
 
-    static createSession() {
+  static createSession() {
     const data = this.load();
 
     const newSession =
@@ -242,17 +250,22 @@ export default class SessionService {
         s => s.id === sessionId
       );
 
-    if (!session) return false;
+    if (!session) {
+      return false;
+    }
 
     const cleanTitle =
       (newTitle || "").trim();
 
-    if (!cleanTitle) return false;
+    if (!cleanTitle) {
+      return false;
+    }
 
     session.title =
       cleanTitle.slice(0, 60);
 
     this.save(data);
+
     return true;
   }
 
@@ -266,14 +279,9 @@ export default class SessionService {
         s => s.id === sessionId
       );
 
-    if (!original) return null;
-
-    const clonedAttachments =
-      JSON.parse(
-        JSON.stringify(
-          original.attachments || {}
-        )
-      );
+    if (!original) {
+      return null;
+    }
 
     const cloned = {
       id:
@@ -288,9 +296,6 @@ export default class SessionService {
         (original.title ||
           "New Chat") +
         " (Copy)",
-
-      attachments:
-        clonedAttachments,
 
       messages:
         original.messages.map(
@@ -359,10 +364,11 @@ export default class SessionService {
     }
 
     this.save(data);
+
     return true;
   }
 
-  static exportSession(
+    static exportSession(
     sessionId,
     format = "txt"
   ) {
@@ -373,7 +379,9 @@ export default class SessionService {
         s => s.id === sessionId
       );
 
-    if (!session) return null;
+    if (!session) {
+      return null;
+    }
 
     if (format === "json") {
       return JSON.stringify(
@@ -412,64 +420,7 @@ export default class SessionService {
     return output;
   }
 
-  static addAttachment(
-    attachment
-  ) {
-    const data = this.load();
-
-    const session =
-      data.sessions.find(
-        s =>
-          s.id ===
-          data.currentSessionId
-      );
-
-    if (!session) return null;
-
-    if (!session.attachments) {
-      session.attachments = {};
-    }
-
-    session.attachments[
-      attachment.id
-    ] = attachment;
-
-    this.save(data);
-
-    return attachment.id;
-  }
-
-  static getAttachment(id) {
-    const session =
-      this.getCurrentSession();
-
-    if (!session) return null;
-
-    return (
-      session.attachments?.[id] ||
-      null
-    );
-  }
-
-  static getAttachments(
-    ids = []
-  ) {
-    const session =
-      this.getCurrentSession();
-
-    if (!session) return [];
-
-    return ids
-      .map(
-        id =>
-          session.attachments?.[
-            id
-          ]
-      )
-      .filter(Boolean);
-  }
-
-    static addMessage(
+  static addMessage(
     role,
     content,
     attachmentIds = []
@@ -500,7 +451,9 @@ export default class SessionService {
           data.currentSessionId
       );
 
-    if (!session) return null;
+    if (!session) {
+      return null;
+    }
 
     if (
       !Array.isArray(
@@ -545,14 +498,18 @@ export default class SessionService {
           data.currentSessionId
       );
 
-    if (!session) return;
+    if (!session) {
+      return;
+    }
 
     const msg =
       session.messages.find(
         m => m.id === messageId
       );
 
-    if (!msg) return;
+    if (!msg) {
+      return;
+    }
 
     msg.content = newContent;
 
@@ -573,14 +530,18 @@ export default class SessionService {
           data.currentSessionId
       );
 
-    if (!session) return false;
+    if (!session) {
+      return false;
+    }
 
     const msg =
       session.messages.find(
         m => m.id === messageId
       );
 
-    if (!msg) return false;
+    if (!msg) {
+      return false;
+    }
 
     msg.content = newContent;
     msg.attachmentIds =
@@ -591,49 +552,7 @@ export default class SessionService {
     return true;
   }
 
-  static cleanupUnusedAttachments() {
-    const data = this.load();
-
-    const session =
-      data.sessions.find(
-        s =>
-          s.id ===
-          data.currentSessionId
-      );
-
-    if (
-      !session ||
-      !session.attachments
-    ) {
-      return;
-    }
-
-    const usedIds = new Set();
-
-    session.messages.forEach(
-      msg => {
-        (
-          msg.attachmentIds || []
-        ).forEach(id =>
-          usedIds.add(id)
-        );
-      }
-    );
-
-    Object.keys(
-      session.attachments
-    ).forEach(id => {
-      if (!usedIds.has(id)) {
-        delete session.attachments[
-          id
-        ];
-      }
-    });
-
-    this.save(data);
-  }
-
-  static removeMessagesAfter(
+    static removeMessagesAfter(
     messageId
   ) {
     const data = this.load();
@@ -645,14 +564,18 @@ export default class SessionService {
           data.currentSessionId
       );
 
-    if (!session) return;
+    if (!session) {
+      return;
+    }
 
     const index =
       session.messages.findIndex(
         m => m.id === messageId
       );
 
-    if (index === -1) return;
+    if (index === -1) {
+      return;
+    }
 
     session.messages =
       session.messages.slice(
@@ -661,8 +584,6 @@ export default class SessionService {
       );
 
     this.save(data);
-
-    this.cleanupUnusedAttachments();
   }
 
   static removeLastAssistantMessage() {
@@ -675,7 +596,9 @@ export default class SessionService {
           data.currentSessionId
       );
 
-    if (!session) return;
+    if (!session) {
+      return;
+    }
 
     for (
       let i =
