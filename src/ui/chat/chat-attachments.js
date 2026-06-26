@@ -1,9 +1,59 @@
 import SessionService from "../../services/session-service.js";
+import AttachmentStorage from "../../services/attachment-storage.js";
 
 export default {
+  async getAttachmentsHybrid(
+    attachmentIds = []
+  ) {
+    if (
+      !attachmentIds ||
+      attachmentIds.length === 0
+    ) {
+      return [];
+    }
+
+    const attachments = [];
+
+    for (const id of attachmentIds) {
+      let attachment = null;
+
+      try {
+        attachment =
+          await AttachmentStorage.getAttachment(
+            id
+          );
+      } catch (error) {
+        console.error(
+          "IndexedDB read failed:",
+          error
+        );
+      }
+
+      if (!attachment) {
+        const legacy =
+          SessionService.getAttachments(
+            [id]
+          );
+
+        attachment =
+          legacy[0] || null;
+      }
+
+      if (attachment) {
+        attachments.push(
+          attachment
+        );
+      }
+    }
+
+    return attachments;
+  },
+
   openFilePicker(type) {
     const input =
-      document.createElement("input");
+      document.createElement(
+        "input"
+      );
 
     input.type = "file";
 
@@ -56,7 +106,6 @@ export default {
         Math.random()
           .toString(36)
           .slice(2),
-
       name: file.name,
       size: file.size,
       type
@@ -80,7 +129,7 @@ export default {
     );
   },
 
-  renderAttachmentPreview() {
+  async renderAttachmentPreview() {
     const preview =
       this.container.querySelector(
         "#attachment-preview"
@@ -89,7 +138,7 @@ export default {
     if (!preview) return;
 
     const existingAttachments =
-      SessionService.getAttachments(
+      await this.getAttachmentsHybrid(
         this.editingAttachmentIds
       );
 
@@ -209,46 +258,32 @@ export default {
       });
   },
 
-  removeAttachment(id) {
-    this.pendingAttachments =
-      this.pendingAttachments.filter(
-        att => att.id !== id
-      );
-
-    this.renderAttachmentPreview();
-  },
-
-  removeExistingAttachment(
-    id
-  ) {
-    this.editingAttachmentIds =
-      this.editingAttachmentIds.filter(
-        attId => attId !== id
-      );
-
-    this.renderAttachmentPreview();
-  },
-
-  renderMessageAttachments(
+  async fillMessageAttachments(
+    container,
     attachmentIds = []
   ) {
     if (
       !attachmentIds ||
       attachmentIds.length === 0
     ) {
-      return "";
+      container.innerHTML = "";
+      return;
     }
 
+    container.innerHTML =
+      `<div class="nexus-message-attachment-chip">Loading...</div>`;
+
     const attachments =
-      SessionService.getAttachments(
+      await this.getAttachmentsHybrid(
         attachmentIds
       );
 
     if (!attachments.length) {
-      return "";
+      container.innerHTML = "";
+      return;
     }
 
-    return `
+    container.innerHTML = `
       <div class="nexus-message-attachments">
         ${attachments
           .map(att => {
@@ -271,16 +306,40 @@ export default {
     `;
   },
 
+  removeAttachment(id) {
+    this.pendingAttachments =
+      this.pendingAttachments.filter(
+        att => att.id !== id
+      );
+
+    this.renderAttachmentPreview();
+  },
+
+  removeExistingAttachment(
+    id
+  ) {
+    this.editingAttachmentIds =
+      this.editingAttachmentIds.filter(
+        attId => attId !== id
+      );
+
+    this.renderAttachmentPreview();
+  },
+
   formatFileSize(bytes) {
     if (bytes < 1024) {
       return bytes + " B";
     }
 
-    if (bytes < 1024 * 1024) {
+    if (
+      bytes <
+      1024 * 1024
+    ) {
       return (
-        (bytes / 1024).toFixed(
-          1
-        ) + " KB"
+        (
+          bytes / 1024
+        ).toFixed(1) +
+        " KB"
       );
     }
 
