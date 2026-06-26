@@ -13,7 +13,6 @@ export default class ChatView {
   render() {
     this.container.innerHTML = `
       <div id="chat-messages" class="nexus-chat"></div>
-
       <div class="nexus-input-area">
         <textarea
           id="chat-input"
@@ -58,7 +57,6 @@ export default class ChatView {
   renderMessages() {
     const box =
       this.container.querySelector("#chat-messages");
-
     if (!box) return;
 
     box.innerHTML = "";
@@ -76,7 +74,11 @@ export default class ChatView {
 
     const messages = SessionService.getMessages();
 
-    for (let i = messages.length - 1; i >= 0; i--) {
+    for (
+      let i = messages.length - 1;
+      i >= 0;
+      i--
+    ) {
       if (messages[i].role === "assistant") {
         return messages[i].id === message.id;
       }
@@ -126,14 +128,13 @@ export default class ChatView {
     input.value = message.content;
     input.focus();
 
-    sendBtn.textContent = "Save & Regenerate";
+    sendBtn.textContent =
+      "Save & Regenerate";
   }
 
   attachCodeCopyListeners(msgNode) {
     const buttons =
-      msgNode.querySelectorAll(
-        ".nexus-code-copy"
-      );
+      msgNode.querySelectorAll(".nexus-code-copy");
 
     buttons.forEach(button => {
       button.addEventListener("click", e => {
@@ -145,9 +146,7 @@ export default class ChatView {
         if (!wrapper) return;
 
         const textarea =
-          wrapper.querySelector(
-            ".nexus-hidden-code"
-          );
+          wrapper.querySelector(".nexus-hidden-code");
 
         if (!textarea) return;
 
@@ -170,9 +169,7 @@ export default class ChatView {
         ? "nexus-user"
         : "nexus-ai");
 
-    if (message.id) {
-      msg.dataset.messageId = message.id;
-    }
+    msg.dataset.messageId = message.id;
 
     const rendered =
       message.role === "user"
@@ -243,10 +240,7 @@ export default class ChatView {
     box.scrollTop = box.scrollHeight;
 
     if (persist) {
-      SessionService.addMessage(
-        message.role,
-        message.content
-      );
+      SessionService.addExistingMessage(message);
     }
 
     return msg;
@@ -278,7 +272,8 @@ export default class ChatView {
     const thinkingNode =
       this.appendMessageObject(
         {
-          id: "thinking",
+          id:
+            "thinking_" + Date.now(),
           role: "assistant",
           content: "Thinking..."
         },
