@@ -1,8 +1,7 @@
-import SessionService from "../../services/session-service.js";
 import AttachmentStorage from "../../services/attachment-storage.js";
 
 export default {
-  async getAttachmentsHybrid(
+  async getAttachments(
     attachmentIds = []
   ) {
     if (
@@ -15,33 +14,21 @@ export default {
     const attachments = [];
 
     for (const id of attachmentIds) {
-      let attachment = null;
-
       try {
-        attachment =
+        const attachment =
           await AttachmentStorage.getAttachment(
             id
           );
+
+        if (attachment) {
+          attachments.push(
+            attachment
+          );
+        }
       } catch (error) {
         console.error(
-          "IndexedDB read failed:",
+          "Attachment read failed:",
           error
-        );
-      }
-
-      if (!attachment) {
-        const legacy =
-          SessionService.getAttachments(
-            [id]
-          );
-
-        attachment =
-          legacy[0] || null;
-      }
-
-      if (attachment) {
-        attachments.push(
-          attachment
         );
       }
     }
@@ -138,7 +125,7 @@ export default {
     if (!preview) return;
 
     const existingAttachments =
-      await this.getAttachmentsHybrid(
+      await this.getAttachments(
         this.editingAttachmentIds
       );
 
@@ -274,7 +261,7 @@ export default {
       `<div class="nexus-message-attachment-chip">Loading...</div>`;
 
     const attachments =
-      await this.getAttachmentsHybrid(
+      await this.getAttachments(
         attachmentIds
       );
 
