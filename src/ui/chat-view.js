@@ -542,3 +542,487 @@ export default class ChatView {
       1500
     );
   }
+
+    copyText(content) {
+    navigator.clipboard
+      .writeText(content)
+      .then(() =>
+        this.showToast(
+          "Copied!"
+        )
+      )
+      .catch(() =>
+        this.showToast(
+          "Copy failed"
+        )
+      );
+  }
+
+  stopGeneration() {
+    if (
+      this.activeController
+    ) {
+      this.activeController.abort();
+    }
+  }
+
+  startEditMessage(
+    message
+  ) {
+    const input =
+      this.container.querySelector(
+        "#chat-input"
+      );
+
+    this.editingMessageId =
+      message.id;
+
+    this.editingAttachmentIds =
+      [
+        ...(message
+          .attachmentIds || [])
+      ];
+
+    input.value =
+      message.content;
+
+    input.focus();
+
+    this.renderAttachmentPreview();
+
+    this.autoResizeTextarea(
+      input
+    );
+
+    this.updateTokenCounter();
+  }
+
+  attachCodeCopyListeners(
+    msgNode
+  ) {
+    const buttons =
+      msgNode.querySelectorAll(
+        ".nexus-code-copy"
+      );
+
+    buttons.forEach(button => {
+      button.addEventListener(
+        "click",
+        e => {
+          e.stopPropagation();
+
+          const wrapper =
+            button.closest(
+              ".nexus-code-block"
+            );
+
+          if (!wrapper) return;
+
+          const textarea =
+            wrapper.querySelector(
+              ".nexus-hidden-code"
+            );
+
+          if (!textarea) return;
+
+          this.copyText(
+            textarea.value
+          );
+        }
+      );
+    });
+  }
+
+  animateMessage(node) {
+    node.style.opacity =
+      "0";
+    node.style.transform =
+      "translateY(-18px)";
+    node.style.transition =
+      "none";
+
+    requestAnimationFrame(
+      () => {
+        requestAnimationFrame(
+          () => {
+            node.style.transition =
+              "opacity 0.35s ease, transform 0.35s ease";
+            node.style.opacity =
+              "1";
+            node.style.transform =
+              "translateY(0)";
+          }
+        );
+      }
+    );
+  }
+
+  appendMessageObject(
+    message,
+    persist = true,
+    showRegen = false,
+    animate = true
+  ) {
+    const box =
+      this.container.querySelector(
+        "#chat-messages"
+      );
+
+    if (!box) return;
+
+    if (persist) {
+      SessionService.addExistingMessage(
+        message
+      );
+    }
+
+    const msg =
+      document.createElement(
+        "div"
+      );
+
+    msg.className =
+      "nexus-msg " +
+      (message.role ===
+      "user"
+        ? "nexus-user"
+        : "nexus-ai");
+
+    const rendered =
+      message.role ===
+      "user"
+        ? message.content.replace(
+            /\n/g,
+            "<br>"
+          )
+        : parseMarkdown(
+            message.content
+          );
+
+    const label =
+      message.role ===
+      "user"
+        ? "You"
+        : "Nexus";
+
+    const attachmentsHtml =
+      message.role ===
+      "user"
+        ? this.renderMessageAttachments(
+            message.attachmentIds
+          )
+        : "";
+
+    let extraButtons =
+      "";
+
+    if (
+      message.role ===
+        "assistant" &&
+      showRegen
+    ) {
+      extraButtons = `
+        <button class="nexus-msg-action-btn nexus-regen-btn">
+          ↻
+        </button>
+      `;
+    } else if (
+      message.role ===
+      "user"
+    ) {
+      extraButtons = `
+        <button class="nexus-msg-action-btn nexus-edit-btn">
+          Edit
+        </button>
+      `;
+    }
+
+    msg.innerHTML = `
+      <strong>${label}</strong><br>
+      ${attachmentsHtml}
+      ${rendered}
+      <div class="nexus-msg-actions">
+        <button class="nexus-msg-action-btn nexus-copy-btn">
+          Copy
+        </button>
+        ${extraButtons}
+      </div>
+    `;
+
+    msg.querySelector(
+      ".nexus-copy-btn"
+    ).addEventListener(
+      "click",
+      () => {
+        this.copyText(
+          message.content
+        );
+      }
+    );
+
+    const regenBtn =
+      msg.querySelector(
+        ".nexus-regen-btn"
+      );
+
+    if (regenBtn) {
+      regenBtn.addEventListener(
+        "click",
+        () => {
+          this.regenerateResponse();
+        }
+      );
+    }
+
+    const editBtn =
+      msg.querySelector(
+        ".nexus-edit-btn"
+      );
+
+    if (editBtn) {
+      editBtn.addEventListener(
+        "click",
+        () => {
+          this.startEditMessage(
+            message
+          );
+        }
+      );
+    }
+
+    this.attachCodeCopyListeners(
+      msg
+    );
+
+    box.appendChild(msg);
+
+    if (animate) {
+      this.animateMessage(
+        msg
+      );
+    }
+
+    box.scrollTop =
+      box.scrollHeight;
+
+    this.updateTokenCounter();
+
+    return msg;
+  }
+
+    async regenerateResponse() {
+    if (this.isGenerating) return;
+
+    SessionService.removeLastAssistantMessage();
+    this.renderMessages();
+
+    await this.generateAssistantReply();
+  }
+
+  async generateAssistantReply() {
+    const sendBtn =
+      this.container.querySelector(
+        "#send-btn"
+      );
+
+    this.isGenerating = true;
+    this.activeController =
+      new AbortController();
+
+    this.commandMenu.hide();
+    sendBtn.textContent = "■";
+
+    const thinkingNode =
+      this.appendMessageObject(
+        {
+          id: "thinking",
+          role: "assistant",
+          content: "Thinking..."
+        },
+        false,
+        false,
+        true
+      );
+
+    this.startThinkingAnimation(
+      thinkingNode
+    );
+
+    try {
+      const response =
+        await AIService.sendMessage(
+          this.activeController.signal
+        );
+
+      this.stopThinkingAnimation();
+      thinkingNode.remove();
+
+      this.appendMessageObject(
+        {
+          id:
+            "msg_" +
+            Date.now() +
+            "_" +
+            Math.random()
+              .toString(36)
+              .slice(2),
+          role: "assistant",
+          content: response
+        },
+        true,
+        true,
+        true
+      );
+    } catch (error) {
+      this.stopThinkingAnimation();
+
+      if (
+        error.name ===
+        "AbortError"
+      ) {
+        thinkingNode.innerHTML =
+          `<strong>Nexus</strong><br>Generation stopped`;
+      } else {
+        thinkingNode.innerHTML =
+          `<strong>Error</strong><br>${error.message}`;
+      }
+    } finally {
+      this.activeController =
+        null;
+      this.isGenerating =
+        false;
+      sendBtn.textContent =
+        "↑";
+    }
+  }
+
+  async sendMessage() {
+    if (this.isGenerating) {
+      return;
+    }
+
+    const input =
+      this.container.querySelector(
+        "#chat-input"
+      );
+
+    const text =
+      input.value.trim();
+
+    if (
+      !text &&
+      this.pendingAttachments
+        .length === 0 &&
+      this
+        .editingAttachmentIds
+        .length === 0
+    ) {
+      return;
+    }
+
+    this.commandMenu.hide();
+
+    /* EDIT MODE */
+    if (
+      this.editingMessageId
+    ) {
+      const newAttachmentIds =
+        [];
+
+      this.pendingAttachments.forEach(
+        att => {
+          SessionService.addAttachment(
+            att
+          );
+
+          newAttachmentIds.push(
+            att.id
+          );
+        }
+      );
+
+      SessionService.updateMessageWithAttachments(
+        this.editingMessageId,
+        text ||
+          "[Attachment]",
+        [
+          ...this
+            .editingAttachmentIds,
+          ...newAttachmentIds
+        ]
+      );
+
+      SessionService.removeMessagesAfter(
+        this.editingMessageId
+      );
+
+      this.editingMessageId =
+        null;
+      this.editingAttachmentIds =
+        [];
+      this.pendingAttachments =
+        [];
+
+      this.renderAttachmentPreview();
+      this.renderMessages();
+
+      input.value = "";
+
+      this.autoResizeTextarea(
+        input
+      );
+
+      this.updateTokenCounter();
+
+      await this.generateAssistantReply();
+      return;
+    }
+
+    /* NEW MESSAGE */
+    const attachmentIds =
+      [];
+
+    this.pendingAttachments.forEach(
+      att => {
+        SessionService.addAttachment(
+          att
+        );
+
+        attachmentIds.push(
+          att.id
+        );
+      }
+    );
+
+    const message =
+      SessionService.createMessage(
+        "user",
+        text ||
+          "[Attachment]",
+        attachmentIds
+      );
+
+    this.appendMessageObject(
+      message,
+      true,
+      false,
+      false
+    );
+
+    input.value = "";
+    this.pendingAttachments =
+      [];
+    this.editingAttachmentIds =
+      [];
+
+    this.renderAttachmentPreview();
+
+    this.autoResizeTextarea(
+      input
+    );
+
+    this.updateTokenCounter();
+
+    await this.generateAssistantReply();
+  }
+}
