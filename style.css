@@ -530,3 +530,44 @@
 .nexus-action-sheet button[data-action="delete"] {
   color: #ff6b6b;
 }
+
+/* COMMAND MENU */
+.nexus-command-menu {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 120px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  padding: 12px;
+  border-radius: 18px;
+
+  background: rgba(24,24,30,0.98);
+  border: 1px solid rgba(255,255,255,0.08);
+
+  z-index: 999999;
+}
+
+.nexus-command-item {
+  width: 100%;
+  border: none;
+  padding: 14px;
+  border-radius: 14px;
+
+  text-align: left;
+  color: white;
+  background: rgba(255,255,255,0.05);
+}
+
+.nexus-command-name {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.nexus-command-desc {
+  font-size: 12px;
+  opacity: 0.7;
+}
