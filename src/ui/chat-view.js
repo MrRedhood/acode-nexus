@@ -63,27 +63,27 @@ export default class ChatView {
 
     box.innerHTML = "";
 
-    SessionService.getMessages()
-      .forEach(msg => {
-        this.appendMessageObject(msg, false);
-      });
-
-    box.scrollTop = box.scrollHeight;
-  }
-
-  isLatestAssistantMessage(message) {
-    if (!message || !message.id) return false;
-
     const messages =
       SessionService.getMessages();
 
+    let latestAssistantId = null;
+
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === "assistant") {
-        return messages[i].id === message.id;
+        latestAssistantId = messages[i].id;
+        break;
       }
     }
 
-    return false;
+    messages.forEach(msg => {
+      this.appendMessageObject(
+        msg,
+        false,
+        msg.id === latestAssistantId
+      );
+    });
+
+    box.scrollTop = box.scrollHeight;
   }
 
   showToast(text) {
@@ -132,9 +132,7 @@ export default class ChatView {
 
   attachCodeCopyListeners(msgNode) {
     const buttons =
-      msgNode.querySelectorAll(
-        ".nexus-code-copy"
-      );
+      msgNode.querySelectorAll(".nexus-code-copy");
 
     buttons.forEach(button => {
       button.addEventListener("click", e => {
@@ -157,7 +155,11 @@ export default class ChatView {
     });
   }
 
-  appendMessageObject(message, persist = true) {
+  appendMessageObject(
+    message,
+    persist = true,
+    showRegen = false
+  ) {
     const box =
       this.container.querySelector("#chat-messages");
 
@@ -175,10 +177,6 @@ export default class ChatView {
         ? "nexus-user"
         : "nexus-ai");
 
-    if (message.id) {
-      msg.dataset.messageId = message.id;
-    }
-
     const rendered =
       message.role === "user"
         ? message.content.replace(/\n/g, "<br>")
@@ -193,7 +191,7 @@ export default class ChatView {
 
     if (
       message.role === "assistant" &&
-      this.isLatestAssistantMessage(message)
+      showRegen
     ) {
       extraButtons = `
         <button class="nexus-msg-action-btn nexus-regen-btn">
@@ -280,6 +278,7 @@ export default class ChatView {
           role: "assistant",
           content: "Thinking..."
         },
+        false,
         false
       );
 
@@ -291,20 +290,23 @@ export default class ChatView {
 
       thinkingNode.remove();
 
-      this.appendMessageObject({
-        id:
-          "msg_" +
-          Date.now() +
-          "_" +
-          Math.random()
-            .toString(36)
-            .slice(2),
-        role: "assistant",
-        content: response
-      });
+      this.appendMessageObject(
+        {
+          id:
+            "msg_" +
+            Date.now() +
+            "_" +
+            Math.random()
+              .toString(36)
+              .slice(2),
+          role: "assistant",
+          content: response
+        },
+        true,
+        true
+      );
 
       this.renderMessages();
-
     } catch (error) {
       if (error.name === "AbortError") {
         thinkingNode.innerHTML =
@@ -360,17 +362,21 @@ export default class ChatView {
       return;
     }
 
-    this.appendMessageObject({
-      id:
-        "msg_" +
-        Date.now() +
-        "_" +
-        Math.random()
-          .toString(36)
-          .slice(2),
-      role: "user",
-      content: text
-    });
+    this.appendMessageObject(
+      {
+        id:
+          "msg_" +
+          Date.now() +
+          "_" +
+          Math.random()
+            .toString(36)
+            .slice(2),
+        role: "user",
+        content: text
+      },
+      true,
+      false
+    );
 
     input.value = "";
 
