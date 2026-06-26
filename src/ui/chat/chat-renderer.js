@@ -239,15 +239,6 @@ export default {
         ? "You"
         : "Nexus";
 
-    const attachmentsHtml =
-      message.role ===
-      "user"
-        ? this.renderMessageAttachments(
-            message
-              .attachmentIds
-          )
-        : "";
-
     let extraButtons =
       "";
 
@@ -272,9 +263,14 @@ export default {
       `;
     }
 
+    const attachmentContainer =
+      message.role === "user"
+        ? `<div class="nexus-async-attachments"></div>`
+        : "";
+
     msg.innerHTML = `
       <strong>${label}</strong><br>
-      ${attachmentsHtml}
+      ${attachmentContainer}
       ${rendered}
 
       <div class="nexus-msg-actions">
@@ -331,6 +327,23 @@ export default {
     );
 
     box.appendChild(msg);
+
+    if (
+      message.role ===
+      "user"
+    ) {
+      const attachmentNode =
+        msg.querySelector(
+          ".nexus-async-attachments"
+        );
+
+      if (attachmentNode) {
+        this.fillMessageAttachments(
+          attachmentNode,
+          message.attachmentIds
+        );
+      }
+    }
 
     if (animate) {
       this.animateMessage(
