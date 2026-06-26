@@ -1,4 +1,6 @@
 import Sidebar from "../ui/sidebar.js";
+import SessionService from "../services/session-service.js";
+import AttachmentStorage from "../services/attachment-storage.js";
 
 export default class Nexus {
   constructor(baseUrl, page, options) {
@@ -11,35 +13,132 @@ export default class Nexus {
   async injectStyles() {
     console.log("Inject styles start");
 
-    const cssPath = `${this.baseUrl}style.css`;
-    console.log("CSS path:", cssPath);
+    const cssPath =
+      `${this.baseUrl}style.css`;
 
-    const res = await fetch(cssPath);
-    const css = await res.text();
+    console.log(
+      "CSS path:",
+      cssPath
+    );
 
-    const style = document.createElement("style");
+    const res =
+      await fetch(cssPath);
+
+    const css =
+      await res.text();
+
+    const style =
+      document.createElement(
+        "style"
+      );
+
     style.id = "nexus-style";
     style.textContent = css;
 
-    document.head.appendChild(style);
+    document.head.appendChild(
+      style
+    );
 
-    console.log("Inject styles done");
+    console.log(
+      "Inject styles done"
+    );
+  }
+
+  async migrateAttachments() {
+    console.log(
+      "[Nexus] Attachment migration start"
+    );
+
+    const data =
+      SessionService.load();
+
+    let migrated = 0;
+
+    for (const session of data.sessions) {
+      const attachments =
+        session.attachments || {};
+
+      const ids =
+        Object.keys(
+          attachments
+        );
+
+      if (!ids.length) {
+        continue;
+      }
+
+      for (const id of ids) {
+        const attachment =
+          attachments[id];
+
+        if (!attachment) {
+          continue;
+        }
+
+        try {
+          await AttachmentStorage.saveAttachment(
+            attachment
+          );
+
+          migrated++;
+        } catch (error) {
+          console.error(
+            "Attachment migration failed:",
+            id,
+            error
+          );
+        }
+      }
+
+      session.attachments = {};
+    }
+
+    if (migrated > 0) {
+      SessionService.save(
+        data
+      );
+
+      console.log(
+        `[Nexus] Migrated ${migrated} attachments`
+      );
+    } else {
+      console.log(
+        "[Nexus] No attachment migration needed"
+      );
+    }
+
+    return migrated;
   }
 
   async init() {
     try {
-      console.log("Nexus init start");
+      console.log(
+        "Nexus init start"
+      );
 
       await this.injectStyles();
 
-      console.log("Creating sidebar");
+      await this.migrateAttachments();
 
-      this.sidebar = new Sidebar(this.page);
+      console.log(
+        "Creating sidebar"
+      );
+
+      this.sidebar =
+        new Sidebar(
+          this.page
+        );
+
       this.sidebar.init();
 
-      console.log("Sidebar initialized");
+      console.log(
+        "Sidebar initialized"
+      );
     } catch (err) {
-      console.error("Nexus init crash:", err);
+      console.error(
+        "Nexus init crash:",
+        err
+      );
     }
   }
 
@@ -48,7 +147,13 @@ export default class Nexus {
       this.sidebar.destroy();
     }
 
-    const style = document.getElementById("nexus-style");
-    if (style) style.remove();
+    const style =
+      document.getElementById(
+        "nexus-style"
+      );
+
+    if (style) {
+      style.remove();
+    }
   }
 }
