@@ -426,7 +426,7 @@ export default class ChatView {
     `;
 
     msg.querySelector(".nexus-copy-btn")
-      ?.addEventListener("click", () => {
+      .addEventListener("click", () => {
         this.copyText(message.content);
       });
 
@@ -547,33 +547,14 @@ export default class ChatView {
 
     const text = input.value.trim();
 
-    if (!text && !this.pendingAttachments.length) {
-      return;
-    }
+    if (!text) return;
 
     this.commandMenu.hide();
-
-    let finalText = text;
-
-    if (this.pendingAttachments.length) {
-      finalText += "\n\nAttachments:\n";
-
-      this.pendingAttachments.forEach(att => {
-        finalText += `- ${att.name}`;
-
-        if (att.content) {
-          finalText +=
-            "\n" + att.content.slice(0, 4000);
-        }
-
-        finalText += "\n";
-      });
-    }
 
     if (this.editingMessageId) {
       SessionService.updateMessage(
         this.editingMessageId,
-        finalText
+        text
       );
 
       SessionService.removeMessagesAfter(
@@ -581,7 +562,6 @@ export default class ChatView {
       );
 
       this.editingMessageId = null;
-      this.pendingAttachments = [];
 
       this.renderMessages();
 
@@ -603,15 +583,16 @@ export default class ChatView {
             .toString(36)
             .slice(2),
         role: "user",
-        content: finalText
+        content: text
       },
       true,
       false,
       false
     );
 
-    this.pendingAttachments = [];
     input.value = "";
+    this.pendingAttachments = [];
+
     this.autoResizeTextarea(input);
     this.updateTokenCounter();
 
