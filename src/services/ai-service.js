@@ -95,9 +95,73 @@ export default class AIService {
     };
   }
 
+  static attachmentToText(attachment) {
+    if (!attachment) {
+      return "";
+    }
+
+    if (attachment.type === "image") {
+      return `[IMAGE ATTACHMENT]
+Name: ${attachment.name}
+Size: ${attachment.size} bytes
+
+Note:
+Image vision is not enabled yet.
+Only metadata is available.`;
+    }
+
+    if (attachment.type === "pdf") {
+      return `[PDF ATTACHMENT]
+Name: ${attachment.name}
+Size: ${attachment.size} bytes
+
+Content:
+${attachment.content || "[No extracted text]"}`;
+    }
+
+    return `[FILE ATTACHMENT]
+Name: ${attachment.name}
+Size: ${attachment.size} bytes
+
+Content:
+${attachment.content || ""}`;
+  }
+
+  static injectAttachments(message) {
+    if (
+      !message.attachmentIds ||
+      message.attachmentIds.length === 0
+    ) {
+      return message.content;
+    }
+
+    const attachments =
+      SessionService.getAttachments(
+        message.attachmentIds
+      );
+
+    if (!attachments.length) {
+      return message.content;
+    }
+
+    const attachmentText =
+      attachments
+        .map(att =>
+          this.attachmentToText(att)
+        )
+        .join("\n\n");
+
+    return `${attachmentText}
+
+User Message:
+${message.content}`;
+  }
+
   static preprocessMessages(messages) {
     const processed =
-      messages.map(msg => ({ ...msg }));
+      messages.map(msg => ({
+        ...msg
+      }));
 
     for (
       let i = processed.length - 1;
@@ -160,7 +224,9 @@ export default class AIService {
       );
     }
 
-    throw new Error("Unsupported provider");
+    throw new Error(
+      "Unsupported provider"
+    );
   }
 
   static async sendMessage(
@@ -213,7 +279,12 @@ export default class AIService {
         )
         .map(msg => ({
           role: msg.role,
-          content: msg.content
+          content:
+            this.injectAttachments(
+              msg
+            ),
+          attachmentIds:
+            msg.attachmentIds || []
         }));
 
     const processedMessages =
