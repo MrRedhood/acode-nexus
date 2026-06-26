@@ -10,6 +10,7 @@ export default class ChatView {
     this.activeController = null;
     this.isGenerating = false;
     this.editingMessageId = null;
+    this.editingAttachmentIds = [];
     this.thinkingInterval = null;
     this.pendingAttachments = [];
 
@@ -189,7 +190,18 @@ export default class ChatView {
 
     if (!preview) return;
 
-    if (this.pendingAttachments.length === 0) {
+    const existingAttachments =
+      SessionService.getAttachments(
+        this.editingAttachmentIds
+      );
+
+    const hasExisting =
+      existingAttachments.length > 0;
+
+    const hasPending =
+      this.pendingAttachments.length > 0;
+
+    if (!hasExisting && !hasPending) {
       preview.innerHTML = "";
       preview.style.display = "none";
       return;
@@ -197,7 +209,36 @@ export default class ChatView {
 
     preview.style.display = "flex";
 
-    preview.innerHTML =
+    const existingHtml =
+      existingAttachments
+        .map(att => {
+          const icon =
+            att.type === "image"
+              ? "📷"
+              : att.type === "pdf"
+              ? "📕"
+              : "📎";
+
+          return `
+            <div class="nexus-attachment-chip">
+              <span class="nexus-attachment-chip-text">
+                ${icon}
+                ${att.name}
+                (${this.formatFileSize(att.size)})
+              </span>
+
+              <button
+                class="nexus-attachment-remove-existing"
+                data-id="${att.id}"
+              >
+                ×
+              </button>
+            </div>
+          `;
+        })
+        .join("");
+
+    const pendingHtml =
       this.pendingAttachments
         .map(att => {
           const icon =
@@ -226,6 +267,9 @@ export default class ChatView {
         })
         .join("");
 
+    preview.innerHTML =
+      existingHtml + pendingHtml;
+
     preview
       .querySelectorAll(
         ".nexus-attachment-remove"
@@ -237,12 +281,33 @@ export default class ChatView {
           );
         });
       });
+
+    preview
+      .querySelectorAll(
+        ".nexus-attachment-remove-existing"
+      )
+      .forEach(btn => {
+        btn.addEventListener("click", () => {
+          this.removeExistingAttachment(
+            btn.dataset.id
+          );
+        });
+      });
   }
 
   removeAttachment(id) {
     this.pendingAttachments =
       this.pendingAttachments.filter(
         att => att.id !== id
+      );
+
+    this.renderAttachmentPreview();
+  }
+
+  removeExistingAttachment(id) {
+    this.editingAttachmentIds =
+      this.editingAttachmentIds.filter(
+        attId => attId !== id
       );
 
     this.renderAttachmentPreview();
@@ -511,10 +576,18 @@ export default class ChatView {
     this.editingMessageId =
       message.id;
 
+    this.editingAttachmentIds =
+      [
+        ...(message
+          .attachmentIds || [])
+      ];
+
     input.value =
       message.content;
 
     input.focus();
+
+    this.renderAttachmentPreview();
 
     this.autoResizeTextarea(
       input
@@ -793,7 +866,6 @@ export default class ChatView {
             Math.random()
               .toString(36)
               .slice(2),
-
           role: "assistant",
           content: response
         },
@@ -829,64 +901,86 @@ export default class ChatView {
         "#chat-input"
       );
 
-    const text =
-      input.value.trim();
+    const text = input.value.trim();
 
     if (
       !text &&
-      this.pendingAttachments
-        .length === 0
+      this.pendingAttachments.length === 0 &&
+      this.editingAttachmentIds.length === 0
     ) {
       return;
     }
 
     this.commandMenu.hide();
 
-    if (
-      this.editingMessageId
-    ) {
-      const existing =
-        SessionService
-          .getMessages()
-          .find(
-            msg =>
-              msg.id ===
-              this
-                .editingMessageId
+    if (this.editingMessageId) {
+      const data =
+        SessionService.load();
+
+      const session =
+        data.sessions.find(
+          s =>
+            s.id ===
+            data.currentSessionId
+        );
+
+      if (!session) return;
+
+      const msg =
+        session.messages.find(
+          m =>
+            m.id ===
+            this.editingMessageId
+        );
+
+      if (!msg) return;
+
+      const newAttachmentIds = [];
+
+      this.pendingAttachments.forEach(
+        att => {
+          SessionService.addAttachment(
+            att
           );
 
-      SessionService.updateMessage(
-        this.editingMessageId,
-        text
+          newAttachmentIds.push(
+            att.id
+          );
+        }
       );
 
-      if (existing) {
-        existing.attachmentIds =
-          existing.attachmentIds ||
-          [];
-      }
+      msg.content = text || "[Attachment]";
+      msg.attachmentIds = [
+        ...this.editingAttachmentIds,
+        ...newAttachmentIds
+      ];
+
+      SessionService.save(data);
 
       SessionService.removeMessagesAfter(
         this.editingMessageId
       );
 
-      this.editingMessageId =
-        null;
+      this.editingMessageId = null;
+      this.editingAttachmentIds = [];
+      this.pendingAttachments = [];
 
+      this.renderAttachmentPreview();
       this.renderMessages();
 
       input.value = "";
+
       this.autoResizeTextarea(
         input
       );
+
       this.updateTokenCounter();
 
       await this.generateAssistantReply();
       return;
     }
 
-    const attachmentIds =
-      [];
+    const attachmentIds = [];
 
     this.pendingAttachments.forEach(
       att => {
@@ -894,17 +988,14 @@ export default class ChatView {
           att
         );
 
-        attachmentIds.push(
-          att.id
-        );
+        attachmentIds.push(att.id);
       }
     );
 
     const message =
       SessionService.createMessage(
         "user",
-        text ||
-          "[Attachment]",
+        text || "[Attachment]",
         attachmentIds
       );
 
@@ -916,15 +1007,12 @@ export default class ChatView {
     );
 
     input.value = "";
-
-    this.pendingAttachments =
-      [];
+    this.pendingAttachments = [];
+    this.editingAttachmentIds = [];
 
     this.renderAttachmentPreview();
 
-    this.autoResizeTextarea(
-      input
-    );
+    this.autoResizeTextarea(input);
     this.updateTokenCounter();
 
     await this.generateAssistantReply();
