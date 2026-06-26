@@ -1,7 +1,8 @@
+import SessionService from "../../services/session-service.js";
 import AttachmentStorage from "../../services/attachment-storage.js";
 
 export default {
-  async getAttachments(
+  async getAttachmentsHybrid(
     attachmentIds = []
   ) {
     if (
@@ -14,21 +15,37 @@ export default {
     const attachments = [];
 
     for (const id of attachmentIds) {
+      let attachment = null;
+
       try {
-        const attachment =
+        attachment =
           await AttachmentStorage.getAttachment(
             id
           );
-
-        if (attachment) {
-          attachments.push(
-            attachment
-          );
-        }
       } catch (error) {
         console.error(
-          "Attachment read failed:",
+          "IndexedDB read failed:",
           error
+        );
+      }
+
+      if (!attachment) {
+        if (
+          SessionService.getAttachments
+        ) {
+          const legacy =
+            SessionService.getAttachments(
+              [id]
+            );
+
+          attachment =
+            legacy[0] || null;
+        }
+      }
+
+      if (attachment) {
+        attachments.push(
+          attachment
         );
       }
     }
@@ -81,6 +98,48 @@ export default {
     input.click();
   },
 
+  fileToBase64(file) {
+    return new Promise(
+      (resolve, reject) => {
+        const reader =
+          new FileReader();
+
+        reader.onload =
+          () => {
+            const result =
+              reader.result;
+
+            const base64 =
+              result.split(",")[1];
+
+            resolve(base64);
+          };
+
+        reader.onerror =
+          reject;
+
+        reader.readAsDataURL(
+          file
+        );
+      }
+    );
+  },
+
+  getMimeType(file, type) {
+    if (type === "pdf") {
+      return "application/pdf";
+    }
+
+    if (type === "image") {
+      return (
+        file.type ||
+        "image/png"
+      );
+    }
+
+    return "text/plain";
+  },
+
   async handleSelectedFile(
     file,
     type
@@ -93,13 +152,26 @@ export default {
         Math.random()
           .toString(36)
           .slice(2),
+
       name: file.name,
       size: file.size,
-      type
+      type,
+      mimeType:
+        file.type ||
+        this.getMimeType(
+          file,
+          type
+        )
     };
 
-    if (type === "image") {
-      attachment.file = file;
+    if (
+      type === "image" ||
+      type === "pdf"
+    ) {
+      attachment.data =
+        await this.fileToBase64(
+          file
+        );
     } else {
       attachment.content =
         await file.text();
@@ -125,7 +197,7 @@ export default {
     if (!preview) return;
 
     const existingAttachments =
-      await this.getAttachments(
+      await this.getAttachmentsHybrid(
         this.editingAttachmentIds
       );
 
@@ -261,7 +333,7 @@ export default {
       `<div class="nexus-message-attachment-chip">Loading...</div>`;
 
     const attachments =
-      await this.getAttachments(
+      await this.getAttachmentsHybrid(
         attachmentIds
       );
 
