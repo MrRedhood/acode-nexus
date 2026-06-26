@@ -11,6 +11,7 @@ export default class ChatView {
     this.isGenerating = false;
     this.editingMessageId = null;
     this.thinkingInterval = null;
+    this.pendingAttachments = [];
 
     this.attachmentMenu =
       new AttachmentMenu(this);
@@ -102,6 +103,73 @@ export default class ChatView {
 
     this.autoResizeTextarea(input);
     this.updateTokenCounter();
+  }
+
+  openFilePicker(type) {
+    const input =
+      document.createElement("input");
+
+    input.type = "file";
+
+    if (type === "image") {
+      input.accept = "image/*";
+    }
+
+    if (type === "txt") {
+      input.accept = ".txt,text/plain";
+    }
+
+    if (type === "pdf") {
+      input.accept = ".pdf,application/pdf";
+    }
+
+    if (type === "code") {
+      input.accept =
+        ".js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.cs,.html,.css,.json,.xml,.md";
+    }
+
+    input.addEventListener("change", async e => {
+      const file = e.target.files?.[0];
+
+      if (!file) return;
+
+      await this.handleSelectedFile(
+        file,
+        type
+      );
+    });
+
+    input.click();
+  }
+
+  async handleSelectedFile(file, type) {
+    const attachment = {
+      id:
+        "att_" +
+        Date.now() +
+        "_" +
+        Math.random()
+          .toString(36)
+          .slice(2),
+      name: file.name,
+      size: file.size,
+      type
+    };
+
+    if (type === "image") {
+      attachment.file = file;
+    } else {
+      attachment.content =
+        await file.text();
+    }
+
+    this.pendingAttachments.push(
+      attachment
+    );
+
+    this.showToast(
+      `${file.name} attached`
+    );
   }
 
   autoResizeTextarea(input) {
@@ -311,7 +379,7 @@ export default class ChatView {
 
     const msg = document.createElement("div");
 
-    msg.className =
+        msg.className =
       "nexus-msg " +
       (message.role === "user"
         ? "nexus-user"
@@ -358,7 +426,7 @@ export default class ChatView {
     `;
 
     msg.querySelector(".nexus-copy-btn")
-      .addEventListener("click", () => {
+      ?.addEventListener("click", () => {
         this.copyText(message.content);
       });
 
@@ -394,7 +462,7 @@ export default class ChatView {
     return msg;
   }
 
-    async regenerateResponse() {
+  async regenerateResponse() {
     if (this.isGenerating) return;
 
     SessionService.removeLastAssistantMessage();
@@ -467,7 +535,6 @@ export default class ChatView {
     } finally {
       this.activeController = null;
       this.isGenerating = false;
-
       sendBtn.textContent = "↑";
     }
   }
@@ -480,14 +547,33 @@ export default class ChatView {
 
     const text = input.value.trim();
 
-    if (!text) return;
+    if (!text && !this.pendingAttachments.length) {
+      return;
+    }
 
     this.commandMenu.hide();
+
+    let finalText = text;
+
+    if (this.pendingAttachments.length) {
+      finalText += "\n\nAttachments:\n";
+
+      this.pendingAttachments.forEach(att => {
+        finalText += `- ${att.name}`;
+
+        if (att.content) {
+          finalText +=
+            "\n" + att.content.slice(0, 4000);
+        }
+
+        finalText += "\n";
+      });
+    }
 
     if (this.editingMessageId) {
       SessionService.updateMessage(
         this.editingMessageId,
-        text
+        finalText
       );
 
       SessionService.removeMessagesAfter(
@@ -495,6 +581,7 @@ export default class ChatView {
       );
 
       this.editingMessageId = null;
+      this.pendingAttachments = [];
 
       this.renderMessages();
 
@@ -516,13 +603,14 @@ export default class ChatView {
             .toString(36)
             .slice(2),
         role: "user",
-        content: text
+        content: finalText
       },
       true,
       false,
       false
     );
 
+    this.pendingAttachments = [];
     input.value = "";
     this.autoResizeTextarea(input);
     this.updateTokenCounter();
