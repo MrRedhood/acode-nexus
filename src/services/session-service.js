@@ -1,3 +1,5 @@
+import AttachmentStorage from "./attachment-storage.js";
+
 const STORAGE_KEY =
   "acode_nexus_sessions";
 
