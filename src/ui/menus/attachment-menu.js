@@ -43,19 +43,8 @@ export default class AttachmentMenu {
               return;
             }
 
-            const labels = {
-              image:
-                "Image upload coming soon",
-              txt:
-                "Text upload coming soon",
-              pdf:
-                "PDF upload coming soon",
-              code:
-                "Code upload coming soon"
-            };
-
-            this.chatView.showToast(
-              labels[type]
+            this.chatView.openFilePicker(
+              type
             );
           }
         );
