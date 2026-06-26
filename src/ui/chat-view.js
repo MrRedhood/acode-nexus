@@ -169,9 +169,7 @@ export default class ChatView {
         if (!wrapper) return;
 
         const textarea =
-          wrapper.querySelector(
-            ".nexus-hidden-code"
-          );
+          wrapper.querySelector(".nexus-hidden-code");
 
         if (!textarea) return;
 
@@ -314,7 +312,6 @@ export default class ChatView {
     this.activeController =
       new AbortController();
 
-    input.disabled = true;
     sendBtn.textContent = "Stop";
 
     const thinkingNode =
@@ -369,9 +366,6 @@ export default class ChatView {
     } finally {
       this.activeController = null;
       this.isGenerating = false;
-
-      input.disabled = false;
-      input.focus();
 
       sendBtn.textContent =
         this.editingMessageId
