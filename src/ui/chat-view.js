@@ -71,6 +71,20 @@ export default class ChatView {
     box.scrollTop = box.scrollHeight;
   }
 
+  isLatestAssistantMessage(message) {
+    if (!message || !message.id) return false;
+
+    const messages = SessionService.getMessages();
+
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "assistant") {
+        return messages[i].id === message.id;
+      }
+    }
+
+    return false;
+  }
+
   showToast(text) {
     const old =
       document.querySelector(".nexus-copy-toast");
@@ -112,8 +126,7 @@ export default class ChatView {
     input.value = message.content;
     input.focus();
 
-    sendBtn.textContent =
-      "Save & Regenerate";
+    sendBtn.textContent = "Save & Regenerate";
   }
 
   attachCodeCopyListeners(msgNode) {
@@ -173,13 +186,16 @@ export default class ChatView {
 
     let extraButtons = "";
 
-    if (message.role === "assistant") {
+    if (
+      message.role === "assistant" &&
+      this.isLatestAssistantMessage(message)
+    ) {
       extraButtons = `
         <button class="nexus-msg-action-btn nexus-regen-btn">
           ↻
         </button>
       `;
-    } else {
+    } else if (message.role === "user") {
       extraButtons = `
         <button class="nexus-msg-action-btn nexus-edit-btn">
           Edit
@@ -278,6 +294,13 @@ export default class ChatView {
       thinkingNode.remove();
 
       this.appendMessageObject({
+        id:
+          "msg_" +
+          Date.now() +
+          "_" +
+          Math.random()
+            .toString(36)
+            .slice(2),
         role: "assistant",
         content: response
       });
@@ -338,6 +361,13 @@ export default class ChatView {
     }
 
     this.appendMessageObject({
+      id:
+        "msg_" +
+        Date.now() +
+        "_" +
+        Math.random()
+          .toString(36)
+          .slice(2),
       role: "user",
       content: text
     });
