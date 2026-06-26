@@ -8,6 +8,7 @@ export default class ChatView {
     this.activeController = null;
     this.isGenerating = false;
     this.editingMessageId = null;
+    this.thinkingInterval = null;
   }
 
   render() {
@@ -79,11 +80,35 @@ export default class ChatView {
       this.appendMessageObject(
         msg,
         false,
-        msg.id === latestAssistantId
+        msg.id === latestAssistantId,
+        false
       );
     });
 
     box.scrollTop = box.scrollHeight;
+  }
+
+  startThinkingAnimation(node) {
+    let dots = 1;
+
+    this.stopThinkingAnimation();
+
+    this.thinkingInterval = setInterval(() => {
+      dots++;
+      if (dots > 3) dots = 1;
+
+      node.innerHTML = `
+        <strong>Nexus</strong><br>
+        Thinking${".".repeat(dots)}
+      `;
+    }, 450);
+  }
+
+  stopThinkingAnimation() {
+    if (this.thinkingInterval) {
+      clearInterval(this.thinkingInterval);
+      this.thinkingInterval = null;
+    }
   }
 
   showToast(text) {
@@ -158,7 +183,8 @@ export default class ChatView {
   appendMessageObject(
     message,
     persist = true,
-    showRegen = false
+    showRegen = false,
+    animate = true
   ) {
     const box =
       this.container.querySelector("#chat-messages");
@@ -176,6 +202,10 @@ export default class ChatView {
       (message.role === "user"
         ? "nexus-user"
         : "nexus-ai");
+
+    if (animate) {
+      msg.classList.add("nexus-msg-enter");
+    }
 
     const rendered =
       message.role === "user"
@@ -279,8 +309,11 @@ export default class ChatView {
           content: "Thinking..."
         },
         false,
-        false
+        false,
+        true
       );
+
+    this.startThinkingAnimation(thinkingNode);
 
     try {
       const response =
@@ -288,6 +321,7 @@ export default class ChatView {
           this.activeController.signal
         );
 
+      this.stopThinkingAnimation();
       thinkingNode.remove();
 
       this.appendMessageObject(
@@ -303,11 +337,14 @@ export default class ChatView {
           content: response
         },
         true,
+        true,
         true
       );
 
       this.renderMessages();
     } catch (error) {
+      this.stopThinkingAnimation();
+
       if (error.name === "AbortError") {
         thinkingNode.innerHTML =
           `<strong>Nexus</strong><br>Generation stopped`;
@@ -375,7 +412,8 @@ export default class ChatView {
         content: text
       },
       true,
-      false
+      false,
+      true
     );
 
     input.value = "";
