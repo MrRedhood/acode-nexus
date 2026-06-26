@@ -144,6 +144,26 @@
   padding: 12px 0 18px;
 }
 
+.nexus-token-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+  padding: 0 6px;
+  color: var(--nx-muted);
+  font-size: 12px;
+}
+
+.nexus-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+
+  padding: 10px;
+  border-radius: 20px;
+  border: 1px solid var(--nx-border);
+  background: rgba(255,255,255,0.04);
+}
+
 .nexus-input,
 .nexus-select,
 .nexus-textarea {
@@ -157,10 +177,41 @@
 }
 
 .nexus-textarea {
-  min-height: 70px;
-  max-height: 140px;
+  flex: 1;
+  min-height: 52px;
+  max-height: 180px;
   resize: none;
-  margin-top: 12px;
+  margin: 0;
+  border: none;
+  background: transparent;
+  padding: 12px 6px;
+}
+
+.nexus-circle-btn {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+
+  border: none;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
+
+  background: rgba(255,255,255,0.08);
+}
+
+.nexus-send-btn {
+  background: linear-gradient(
+    135deg,
+    var(--nx-accent),
+    var(--nx-accent-2)
+  );
 }
 
 .nexus-button {
