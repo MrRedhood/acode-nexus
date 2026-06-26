@@ -1,18 +1,15 @@
 import AIService from "../../services/ai-service.js";
 import SessionService from "../../services/session-service.js";
+import AttachmentStorage from "../../services/attachment-storage.js";
 
 export default {
   stopGeneration() {
-    if (
-      this.activeController
-    ) {
+    if (this.activeController) {
       this.activeController.abort();
     }
   },
 
-  startEditMessage(
-    message
-  ) {
+  startEditMessage(message) {
     const input =
       this.container.querySelector(
         "#chat-input"
@@ -21,33 +18,22 @@ export default {
     this.editingMessageId =
       message.id;
 
-    this.editingAttachmentIds =
-      [
-        ...(message
-          .attachmentIds || [])
-      ];
+    this.editingAttachmentIds = [
+      ...(message.attachmentIds || [])
+    ];
 
-    input.value =
-      message.content;
-
+    input.value = message.content;
     input.focus();
 
     this.renderAttachmentPreview();
-
-    this.autoResizeTextarea(
-      input
-    );
-
+    this.autoResizeTextarea(input);
     this.updateTokenCounter();
   },
 
   async regenerateResponse() {
-    if (this.isGenerating) {
-      return;
-    }
+    if (this.isGenerating) return;
 
     SessionService.removeLastAssistantMessage();
-
     this.renderMessages();
 
     await this.generateAssistantReply();
@@ -60,12 +46,10 @@ export default {
       );
 
     this.isGenerating = true;
-
     this.activeController =
       new AbortController();
 
     this.commandMenu.hide();
-
     sendBtn.textContent = "■";
 
     const thinkingNode =
@@ -73,8 +57,7 @@ export default {
         {
           id: "thinking",
           role: "assistant",
-          content:
-            "Thinking..."
+          content: "Thinking..."
         },
         false,
         false,
@@ -88,12 +71,10 @@ export default {
     try {
       const response =
         await AIService.sendMessage(
-          this.activeController
-            .signal
+          this.activeController.signal
         );
 
       this.stopThinkingAnimation();
-
       thinkingNode.remove();
 
       this.appendMessageObject(
@@ -106,8 +87,7 @@ export default {
               .toString(36)
               .slice(2),
           role: "assistant",
-          content:
-            response
+          content: response
         },
         true,
         true,
@@ -127,21 +107,14 @@ export default {
           `<strong>Error</strong><br>${error.message}`;
       }
     } finally {
-      this.activeController =
-        null;
-
-      this.isGenerating =
-        false;
-
-      sendBtn.textContent =
-        "↑";
+      this.activeController = null;
+      this.isGenerating = false;
+      sendBtn.textContent = "↑";
     }
   },
 
   async sendMessage() {
-    if (
-      this.isGenerating
-    ) {
+    if (this.isGenerating) {
       return;
     }
 
@@ -155,39 +128,32 @@ export default {
 
     if (
       !text &&
-      this.pendingAttachments
-        .length === 0 &&
-      this
-        .editingAttachmentIds
-        .length === 0
+      this.pendingAttachments.length === 0 &&
+      this.editingAttachmentIds.length === 0
     ) {
       return;
     }
 
     this.commandMenu.hide();
 
-    if (
-      this.editingMessageId
-    ) {
-      const newAttachmentIds =
-        [];
+    /* EDIT MODE */
+    if (this.editingMessageId) {
+      const newAttachmentIds = [];
 
-      this.pendingAttachments.forEach(
-        att => {
-          SessionService.addAttachment(
-            att
-          );
+      for (const att of this
+        .pendingAttachments) {
+        await AttachmentStorage.saveAttachment(
+          att
+        );
 
-          newAttachmentIds.push(
-            att.id
-          );
-        }
-      );
+        newAttachmentIds.push(
+          att.id
+        );
+      }
 
       SessionService.updateMessageWithAttachments(
         this.editingMessageId,
-        text ||
-          "[Attachment]",
+        text || "[Attachment]",
         [
           ...this
             .editingAttachmentIds,
@@ -199,17 +165,11 @@ export default {
         this.editingMessageId
       );
 
-      this.editingMessageId =
-        null;
-
-      this.editingAttachmentIds =
-        [];
-
-      this.pendingAttachments =
-        [];
+      this.editingMessageId = null;
+      this.editingAttachmentIds = [];
+      this.pendingAttachments = [];
 
       this.renderAttachmentPreview();
-
       this.renderMessages();
 
       input.value = "";
@@ -221,30 +181,25 @@ export default {
       this.updateTokenCounter();
 
       await this.generateAssistantReply();
-
       return;
     }
 
-    const attachmentIds =
-      [];
+    /* NEW MESSAGE */
+    const attachmentIds = [];
 
-    this.pendingAttachments.forEach(
-      att => {
-        SessionService.addAttachment(
-          att
-        );
+    for (const att of this
+      .pendingAttachments) {
+      await AttachmentStorage.saveAttachment(
+        att
+      );
 
-        attachmentIds.push(
-          att.id
-        );
-      }
-    );
+      attachmentIds.push(att.id);
+    }
 
     const message =
       SessionService.createMessage(
         "user",
-        text ||
-          "[Attachment]",
+        text || "[Attachment]",
         attachmentIds
       );
 
@@ -256,19 +211,11 @@ export default {
     );
 
     input.value = "";
-
-    this.pendingAttachments =
-      [];
-
-    this.editingAttachmentIds =
-      [];
+    this.pendingAttachments = [];
+    this.editingAttachmentIds = [];
 
     this.renderAttachmentPreview();
-
-    this.autoResizeTextarea(
-      input
-    );
-
+    this.autoResizeTextarea(input);
     this.updateTokenCounter();
 
     await this.generateAssistantReply();
