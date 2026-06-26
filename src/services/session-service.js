@@ -14,6 +14,14 @@ export default class SessionService {
     };
   }
 
+  static createSessionObject(title = "New Chat") {
+    return {
+      id: "session_" + Date.now() + "_" + Math.random().toString(36).slice(2),
+      title,
+      messages: []
+    };
+  }
+
   static normalizeData(data) {
     if (!data || !Array.isArray(data.sessions)) {
       return {
@@ -154,11 +162,8 @@ export default class SessionService {
   static createSession() {
     const data = this.load();
 
-    const newSession = {
-      id: "session_" + Date.now(),
-      title: "New Chat",
-      messages: []
-    };
+    const newSession =
+      this.createSessionObject();
 
     data.sessions.unshift(newSession);
     data.currentSessionId =
@@ -167,6 +172,149 @@ export default class SessionService {
     this.save(data);
 
     return newSession;
+  }
+
+  static renameSession(sessionId, newTitle) {
+    const data = this.load();
+
+    const session = data.sessions.find(
+      s => s.id === sessionId
+    );
+
+    if (!session) return false;
+
+    const cleanTitle =
+      (newTitle || "").trim();
+
+    if (!cleanTitle) return false;
+
+    session.title =
+      cleanTitle.slice(0, 60);
+
+    this.save(data);
+    return true;
+  }
+
+  static duplicateSession(sessionId) {
+    const data = this.load();
+
+    const original =
+      data.sessions.find(
+        s => s.id === sessionId
+      );
+
+    if (!original) return null;
+
+    const cloned = {
+      id:
+        "session_" +
+        Date.now() +
+        "_" +
+        Math.random()
+          .toString(36)
+          .slice(2),
+
+      title:
+        (original.title || "New Chat") +
+        " (Copy)",
+
+      messages: original.messages.map(msg => ({
+        ...msg,
+        id:
+          "msg_" +
+          Date.now() +
+          "_" +
+          Math.random()
+            .toString(36)
+            .slice(2)
+      }))
+    };
+
+    data.sessions.unshift(cloned);
+    data.currentSessionId =
+      cloned.id;
+
+    this.save(data);
+
+    return cloned;
+  }
+
+  static deleteSession(sessionId) {
+    const data = this.load();
+
+    const index =
+      data.sessions.findIndex(
+        s => s.id === sessionId
+      );
+
+    if (index === -1) {
+      return false;
+    }
+
+    data.sessions.splice(index, 1);
+
+    if (data.sessions.length === 0) {
+      const newSession =
+        this.createSessionObject();
+
+      data.sessions.push(newSession);
+      data.currentSessionId =
+        newSession.id;
+    } else if (
+      data.currentSessionId === sessionId
+    ) {
+      data.currentSessionId =
+        data.sessions[0].id;
+    }
+
+    this.save(data);
+    return true;
+  }
+
+  static exportSession(
+    sessionId,
+    format = "txt"
+  ) {
+    const data = this.load();
+
+    const session =
+      data.sessions.find(
+        s => s.id === sessionId
+      );
+
+    if (!session) return null;
+
+    if (format === "json") {
+      return JSON.stringify(
+        session,
+        null,
+        2
+      );
+    }
+
+    if (format === "md") {
+      let output =
+        `# ${session.title}\n\n`;
+
+      session.messages.forEach(msg => {
+        output +=
+          `## ${msg.role}\n` +
+          `${msg.content}\n\n`;
+      });
+
+      return output;
+    }
+
+    let output =
+      `${session.title}\n\n`;
+
+    session.messages.forEach(msg => {
+      output +=
+        `${msg.role.toUpperCase()}:\n` +
+        `${msg.content}\n\n`;
+    });
+
+    return output;
   }
 
   static addMessage(role, content) {
