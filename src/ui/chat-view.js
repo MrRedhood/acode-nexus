@@ -393,3 +393,140 @@ export default class ChatView {
 
     return msg;
   }
+
+    async regenerateResponse() {
+    if (this.isGenerating) return;
+
+    SessionService.removeLastAssistantMessage();
+    this.renderMessages();
+
+    await this.generateAssistantReply();
+  }
+
+  async generateAssistantReply() {
+    const sendBtn =
+      this.container.querySelector("#send-btn");
+
+    this.isGenerating = true;
+    this.activeController =
+      new AbortController();
+
+    this.commandMenu.hide();
+
+    sendBtn.textContent = "■";
+
+    const thinkingNode =
+      this.appendMessageObject(
+        {
+          id: "thinking",
+          role: "assistant",
+          content: "Thinking..."
+        },
+        false,
+        false,
+        true
+      );
+
+    this.startThinkingAnimation(thinkingNode);
+
+    try {
+      const response =
+        await AIService.sendMessage(
+          this.activeController.signal
+        );
+
+      this.stopThinkingAnimation();
+      thinkingNode.remove();
+
+      this.appendMessageObject(
+        {
+          id:
+            "msg_" +
+            Date.now() +
+            "_" +
+            Math.random()
+              .toString(36)
+              .slice(2),
+          role: "assistant",
+          content: response
+        },
+        true,
+        true,
+        true
+      );
+    } catch (error) {
+      this.stopThinkingAnimation();
+
+      if (error.name === "AbortError") {
+        thinkingNode.innerHTML =
+          `<strong>Nexus</strong><br>Generation stopped`;
+      } else {
+        thinkingNode.innerHTML =
+          `<strong>Error</strong><br>${error.message}`;
+      }
+    } finally {
+      this.activeController = null;
+      this.isGenerating = false;
+
+      sendBtn.textContent = "↑";
+    }
+  }
+
+  async sendMessage() {
+    if (this.isGenerating) return;
+
+    const input =
+      this.container.querySelector("#chat-input");
+
+    const text = input.value.trim();
+
+    if (!text) return;
+
+    this.commandMenu.hide();
+
+    if (this.editingMessageId) {
+      SessionService.updateMessage(
+        this.editingMessageId,
+        text
+      );
+
+      SessionService.removeMessagesAfter(
+        this.editingMessageId
+      );
+
+      this.editingMessageId = null;
+
+      this.renderMessages();
+
+      input.value = "";
+      this.autoResizeTextarea(input);
+      this.updateTokenCounter();
+
+      await this.generateAssistantReply();
+      return;
+    }
+
+    this.appendMessageObject(
+      {
+        id:
+          "msg_" +
+          Date.now() +
+          "_" +
+          Math.random()
+            .toString(36)
+            .slice(2),
+        role: "user",
+        content: text
+      },
+      true,
+      false,
+      false
+    );
+
+    input.value = "";
+    this.autoResizeTextarea(input);
+    this.updateTokenCounter();
+
+    await this.generateAssistantReply();
+  }
+}
