@@ -68,14 +68,8 @@ export default {
       "nexus-image-preview-overlay";
 
     overlay.innerHTML = `
-      <button class="nexus-image-preview-close">
-        ×
-      </button>
-
-      <img
-        src="${src}"
-        class="nexus-image-preview-img"
-      >
+      <button class="nexus-image-preview-close">×</button>
+      <img src="${src}" class="nexus-image-preview-img">
     `;
 
     overlay.addEventListener(
@@ -117,7 +111,6 @@ export default {
           <div class="nexus-text-preview-title">
             ${att.name}
           </div>
-
           <button class="nexus-text-preview-close">
             ×
           </button>
@@ -160,11 +153,10 @@ export default {
         ".nexus-attachment-thumb"
       )
       .forEach(img => {
-        img.onclick = () => {
+        img.onclick = () =>
           this.openImagePreview(
             img.src
           );
-        };
       });
 
     root
@@ -182,280 +174,161 @@ export default {
 
         if (!att) return;
 
-        card.onclick = () => {
+        card.onclick = () =>
           this.openTextPreview(
             att
           );
-        };
       });
   },
 
   openFilePicker(type) {
-  const self = this;
+    const self = this;
 
-  const input =
-    document.createElement(
-      "input"
-    );
-
-  input.type = "file";
-
-  if (type === "image") {
-    input.accept = "image/*";
-  } else if (
-    type === "txt"
-  ) {
-    input.accept =
-      "text/plain,.txt";
-  } else if (
-    type === "pdf"
-  ) {
-    input.accept =
-      "application/pdf,.pdf";
-  } else if (
-    type === "code"
-  ) {
-    input.accept = "*/*";
-  }
-
-  input.addEventListener(
-    "change",
-    async function (e) {
-      const file =
-        e.target.files?.[0];
-
-      if (!file) {
-        return;
-      }
-
-      console.log(
-        "Picked file:",
-        file.name,
-        file.type
+    const input =
+      document.createElement(
+        "input"
       );
 
-      if (
-        type === "code"
-      ) {
-        const allowed = [
-          ".js",
-          ".ts",
-          ".jsx",
-          ".tsx",
-          ".py",
-          ".java",
-          ".cpp",
-          ".c",
-          ".cs",
-          ".html",
-          ".css",
-          ".json",
-          ".xml",
-          ".md"
-        ];
+    input.type = "file";
 
-        const lower =
-          file.name.toLowerCase();
+    if (type === "image") {
+      input.accept = "image/*";
+    } else if (
+      type === "txt"
+    ) {
+      input.accept =
+        "text/plain,.txt";
+    } else if (
+      type === "pdf"
+    ) {
+      input.accept =
+        "application/pdf,.pdf";
+    } else if (
+      type === "code"
+    ) {
+      input.accept = "*/*";
+    }
 
-        const valid =
-          allowed.some(ext =>
-            lower.endsWith(ext)
-          );
+    input.addEventListener(
+      "change",
+      async function (e) {
+        const file =
+          e.target.files?.[0];
 
-        if (!valid) {
-          self.showToast(
-            "Unsupported code file"
-          );
+        if (!file) {
           return;
         }
+
+        if (
+          type === "code"
+        ) {
+          const allowed = [
+            ".js",
+            ".ts",
+            ".jsx",
+            ".tsx",
+            ".py",
+            ".java",
+            ".cpp",
+            ".c",
+            ".cs",
+            ".html",
+            ".css",
+            ".json",
+            ".xml",
+            ".md"
+          ];
+
+          const lower =
+            file.name.toLowerCase();
+
+          const valid =
+            allowed.some(ext =>
+              lower.endsWith(ext)
+            );
+
+          if (!valid) {
+            self.showToast(
+              "Unsupported code file"
+            );
+            return;
+          }
+        }
+
+        await self.handleSelectedFile(
+          file,
+          type
+        );
       }
+    );
 
-      await self.handleSelectedFile(
-        file,
-        type
-      );
-    }
-  );
+    input.click();
+  },
 
-  input.click();
-},
+  fileToBase64(file) {
+    return new Promise(
+      (resolve, reject) => {
+        const reader =
+          new FileReader();
 
-fileToText(file) {
-  return new Promise(
-    (resolve, reject) => {
-      const reader =
-        new FileReader();
+        reader.onload = () => {
+          try {
+            const result =
+              String(
+                reader.result || ""
+              );
 
-      reader.onload =
-        function () {
+            resolve(
+              result.split(",")[1] ||
+                ""
+            );
+          } catch (error) {
+            reject(error);
+          }
+        };
+
+        reader.onerror = () =>
+          reject(
+            reader.error ||
+              new Error(
+                "File read failed"
+              )
+          );
+
+        reader.readAsDataURL(
+          file
+        );
+      }
+    );
+  },
+
+  fileToText(file) {
+    return new Promise(
+      (resolve, reject) => {
+        const reader =
+          new FileReader();
+
+        reader.onload = () =>
           resolve(
             String(
               reader.result || ""
             )
           );
-        };
 
-      reader.onerror =
-        function () {
+        reader.onerror = () =>
           reject(
             reader.error ||
               new Error(
                 "Text read failed"
               )
           );
-        };
 
-      reader.readAsText(
-        file,
-        "UTF-8"
-      );
-    }
-  );
-},
-
-async handleSelectedFile(
-  file,
-  type
-) {
-  try {
-    console.log(
-      "handleSelectedFile:",
-      file.name,
-      type
-    );
-
-    const attachment = {
-      id:
-        "att_" +
-        Date.now() +
-        "_" +
-        Math.random()
-          .toString(36)
-          .slice(2),
-
-      name: file.name,
-      size: file.size,
-      type,
-      mimeType:
-        file.type ||
-        this.getMimeType(
+        reader.readAsText(
           file,
-          type
-        )
-    };
-
-    if (
-      type === "image" ||
-      type === "pdf"
-    ) {
-      attachment.data =
-        await this.fileToBase64(
-          file
+          "UTF-8"
         );
-    } else {
-      attachment.content =
-        await this.fileToText(
-          file
-        );
-    }
-
-    if (
-      !this.pendingAttachments
-    ) {
-      this.pendingAttachments =
-        [];
-    }
-
-    this.pendingAttachments.push(
-      attachment
+      }
     );
-
-    await this.renderAttachmentPreview();
-
-    this.showToast(
-      `${file.name} attached`
-    );
-  } catch (error) {
-    console.error(
-      "Attachment error:",
-      error
-    );
-
-    this.showToast(
-      "Unsupported file format"
-    );
-  }
-},
-
-      await this.handleSelectedFile(
-        file,
-        type
-      );
-    }
-  );
-
-  input.click();
-},
-
-  fileToBase64(file) {
-  return new Promise(
-    (resolve, reject) => {
-      const reader =
-        new FileReader();
-
-      reader.onload = () => {
-        try {
-          const result =
-            reader.result || "";
-
-          const parts =
-            String(result).split(",");
-
-          resolve(
-            parts[1] || ""
-          );
-        } catch (error) {
-          reject(error);
-        }
-      };
-
-      reader.onerror = () =>
-        reject(
-          reader.error ||
-            new Error(
-              "File read failed"
-            )
-        );
-
-      reader.readAsDataURL(
-        file
-      );
-    }
-  );
-},
-
-  fileToText(file) {
-  return new Promise(
-    (resolve, reject) => {
-      const reader =
-        new FileReader();
-
-      reader.onload = () =>
-        resolve(
-          reader.result || ""
-        );
-
-      reader.onerror = () =>
-        reject(
-          reader.error ||
-            new Error(
-              "Text read failed"
-            )
-        );
-
-      reader.readAsText(file);
-    }
-  );
   },
 
   getMimeType(file, type) {
@@ -474,64 +347,74 @@ async handleSelectedFile(
   },
 
   async handleSelectedFile(
-  file,
-  type
-) {
-  try {
-    const attachment = {
-      id:
-        "att_" +
-        Date.now() +
-        "_" +
-        Math.random()
-          .toString(36)
-          .slice(2),
+    file,
+    type
+  ) {
+    try {
+      const attachment = {
+        id:
+          "att_" +
+          Date.now() +
+          "_" +
+          Math.random()
+            .toString(36)
+            .slice(2),
 
-      name: file.name,
-      size: file.size,
-      type,
-      mimeType:
-        file.type ||
-        this.getMimeType(
-          file,
-          type
-        )
-    };
+        name: file.name,
+        size: file.size,
+        type,
+        mimeType:
+          file.type ||
+          this.getMimeType(
+            file,
+            type
+          )
+      };
 
-    if (
-      type === "image" ||
-      type === "pdf"
-    ) {
-      attachment.data =
-        await this.fileToBase64(
-          file
-        );
-    } else {
-      attachment.content =
-        await this.fileToText(
-          file
-        );
+      if (
+        type === "image" ||
+        type === "pdf"
+      ) {
+        attachment.data =
+          await this.fileToBase64(
+            file
+          );
+      } else {
+        attachment.content =
+          await this.fileToText(
+            file
+          );
+      }
+
+      if (
+        !this.pendingAttachments
+      ) {
+        this.pendingAttachments =
+          [];
+      }
+
+      this.pendingAttachments.push(
+        attachment
+      );
+
+      await this.renderAttachmentPreview();
+
+      this.showToast(
+        `${file.name} attached`
+      );
+    } catch (error) {
+      console.error(
+        "Attachment error:",
+        error
+      );
+
+      this.showToast(
+        "Unsupported file format"
+      );
     }
+  },
 
-    this.pendingAttachments.push(
-      attachment
-    );
-
-    this.renderAttachmentPreview();
-
-    this.showToast(
-      `${file.name} attached`
-    );
-  } catch (error) {
-    console.error(error);
-
-    this.showToast(
-      "Unsupported file format"
-    );
-  }
-},
-
-  renderAttachmentCard(
+    renderAttachmentCard(
     att,
     removable = false,
     existing = false
@@ -551,7 +434,7 @@ async handleSelectedFile(
       `
       : "";
 
-        if (att.type === "image") {
+    if (att.type === "image") {
       const imageSrc =
         att.data
           ? `data:${att.mimeType};base64,${att.data}`
@@ -613,7 +496,9 @@ async handleSelectedFile(
         "#attachment-preview"
       );
 
-    if (!preview) return;
+    if (!preview) {
+      return;
+    }
 
     const existingAttachments =
       await this.getAttachmentsHybrid(
@@ -757,7 +642,7 @@ async handleSelectedFile(
     );
   },
 
-  removeAttachment(id) {
+    removeAttachment(id) {
     this.pendingAttachments =
       this.pendingAttachments.filter(
         att => att.id !== id
@@ -798,7 +683,8 @@ async handleSelectedFile(
       (
         bytes /
         (1024 * 1024)
-      ).toFixed(1) + " MB"
+      ).toFixed(1) +
+      " MB"
     );
   }
 };
