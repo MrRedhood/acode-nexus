@@ -578,40 +578,108 @@
 /* ATTACHMENT PREVIEW */
 .nexus-attachment-preview {
   display: none;
-  gap: 10px;
+  gap: 12px;
   overflow-x: auto;
   overflow-y: hidden;
   margin-bottom: 10px;
-  padding-bottom: 4px;
+  padding: 4px 2px 8px;
 }
 
 .nexus-attachment-preview::-webkit-scrollbar {
   display: none;
 }
 
-.nexus-attachment-chip {
+/* CARD */
+.nexus-attachment-card {
+  position: relative;
   flex-shrink: 0;
+
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 
-  padding: 10px 14px;
-  border-radius: 999px;
+  min-width: 180px;
+  max-width: 240px;
+
+  padding: 12px;
+  border-radius: 18px;
 
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.08);
 
+  overflow: hidden;
+}
+
+/* IMAGE CARD */
+.nexus-image-card {
+  min-width: 220px;
+}
+
+.nexus-attachment-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.nexus-attachment-thumb-placeholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 28px;
+  background: rgba(255,255,255,0.08);
+}
+
+/* FILE/PDF ICON */
+.nexus-attachment-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  font-size: 28px;
+  background: rgba(255,255,255,0.08);
+}
+
+/* META */
+.nexus-attachment-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.nexus-attachment-meta div {
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.nexus-attachment-chip-text {
-  font-size: 12px;
-  color: white;
+.nexus-attachment-meta small {
+  display: block;
+  margin-top: 4px;
+  color: rgba(255,255,255,0.6);
+  font-size: 11px;
 }
 
-.nexus-attachment-remove {
-  width: 22px;
-  height: 22px;
+/* REMOVE BUTTON */
+.nexus-attachment-remove,
+.nexus-attachment-remove-existing {
+  width: 24px;
+  height: 24px;
   border: none;
   border-radius: 50%;
 
@@ -621,20 +689,23 @@
 
   background: rgba(255,255,255,0.12);
   color: white;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
+
+  flex-shrink: 0;
 }
 
+/* MESSAGE ATTACHMENTS */
 .nexus-message-attachments {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 8px 0 12px;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px 0 14px;
 }
 
 .nexus-message-attachment-chip {
-  padding: 8px 12px;
-  border-radius: 999px;
+  padding: 10px 14px;
+  border-radius: 14px;
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.08);
   font-size: 12px;
