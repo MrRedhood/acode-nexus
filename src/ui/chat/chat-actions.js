@@ -31,7 +31,9 @@ export default {
   },
 
   async regenerateResponse() {
-    if (this.isGenerating) return;
+    if (this.isGenerating) {
+      return;
+    }
 
     SessionService.removeLastAssistantMessage();
     this.renderMessages();
@@ -39,7 +41,7 @@ export default {
     await this.generateAssistantReply();
   },
 
-  async generateAssistantReply() {
+    async generateAssistantReply() {
     const sendBtn =
       this.container.querySelector(
         "#send-btn"
@@ -68,30 +70,114 @@ export default {
       thinkingNode
     );
 
+    let streamedText = "";
+
     try {
-      const response =
-        await AIService.sendMessage(
-          this.activeController.signal
-        );
+      const assistantMessage = {
+        id:
+          "msg_" +
+          Date.now() +
+          "_" +
+          Math.random()
+            .toString(36)
+            .slice(2),
+        role: "assistant",
+        content: ""
+      };
 
-      this.stopThinkingAnimation();
-      thinkingNode.remove();
+      await AIService.sendMessageStream(
+        fullText => {
+          streamedText =
+            fullText;
 
-      this.appendMessageObject(
-        {
-          id:
-            "msg_" +
-            Date.now() +
-            "_" +
-            Math.random()
-              .toString(36)
-              .slice(2),
-          role: "assistant",
-          content: response
+          if (
+            thinkingNode &&
+            thinkingNode.parentNode
+          ) {
+            this.stopThinkingAnimation();
+            thinkingNode.remove();
+
+            this.appendMessageObject(
+              assistantMessage,
+              false,
+              true,
+              true
+            );
+          }
+
+          const box =
+            this.container.querySelector(
+              "#chat-messages"
+            );
+
+          if (!box) {
+            return;
+          }
+
+          const messages =
+            box.querySelectorAll(
+              ".nexus-ai"
+            );
+
+          const latest =
+            messages[
+              messages.length - 1
+            ];
+
+          if (!latest) {
+            return;
+          }
+
+          const contentNodes =
+            latest.childNodes;
+
+          for (
+            let i =
+              contentNodes.length - 1;
+            i >= 0;
+            i--
+          ) {
+            const node =
+              contentNodes[i];
+
+            if (
+              node.nodeType === 3
+            ) {
+              node.remove();
+            }
+          }
+
+          const actions =
+            latest.querySelector(
+              ".nexus-msg-actions"
+            );
+
+          latest.innerHTML = `
+            <strong>Nexus</strong><br>
+            ${fullText.replace(
+              /\n/g,
+              "<br>"
+            )}
+          `;
+
+          if (actions) {
+            latest.appendChild(
+              actions
+            );
+          }
+
+          box.scrollTop =
+            box.scrollHeight;
         },
-        true,
-        true,
-        true
+        this.activeController.signal
+      );
+
+            assistantMessage.content =
+        streamedText ||
+        "No response returned.";
+
+      SessionService.addExistingMessage(
+        assistantMessage
       );
     } catch (error) {
       this.stopThinkingAnimation();
@@ -100,16 +186,36 @@ export default {
         error.name ===
         "AbortError"
       ) {
-        thinkingNode.innerHTML =
-          `<strong>Nexus</strong><br>Generation stopped`;
+        if (
+          thinkingNode &&
+          thinkingNode.parentNode
+        ) {
+          thinkingNode.innerHTML =
+            `<strong>Nexus</strong><br>Generation stopped`;
+        }
       } else {
-        thinkingNode.innerHTML =
-          `<strong>Error</strong><br>${error.message}`;
+        if (
+          thinkingNode &&
+          thinkingNode.parentNode
+        ) {
+          thinkingNode.innerHTML =
+            `<strong>Error</strong><br>${error.message}`;
+        } else {
+          this.showToast(
+            error.message ||
+              "Generation failed"
+          );
+        }
       }
     } finally {
-      this.activeController = null;
-      this.isGenerating = false;
-      sendBtn.textContent = "↑";
+      this.activeController =
+        null;
+
+      this.isGenerating =
+        false;
+
+      sendBtn.textContent =
+        "↑";
     }
   },
 
@@ -165,9 +271,14 @@ export default {
         this.editingMessageId
       );
 
-      this.editingMessageId = null;
-      this.editingAttachmentIds = [];
-      this.pendingAttachments = [];
+      this.editingMessageId =
+        null;
+
+      this.editingAttachmentIds =
+        [];
+
+      this.pendingAttachments =
+        [];
 
       this.renderAttachmentPreview();
       this.renderMessages();
@@ -193,7 +304,9 @@ export default {
         att
       );
 
-      attachmentIds.push(att.id);
+      attachmentIds.push(
+        att.id
+      );
     }
 
     const message =
@@ -215,7 +328,9 @@ export default {
     this.editingAttachmentIds = [];
 
     this.renderAttachmentPreview();
-    this.autoResizeTextarea(input);
+    this.autoResizeTextarea(
+      input
+    );
     this.updateTokenCounter();
 
     await this.generateAssistantReply();
