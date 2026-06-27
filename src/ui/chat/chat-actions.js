@@ -1,51 +1,14 @@
-import AIService from "../../services/ai-service.js";
-import SessionService from "../../services/session-service.js";
-import AttachmentStorage from "../../services/attachment-storage.js";
-
-export default {
-  stopGeneration() {
-    if (this.activeController) {
-      this.activeController.abort();
-    }
-  },
-
-  startEditMessage(message) {
-    const input =
-      this.container.querySelector(
-        "#chat-input"
-      );
-
-    this.editingMessageId =
-      message.id;
-
-    this.editingAttachmentIds = [
-      ...(message.attachmentIds || [])
-    ];
-
-    input.value = message.content;
-    input.focus();
-
-    this.renderAttachmentPreview();
-    this.autoResizeTextarea(input);
-    this.updateTokenCounter();
-  },
-
-  async regenerateResponse() {
-    if (this.isGenerating) {
-      return;
-    }
-
-    SessionService.removeLastAssistantMessage();
-    this.renderMessages();
-
-    await this.generateAssistantReply();
-  },
-
-    async generateAssistantReply() {
+  async generateAssistantReply() {
     const sendBtn =
       this.container.querySelector(
         "#send-btn"
       );
+
+    const escapeHtml = text =>
+      (text || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 
     this.isGenerating = true;
     this.activeController =
@@ -71,6 +34,7 @@ export default {
     );
 
     let streamedText = "";
+    let assistantNode = null;
 
     try {
       const assistantMessage = {
@@ -89,19 +53,45 @@ export default {
         fullText => {
           streamedText =
             fullText;
-
-          if (
-            thinkingNode &&
-            thinkingNode.parentNode
+                    if (
+            !assistantNode
           ) {
             this.stopThinkingAnimation();
-            thinkingNode.remove();
 
-            this.appendMessageObject(
-              assistantMessage,
-              false,
-              true,
-              true
+            if (
+              thinkingNode &&
+              thinkingNode.parentNode
+            ) {
+              thinkingNode.remove();
+            }
+
+            assistantNode =
+              this.appendMessageObject(
+                assistantMessage,
+                false,
+                true,
+                true
+              );
+          }
+
+          const actions =
+            assistantNode.querySelector(
+              ".nexus-msg-actions"
+            );
+
+          assistantNode.innerHTML = `
+            <strong>Nexus</strong><br>
+            ${escapeHtml(
+              fullText
+            ).replace(
+              /\n/g,
+              "<br>"
+            )}
+          `;
+
+          if (actions) {
+            assistantNode.appendChild(
+              actions
             );
           }
 
@@ -110,64 +100,10 @@ export default {
               "#chat-messages"
             );
 
-          if (!box) {
-            return;
+          if (box) {
+            box.scrollTop =
+              box.scrollHeight;
           }
-
-          const messages =
-            box.querySelectorAll(
-              ".nexus-ai"
-            );
-
-          const latest =
-            messages[
-              messages.length - 1
-            ];
-
-          if (!latest) {
-            return;
-          }
-
-          const contentNodes =
-            latest.childNodes;
-
-          for (
-            let i =
-              contentNodes.length - 1;
-            i >= 0;
-            i--
-          ) {
-            const node =
-              contentNodes[i];
-
-            if (
-              node.nodeType === 3
-            ) {
-              node.remove();
-            }
-          }
-
-          const actions =
-            latest.querySelector(
-              ".nexus-msg-actions"
-            );
-
-          latest.innerHTML = `
-            <strong>Nexus</strong><br>
-            ${fullText.replace(
-              /\n/g,
-              "<br>"
-            )}
-          `;
-
-          if (actions) {
-            latest.appendChild(
-              actions
-            );
-          }
-
-          box.scrollTop =
-            box.scrollHeight;
         },
         this.activeController.signal
       );
@@ -175,6 +111,30 @@ export default {
             assistantMessage.content =
         streamedText ||
         "No response returned.";
+
+      if (assistantNode) {
+        const actions =
+          assistantNode.querySelector(
+            ".nexus-msg-actions"
+          );
+
+        assistantNode.innerHTML = `
+          <strong>Nexus</strong><br>
+          ${parseMarkdown(
+            assistantMessage.content
+          )}
+        `;
+
+        if (actions) {
+          assistantNode.appendChild(
+            actions
+          );
+        }
+
+        this.attachCodeCopyListeners(
+          assistantNode
+        );
+      }
 
       SessionService.addExistingMessage(
         assistantMessage
@@ -218,121 +178,3 @@ export default {
         "↑";
     }
   },
-
-  async sendMessage() {
-    if (this.isGenerating) {
-      return;
-    }
-
-    const input =
-      this.container.querySelector(
-        "#chat-input"
-      );
-
-    const text =
-      input.value.trim();
-
-    if (
-      !text &&
-      this.pendingAttachments.length === 0 &&
-      this.editingAttachmentIds.length === 0
-    ) {
-      return;
-    }
-
-    this.commandMenu.hide();
-
-    /* EDIT MODE */
-    if (this.editingMessageId) {
-      const newAttachmentIds = [];
-
-      for (const att of this
-        .pendingAttachments) {
-        await AttachmentStorage.saveAttachment(
-          att
-        );
-
-        newAttachmentIds.push(
-          att.id
-        );
-      }
-
-      SessionService.updateMessageWithAttachments(
-        this.editingMessageId,
-        text || "[Attachment]",
-        [
-          ...this
-            .editingAttachmentIds,
-          ...newAttachmentIds
-        ]
-      );
-
-      SessionService.removeMessagesAfter(
-        this.editingMessageId
-      );
-
-      this.editingMessageId =
-        null;
-
-      this.editingAttachmentIds =
-        [];
-
-      this.pendingAttachments =
-        [];
-
-      this.renderAttachmentPreview();
-      this.renderMessages();
-
-      input.value = "";
-
-      this.autoResizeTextarea(
-        input
-      );
-
-      this.updateTokenCounter();
-
-      await this.generateAssistantReply();
-      return;
-    }
-
-    /* NEW MESSAGE */
-    const attachmentIds = [];
-
-    for (const att of this
-      .pendingAttachments) {
-      await AttachmentStorage.saveAttachment(
-        att
-      );
-
-      attachmentIds.push(
-        att.id
-      );
-    }
-
-    const message =
-      SessionService.createMessage(
-        "user",
-        text || "[Attachment]",
-        attachmentIds
-      );
-
-    this.appendMessageObject(
-      message,
-      true,
-      false,
-      false
-    );
-
-    input.value = "";
-    this.pendingAttachments = [];
-    this.editingAttachmentIds = [];
-
-    this.renderAttachmentPreview();
-    this.autoResizeTextarea(
-      input
-    );
-    this.updateTokenCounter();
-
-    await this.generateAssistantReply();
-  }
-};
