@@ -43,10 +43,14 @@ export default class AttachmentMenu {
               return;
             }
 
-            this.chatView.openFilePicker(
-              type
-            );
-          }
+            console.log(
+  "Attachment type:",
+  type
+);
+
+this.chatView.openFilePicker(
+  type
+);
         );
       });
   }
