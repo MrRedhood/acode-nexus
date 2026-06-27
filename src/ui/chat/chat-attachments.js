@@ -279,30 +279,64 @@ export default {
 },
 
   fileToBase64(file) {
-    return new Promise(
-      (resolve, reject) => {
-        const reader =
-          new FileReader();
+  return new Promise(
+    (resolve, reject) => {
+      const reader =
+        new FileReader();
 
-        reader.onload =
-          () => {
-            const result =
-              reader.result;
+      reader.onload = () => {
+        try {
+          const result =
+            reader.result || "";
 
-            const base64 =
-              result.split(",")[1];
+          const parts =
+            String(result).split(",");
 
-            resolve(base64);
-          };
+          resolve(
+            parts[1] || ""
+          );
+        } catch (error) {
+          reject(error);
+        }
+      };
 
-        reader.onerror =
-          reject;
-
-        reader.readAsDataURL(
-          file
+      reader.onerror = () =>
+        reject(
+          reader.error ||
+            new Error(
+              "File read failed"
+            )
         );
-      }
-    );
+
+      reader.readAsDataURL(
+        file
+      );
+    }
+  );
+},
+
+  fileToText(file) {
+  return new Promise(
+    (resolve, reject) => {
+      const reader =
+        new FileReader();
+
+      reader.onload = () =>
+        resolve(
+          reader.result || ""
+        );
+
+      reader.onerror = () =>
+        reject(
+          reader.error ||
+            new Error(
+              "Text read failed"
+            )
+        );
+
+      reader.readAsText(file);
+    }
+  );
   },
 
   getMimeType(file, type) {
@@ -321,9 +355,10 @@ export default {
   },
 
   async handleSelectedFile(
-    file,
-    type
-  ) {
+  file,
+  type
+) {
+  try {
     const attachment = {
       id:
         "att_" +
@@ -354,7 +389,9 @@ export default {
         );
     } else {
       attachment.content =
-        await file.text();
+        await this.fileToText(
+          file
+        );
     }
 
     this.pendingAttachments.push(
@@ -366,7 +403,14 @@ export default {
     this.showToast(
       `${file.name} attached`
     );
-  },
+  } catch (error) {
+    console.error(error);
+
+    this.showToast(
+      "Unsupported file format"
+    );
+  }
+},
 
   renderAttachmentCard(
     att,
