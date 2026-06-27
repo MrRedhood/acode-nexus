@@ -191,6 +191,8 @@ export default {
   },
 
   openFilePicker(type) {
+  const self = this;
+
   const input =
     document.createElement(
       "input"
@@ -213,17 +215,12 @@ export default {
   } else if (
     type === "code"
   ) {
-    /*
-      Android file pickers often
-      fail on long extension lists.
-      Allow all files and validate later.
-    */
     input.accept = "*/*";
   }
 
   input.addEventListener(
     "change",
-    async e => {
+    async function (e) {
       const file =
         e.target.files?.[0];
 
@@ -231,26 +228,31 @@ export default {
         return;
       }
 
+      console.log(
+        "Picked file:",
+        file.name,
+        file.type
+      );
+
       if (
         type === "code"
       ) {
-        const allowed =
-          [
-            ".js",
-            ".ts",
-            ".jsx",
-            ".tsx",
-            ".py",
-            ".java",
-            ".cpp",
-            ".c",
-            ".cs",
-            ".html",
-            ".css",
-            ".json",
-            ".xml",
-            ".md"
-          ];
+        const allowed = [
+          ".js",
+          ".ts",
+          ".jsx",
+          ".tsx",
+          ".py",
+          ".java",
+          ".cpp",
+          ".c",
+          ".cs",
+          ".html",
+          ".css",
+          ".json",
+          ".xml",
+          ".md"
+        ];
 
         const lower =
           file.name.toLowerCase();
@@ -261,12 +263,129 @@ export default {
           );
 
         if (!valid) {
-          this.showToast(
+          self.showToast(
             "Unsupported code file"
           );
           return;
         }
       }
+
+      await self.handleSelectedFile(
+        file,
+        type
+      );
+    }
+  );
+
+  input.click();
+},
+
+fileToText(file) {
+  return new Promise(
+    (resolve, reject) => {
+      const reader =
+        new FileReader();
+
+      reader.onload =
+        function () {
+          resolve(
+            String(
+              reader.result || ""
+            )
+          );
+        };
+
+      reader.onerror =
+        function () {
+          reject(
+            reader.error ||
+              new Error(
+                "Text read failed"
+              )
+          );
+        };
+
+      reader.readAsText(
+        file,
+        "UTF-8"
+      );
+    }
+  );
+},
+
+async handleSelectedFile(
+  file,
+  type
+) {
+  try {
+    console.log(
+      "handleSelectedFile:",
+      file.name,
+      type
+    );
+
+    const attachment = {
+      id:
+        "att_" +
+        Date.now() +
+        "_" +
+        Math.random()
+          .toString(36)
+          .slice(2),
+
+      name: file.name,
+      size: file.size,
+      type,
+      mimeType:
+        file.type ||
+        this.getMimeType(
+          file,
+          type
+        )
+    };
+
+    if (
+      type === "image" ||
+      type === "pdf"
+    ) {
+      attachment.data =
+        await this.fileToBase64(
+          file
+        );
+    } else {
+      attachment.content =
+        await this.fileToText(
+          file
+        );
+    }
+
+    if (
+      !this.pendingAttachments
+    ) {
+      this.pendingAttachments =
+        [];
+    }
+
+    this.pendingAttachments.push(
+      attachment
+    );
+
+    await this.renderAttachmentPreview();
+
+    this.showToast(
+      `${file.name} attached`
+    );
+  } catch (error) {
+    console.error(
+      "Attachment error:",
+      error
+    );
+
+    this.showToast(
+      "Unsupported file format"
+    );
+  }
+},
 
       await this.handleSelectedFile(
         file,
