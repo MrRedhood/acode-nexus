@@ -153,3 +153,217 @@ export default class GeminiProvider {
         ?.text || ""
     );
   }
+
+    static async chat(
+    apiKey,
+    model,
+    messages,
+    signal = null
+  ) {
+    try {
+      const contents =
+        this.buildContents(
+          messages
+        );
+
+      const response =
+        await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            signal,
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              contents
+            })
+          }
+        );
+
+      if (!response.ok) {
+        const errorText =
+          await response.text();
+
+        throw new Error(
+          errorText
+        );
+      }
+
+      const data =
+        await response.json();
+
+      return (
+        this.extractChunkText(
+          data
+        ) ||
+        "No response returned."
+      );
+    } catch (error) {
+      if (
+        error.name ===
+        "AbortError"
+      ) {
+        throw error;
+      }
+
+      console.error(
+        "[Gemini] chat failed:",
+        error
+      );
+
+      throw error;
+    }
+  }
+
+  static async streamChat(
+    apiKey,
+    model,
+    messages,
+    onChunk,
+    signal = null
+  ) {
+    try {
+      const contents =
+        this.buildContents(
+          messages
+        );
+
+      const response =
+        await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`,
+          {
+            method: "POST",
+            signal,
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              contents
+            })
+          }
+        );
+
+      if (!response.ok) {
+        const errorText =
+          await response.text();
+
+        throw new Error(
+          errorText
+        );
+      }
+
+      if (
+        !response.body
+      ) {
+        throw new Error(
+          "Streaming not supported"
+        );
+      }
+
+      const reader =
+        response.body.getReader();
+
+      const decoder =
+        new TextDecoder();
+
+      let buffer = "";
+      let fullText = "";
+
+      while (true) {
+        const {
+          done,
+          value
+        } =
+          await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        buffer +=
+          decoder.decode(
+            value,
+            {
+              stream: true
+            }
+          );
+
+        const lines =
+          buffer.split("\n");
+
+        buffer =
+          lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed =
+            line.trim();
+
+          if (
+            !trimmed ||
+            !trimmed.startsWith(
+              "data:"
+            )
+          ) {
+            continue;
+          }
+
+          const jsonText =
+            trimmed.replace(
+              /^data:\s*/,
+              ""
+            );
+
+          try {
+            const payload =
+              JSON.parse(
+                jsonText
+              );
+
+            const chunk =
+              this.extractChunkText(
+                payload
+              );
+
+            if (!chunk) {
+              continue;
+            }
+
+            fullText += chunk;
+
+            if (onChunk) {
+              onChunk(
+                fullText,
+                chunk
+              );
+            }
+          } catch (error) {
+            console.warn(
+              "Stream parse skip:",
+              error
+            );
+          }
+        }
+      }
+
+      return fullText ||
+        "No response returned.";
+    } catch (error) {
+      if (
+        error.name ===
+        "AbortError"
+      ) {
+        throw error;
+      }
+
+      console.error(
+        "[Gemini] streamChat failed:",
+        error
+      );
+
+      throw error;
+    }
+  }
+}
