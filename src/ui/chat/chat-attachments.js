@@ -276,7 +276,7 @@ export default {
   );
 
   input.click();
-}
+},
 
   fileToBase64(file) {
     return new Promise(
