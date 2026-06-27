@@ -191,49 +191,92 @@ export default {
   },
 
   openFilePicker(type) {
-    const input =
-      document.createElement(
-        "input"
-      );
-
-    input.type = "file";
-
-    if (type === "image") {
-      input.accept = "image/*";
-    }
-
-    if (type === "txt") {
-      input.accept =
-        ".txt,text/plain";
-    }
-
-    if (type === "pdf") {
-      input.accept =
-        ".pdf,application/pdf";
-    }
-
-    if (type === "code") {
-      input.accept =
-        ".js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.cs,.html,.css,.json,.xml,.md";
-    }
-
-    input.addEventListener(
-      "change",
-      async e => {
-        const file =
-          e.target.files?.[0];
-
-        if (!file) return;
-
-        await this.handleSelectedFile(
-          file,
-          type
-        );
-      }
+  const input =
+    document.createElement(
+      "input"
     );
 
-    input.click();
-  },
+  input.type = "file";
+
+  if (type === "image") {
+    input.accept = "image/*";
+  } else if (
+    type === "txt"
+  ) {
+    input.accept =
+      "text/plain,.txt";
+  } else if (
+    type === "pdf"
+  ) {
+    input.accept =
+      "application/pdf,.pdf";
+  } else if (
+    type === "code"
+  ) {
+    /*
+      Android file pickers often
+      fail on long extension lists.
+      Allow all files and validate later.
+    */
+    input.accept = "*/*";
+  }
+
+  input.addEventListener(
+    "change",
+    async e => {
+      const file =
+        e.target.files?.[0];
+
+      if (!file) {
+        return;
+      }
+
+      if (
+        type === "code"
+      ) {
+        const allowed =
+          [
+            ".js",
+            ".ts",
+            ".jsx",
+            ".tsx",
+            ".py",
+            ".java",
+            ".cpp",
+            ".c",
+            ".cs",
+            ".html",
+            ".css",
+            ".json",
+            ".xml",
+            ".md"
+          ];
+
+        const lower =
+          file.name.toLowerCase();
+
+        const valid =
+          allowed.some(ext =>
+            lower.endsWith(ext)
+          );
+
+        if (!valid) {
+          this.showToast(
+            "Unsupported code file"
+          );
+          return;
+        }
+      }
+
+      await this.handleSelectedFile(
+        file,
+        type
+      );
+    }
+  );
+
+  input.click();
+}
 
   fileToBase64(file) {
     return new Promise(
