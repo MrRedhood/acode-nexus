@@ -188,6 +188,79 @@ export default {
     );
   },
 
+  renderAttachmentCard(
+    att,
+    removable = false,
+    existing = false
+  ) {
+    const removeClass = existing
+      ? "nexus-attachment-remove-existing"
+      : "nexus-attachment-remove";
+
+    const removeButton = removable
+      ? `
+        <button
+          class="${removeClass}"
+          data-id="${att.id}"
+        >
+          ×
+        </button>
+      `
+      : "";
+
+    if (att.type === "image") {
+      const imageSrc =
+        att.data
+          ? `data:${att.mimeType};base64,${att.data}`
+          : "";
+
+      return `
+        <div class="nexus-attachment-card nexus-image-card">
+          ${
+            imageSrc
+              ? `<img src="${imageSrc}" class="nexus-attachment-thumb">`
+              : `<div class="nexus-attachment-thumb-placeholder">📷</div>`
+          }
+
+          <div class="nexus-attachment-meta">
+            <div>${att.name}</div>
+            <small>${this.formatFileSize(att.size)}</small>
+          </div>
+
+          ${removeButton}
+        </div>
+      `;
+    }
+
+    if (att.type === "pdf") {
+      return `
+        <div class="nexus-attachment-card nexus-pdf-card">
+          <div class="nexus-attachment-icon">📕</div>
+
+          <div class="nexus-attachment-meta">
+            <div>${att.name}</div>
+            <small>${this.formatFileSize(att.size)}</small>
+          </div>
+
+          ${removeButton}
+        </div>
+      `;
+    }
+
+    return `
+      <div class="nexus-attachment-card nexus-file-card">
+        <div class="nexus-attachment-icon">📎</div>
+
+        <div class="nexus-attachment-meta">
+          <div>${att.name}</div>
+          <small>${this.formatFileSize(att.size)}</small>
+        </div>
+
+        ${removeButton}
+      </div>
+    `;
+  },
+
   async renderAttachmentPreview() {
     const preview =
       this.container.querySelector(
@@ -224,62 +297,24 @@ export default {
 
     const existingHtml =
       existingAttachments
-        .map(att => {
-          const icon =
-            att.type === "image"
-              ? "📷"
-              : att.type ===
-                "pdf"
-              ? "📕"
-              : "📎";
-
-          return `
-            <div class="nexus-attachment-chip">
-              <span class="nexus-attachment-chip-text">
-                ${icon}
-                ${att.name}
-                (${this.formatFileSize(att.size)})
-              </span>
-
-              <button
-                class="nexus-attachment-remove-existing"
-                data-id="${att.id}"
-              >
-                ×
-              </button>
-            </div>
-          `;
-        })
+        .map(att =>
+          this.renderAttachmentCard(
+            att,
+            true,
+            true
+          )
+        )
         .join("");
 
     const pendingHtml =
       this.pendingAttachments
-        .map(att => {
-          const icon =
-            att.type === "image"
-              ? "📷"
-              : att.type ===
-                "pdf"
-              ? "📕"
-              : "📎";
-
-          return `
-            <div class="nexus-attachment-chip">
-              <span class="nexus-attachment-chip-text">
-                ${icon}
-                ${att.name}
-                (${this.formatFileSize(att.size)})
-              </span>
-
-              <button
-                class="nexus-attachment-remove"
-                data-id="${att.id}"
-              >
-                ×
-              </button>
-            </div>
-          `;
-        })
+        .map(att =>
+          this.renderAttachmentCard(
+            att,
+            true,
+            false
+          )
+        )
         .join("");
 
     preview.innerHTML =
@@ -345,21 +380,13 @@ export default {
     container.innerHTML = `
       <div class="nexus-message-attachments">
         ${attachments
-          .map(att => {
-            const icon =
-              att.type === "image"
-                ? "📷"
-                : att.type === "pdf"
-                ? "📕"
-                : "📎";
-
-            return `
-              <div class="nexus-message-attachment-chip">
-                ${icon}
-                ${att.name}
-              </div>
-            `;
-          })
+          .map(att =>
+            this.renderAttachmentCard(
+              att,
+              false,
+              false
+            )
+          )
           .join("")}
       </div>
     `;
