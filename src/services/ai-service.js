@@ -163,7 +163,7 @@ Content:
 ${attachment.content || ""}`;
   }
 
-    static async preprocessMessages(
+  static async preprocessMessages(
     messages
   ) {
     const processed = [];
@@ -215,7 +215,7 @@ ${attachment.content || ""}`;
     return processed;
   }
 
-  static async getModels(
+    static async getModels(
     provider = null,
     apiKey = null
   ) {
@@ -252,9 +252,7 @@ ${attachment.content || ""}`;
     );
   }
 
-    static async sendMessage(
-    signal = null
-  ) {
+  static async prepareMessages() {
     const provider =
       StorageService.get(
         "provider"
@@ -315,6 +313,25 @@ ${attachment.content || ""}`;
         cleanedMessages
       );
 
+    return {
+      provider,
+      apiKey,
+      model,
+      processedMessages
+    };
+  }
+
+  static async sendMessage(
+    signal = null
+  ) {
+    const {
+      provider,
+      apiKey,
+      model,
+      processedMessages
+    } =
+      await this.prepareMessages();
+
     if (
       provider ===
       "gemini"
@@ -323,6 +340,36 @@ ${attachment.content || ""}`;
         apiKey,
         model,
         processedMessages,
+        signal
+      );
+    }
+
+    throw new Error(
+      "Unsupported provider"
+    );
+  }
+
+  static async sendMessageStream(
+    onChunk,
+    signal = null
+  ) {
+    const {
+      provider,
+      apiKey,
+      model,
+      processedMessages
+    } =
+      await this.prepareMessages();
+
+    if (
+      provider ===
+      "gemini"
+    ) {
+      return await GeminiProvider.streamChat(
+        apiKey,
+        model,
+        processedMessages,
+        onChunk,
         signal
       );
     }
