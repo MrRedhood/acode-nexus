@@ -53,6 +53,66 @@ export default {
     return attachments;
   },
 
+  openImagePreview(src) {
+    const old =
+      document.querySelector(
+        ".nexus-image-preview-overlay"
+      );
+
+    if (old) old.remove();
+
+    const overlay =
+      document.createElement("div");
+
+    overlay.className =
+      "nexus-image-preview-overlay";
+
+    overlay.innerHTML = `
+      <button class="nexus-image-preview-close">
+        ×
+      </button>
+
+      <img
+        src="${src}"
+        class="nexus-image-preview-img"
+      >
+    `;
+
+    overlay.addEventListener(
+      "click",
+      e => {
+        if (
+          e.target === overlay ||
+          e.target.classList.contains(
+            "nexus-image-preview-close"
+          )
+        ) {
+          overlay.remove();
+        }
+      }
+    );
+
+    document.body.appendChild(
+      overlay
+    );
+  },
+
+  attachImagePreviewListeners(
+    root = document
+  ) {
+    root
+      .querySelectorAll(
+        ".nexus-attachment-thumb"
+      )
+      .forEach(img => {
+        img.onclick = () => {
+          this.openImagePreview(
+            img.src
+          );
+        };
+      });
+  },
+
   openFilePicker(type) {
     const input =
       document.createElement(
@@ -321,6 +381,10 @@ export default {
       existingHtml +
       pendingHtml;
 
+    this.attachImagePreviewListeners(
+      preview
+    );
+
     preview
       .querySelectorAll(
         ".nexus-attachment-remove"
@@ -390,6 +454,10 @@ export default {
           .join("")}
       </div>
     `;
+
+    this.attachImagePreviewListeners(
+      container
+    );
   },
 
   removeAttachment(id) {
