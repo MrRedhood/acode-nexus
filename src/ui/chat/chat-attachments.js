@@ -97,8 +97,63 @@ export default {
     );
   },
 
-  attachImagePreviewListeners(
-    root = document
+  openTextPreview(att) {
+    const old =
+      document.querySelector(
+        ".nexus-text-preview-overlay"
+      );
+
+    if (old) old.remove();
+
+    const overlay =
+      document.createElement("div");
+
+    overlay.className =
+      "nexus-text-preview-overlay";
+
+    overlay.innerHTML = `
+      <div class="nexus-text-preview-modal">
+        <div class="nexus-text-preview-header">
+          <div class="nexus-text-preview-title">
+            ${att.name}
+          </div>
+
+          <button class="nexus-text-preview-close">
+            ×
+          </button>
+        </div>
+
+        <pre class="nexus-text-preview-content">${(
+          att.content || ""
+        )
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")}</pre>
+      </div>
+    `;
+
+    overlay.addEventListener(
+      "click",
+      e => {
+        if (
+          e.target === overlay ||
+          e.target.classList.contains(
+            "nexus-text-preview-close"
+          )
+        ) {
+          overlay.remove();
+        }
+      }
+    );
+
+    document.body.appendChild(
+      overlay
+    );
+  },
+
+  attachPreviewListeners(
+    root = document,
+    attachments = []
   ) {
     root
       .querySelectorAll(
@@ -108,6 +163,28 @@ export default {
         img.onclick = () => {
           this.openImagePreview(
             img.src
+          );
+        };
+      });
+
+    root
+      .querySelectorAll(
+        ".nexus-file-card"
+      )
+      .forEach(card => {
+        const id =
+          card.dataset.id;
+
+        const att =
+          attachments.find(
+            a => a.id === id
+          );
+
+        if (!att) return;
+
+        card.onclick = () => {
+          this.openTextPreview(
+            att
           );
         };
       });
@@ -268,7 +345,7 @@ export default {
       `
       : "";
 
-    if (att.type === "image") {
+        if (att.type === "image") {
       const imageSrc =
         att.data
           ? `data:${att.mimeType};base64,${att.data}`
@@ -308,7 +385,10 @@ export default {
     }
 
     return `
-      <div class="nexus-attachment-card nexus-file-card">
+      <div
+        class="nexus-attachment-card nexus-file-card"
+        data-id="${att.id}"
+      >
         <div class="nexus-attachment-icon">📎</div>
 
         <div class="nexus-attachment-meta">
@@ -355,6 +435,11 @@ export default {
     preview.style.display =
       "flex";
 
+    const allAttachments = [
+      ...existingAttachments,
+      ...this.pendingAttachments
+    ];
+
     const existingHtml =
       existingAttachments
         .map(att =>
@@ -381,8 +466,9 @@ export default {
       existingHtml +
       pendingHtml;
 
-    this.attachImagePreviewListeners(
-      preview
+    this.attachPreviewListeners(
+      preview,
+      allAttachments
     );
 
     preview
@@ -392,7 +478,9 @@ export default {
       .forEach(btn => {
         btn.addEventListener(
           "click",
-          () => {
+          e => {
+            e.stopPropagation();
+
             this.removeAttachment(
               btn.dataset.id
             );
@@ -407,7 +495,9 @@ export default {
       .forEach(btn => {
         btn.addEventListener(
           "click",
-          () => {
+          e => {
+            e.stopPropagation();
+
             this.removeExistingAttachment(
               btn.dataset.id
             );
@@ -455,8 +545,9 @@ export default {
       </div>
     `;
 
-    this.attachImagePreviewListeners(
-      container
+    this.attachPreviewListeners(
+      container,
+      attachments
     );
   },
 
