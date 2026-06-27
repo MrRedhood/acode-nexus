@@ -20,13 +20,18 @@ export default class AttachmentMenu {
       </div>
     `;
 
-    document.body.appendChild(overlay);
+    document.body.appendChild(
+      overlay
+    );
 
-    overlay.addEventListener("click", e => {
-      if (e.target === overlay) {
-        overlay.remove();
+    overlay.addEventListener(
+      "click",
+      e => {
+        if (e.target === overlay) {
+          overlay.remove();
+        }
       }
-    });
+    );
 
     overlay
       .querySelectorAll("button")
@@ -37,20 +42,23 @@ export default class AttachmentMenu {
             const type =
               btn.dataset.type;
 
+            console.log(
+              "Attachment type:",
+              type
+            );
+
             overlay.remove();
 
-            if (type === "cancel") {
+            if (
+              type === "cancel"
+            ) {
               return;
             }
 
-            console.log(
-  "Attachment type:",
-  type
-);
-
-this.chatView.openFilePicker(
-  type
-);
+            this.chatView.openFilePicker(
+              type
+            );
+          }
         );
       });
   }
