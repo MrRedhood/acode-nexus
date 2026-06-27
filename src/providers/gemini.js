@@ -72,7 +72,9 @@ export default class GeminiProvider {
     }
   }
 
-  static buildParts(message) {
+  static buildParts(
+    message
+  ) {
     const parts = [];
 
     if (
@@ -80,7 +82,8 @@ export default class GeminiProvider {
       message.content.trim()
     ) {
       parts.push({
-        text: message.content
+        text:
+          message.content
       });
     }
 
@@ -122,75 +125,31 @@ export default class GeminiProvider {
     return parts;
   }
 
-  static async chat(
-    apiKey,
-    model,
-    messages,
-    signal = null
+  static buildContents(
+    messages
   ) {
-    try {
-      const contents =
-        messages.map(msg => ({
-          role:
-            msg.role ===
-            "assistant"
-              ? "model"
-              : "user",
+    return messages.map(
+      msg => ({
+        role:
+          msg.role ===
+          "assistant"
+            ? "model"
+            : "user",
 
-          parts:
-            this.buildParts(
-              msg
-            )
-        }));
-
-      const response =
-        await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            signal,
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-            body: JSON.stringify({
-              contents
-            })
-          }
-        );
-
-      if (!response.ok) {
-        const errorText =
-          await response.text();
-
-        throw new Error(
-          errorText
-        );
-      }
-
-      const data =
-        await response.json();
-
-      return (
-        data?.candidates?.[0]
-          ?.content?.parts?.[0]
-          ?.text ||
-        "No response returned."
-      );
-    } catch (error) {
-      if (
-        error.name ===
-        "AbortError"
-      ) {
-        throw error;
-      }
-
-      console.error(
-        "[Gemini] chat failed:",
-        error
-      );
-
-      throw error;
-    }
+        parts:
+          this.buildParts(
+            msg
+          )
+      })
+    );
   }
-}
+
+  static extractChunkText(
+    payload
+  ) {
+    return (
+      payload?.candidates?.[0]
+        ?.content?.parts?.[0]
+        ?.text || ""
+    );
+  }
