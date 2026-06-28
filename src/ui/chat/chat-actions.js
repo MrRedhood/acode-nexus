@@ -18,6 +18,16 @@ export default {
     }
 
     this.isGenerating = false;
+
+    const sendBtn =
+      this.container.querySelector(
+        "#send-btn"
+      );
+
+    if (sendBtn) {
+      sendBtn.textContent =
+        "↑";
+    }
   },
 
   startEditMessage(message) {
@@ -58,8 +68,15 @@ export default {
   ) {
     return new Promise(resolve => {
       let index = 0;
-      const chunkSize = 15;
-      const intervalMs = 20;
+
+      const chunkSize = 8;
+      const intervalMs = 35;
+
+      const escapeHtml = text =>
+        (text || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
 
       this.fakeStreamTimer =
         setInterval(() => {
@@ -92,7 +109,9 @@ export default {
 
           assistantNode.innerHTML = `
             <strong>Nexus</strong><br>
-            ${partial.replace(
+            ${escapeHtml(
+              partial
+            ).replace(
               /\n/g,
               "<br>"
             )}
