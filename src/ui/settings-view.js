@@ -431,17 +431,22 @@ export default class SettingsView {
 
       console.error(
         "message:",
-        error?.message
+        error
+          ? error.message
+          : undefined
       );
 
       console.error(
         "stack:",
-        error?.stack
+        error
+          ? error.stack
+          : undefined
       );
 
       alert(
-        error?.message ||
-        "Unknown model load error"
+        (error &&
+          error.message) ||
+          "Unknown model load error"
       );
 
       modelEl.innerHTML =
