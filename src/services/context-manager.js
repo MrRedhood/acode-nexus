@@ -57,6 +57,99 @@ export default class ContextManager {
     return total;
   }
 
+  static createSummary(
+    messages
+  ) {
+    if (
+      !messages ||
+      messages.length === 0
+    ) {
+      return null;
+    }
+
+    const lines = [
+      "Conversation Summary:"
+    ];
+
+    for (const msg of messages) {
+      const role =
+        msg.role === "assistant"
+          ? "ASSISTANT"
+          : "USER";
+
+      let content =
+        msg.content || "";
+
+      content =
+        content
+          .replace(/\s+/g, " ")
+          .trim();
+
+      if (
+        content.length > 120
+      ) {
+        content =
+          content.slice(
+            0,
+            120
+          ) + "...";
+      }
+
+      lines.push(
+        `- ${role}: ${content}`
+      );
+    }
+
+    return {
+      id:
+        "summary_" +
+        Date.now(),
+      role: "system",
+      content:
+        lines.join("\n")
+    };
+  }
+
+  static compressMessages(
+    messages
+  ) {
+    if (
+      !messages ||
+      messages.length <= 6
+    ) {
+      return messages;
+    }
+
+    const preserveCount = 6;
+
+    const oldMessages =
+      messages.slice(
+        0,
+        messages.length -
+          preserveCount
+      );
+
+    const recentMessages =
+      messages.slice(
+        messages.length -
+          preserveCount
+      );
+
+    const summary =
+      this.createSummary(
+        oldMessages
+      );
+
+    if (!summary) {
+      return messages;
+    }
+
+    return [
+      summary,
+      ...recentMessages
+    ];
+  }
+
   static trimMessages(
     messages
   ) {
@@ -122,13 +215,13 @@ export default class ContextManager {
   static prepareMessages(
     messages
   ) {
-    const totalTokens =
+    const usableLimit =
+      this.getUsableInputLimit();
+
+    let totalTokens =
       this.getTotalTokens(
         messages
       );
-
-    const usableLimit =
-      this.getUsableInputLimit();
 
     if (
       totalTokens <=
@@ -141,14 +234,29 @@ export default class ContextManager {
       "[ContextManager] Overflow detected"
     );
 
-    console.warn(
-      "Current:",
-      totalTokens
-    );
+    messages =
+      this.compressMessages(
+        messages
+      );
+
+    totalTokens =
+      this.getTotalTokens(
+        messages
+      );
+
+    if (
+      totalTokens <=
+      usableLimit
+    ) {
+      console.warn(
+        "[ContextManager] Compression applied"
+      );
+
+      return messages;
+    }
 
     console.warn(
-      "Limit:",
-      usableLimit
+      "[ContextManager] Compression insufficient, trimming"
     );
 
     return this.trimMessages(
