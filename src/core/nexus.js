@@ -94,7 +94,9 @@ export default class Nexus {
     }
 
     if (migrated > 0) {
-      SessionService.save(data);
+      SessionService.save(
+        data
+      );
 
       console.log(
         `[Nexus] Migrated ${migrated} attachments`
@@ -108,33 +110,30 @@ export default class Nexus {
     return migrated;
   }
 
-  async getClipboardText() {
-    try {
-      if (
-        !navigator.clipboard
-      ) {
-        throw new Error(
-          "Clipboard API unavailable"
-        );
-      }
-
-      return await navigator.clipboard.readText();
-    } catch (error) {
-      console.error(
-        "Clipboard read failed:",
-        error
-      );
-
-      return "";
-    }
-  }
-
   async getCurrentFile() {
     try {
+      console.log(
+        "window.editorManager:",
+        window.editorManager
+      );
+
+      if (
+        typeof editorManager ===
+        "undefined"
+      ) {
+        console.error(
+          "editorManager not found"
+        );
+        return null;
+      }
+
       const editor =
         editorManager?.editor;
 
       if (!editor) {
+        console.error(
+          "editor missing"
+        );
         return null;
       }
 
@@ -142,6 +141,9 @@ export default class Nexus {
         editor.session;
 
       if (!session) {
+        console.error(
+          "session missing"
+        );
         return null;
       }
 
@@ -149,7 +151,8 @@ export default class Nexus {
         session.getValue();
 
       const filename =
-        editorManager?.activeFile?.name ||
+        editorManager
+          ?.activeFile?.name ||
         "current-file.txt";
 
       return {
@@ -176,10 +179,6 @@ export default class Nexus {
       await this.migrateAttachments();
 
       window.NexusBridge = {
-        getClipboardText:
-          this.getClipboardText.bind(
-            this
-          ),
         getCurrentFile:
           this.getCurrentFile.bind(
             this
