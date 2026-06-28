@@ -40,64 +40,6 @@ export default class ChatView {
       );
   }
 
-  async attachClipboard() {
-    try {
-      if (
-        !window.NexusBridge
-      ) {
-        this.showToast(
-          "Nexus bridge unavailable"
-        );
-        return;
-      }
-
-      const text =
-        await window.NexusBridge.getClipboardText();
-
-      if (!text || !text.trim()) {
-        this.showToast(
-          "Clipboard empty"
-        );
-        return;
-      }
-
-      const attachment = {
-        id:
-          "att_" +
-          Date.now() +
-          "_" +
-          Math.random()
-            .toString(36)
-            .slice(2),
-
-        name:
-          "clipboard.txt",
-
-        size: text.length,
-        type: "clipboard",
-        mimeType:
-          "text/plain",
-        content: text
-      };
-
-      this.pendingAttachments.push(
-        attachment
-      );
-
-      await this.renderAttachmentPreview();
-
-      this.showToast(
-        "Clipboard attached"
-      );
-    } catch (error) {
-      console.error(error);
-
-      this.showToast(
-        "Clipboard attach failed"
-      );
-    }
-  }
-
   async attachCurrentFile() {
     try {
       if (
