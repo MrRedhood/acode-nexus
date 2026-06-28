@@ -1,5 +1,6 @@
 import SessionService from "../../services/session-service.js";
 import StorageService from "../../services/storage-service.js";
+import AttachmentStorage from "../../services/attachment-storage.js";
 
 export default {
   render() {
@@ -158,7 +159,7 @@ export default {
 
   estimateTokens(charCount) {
     return Math.ceil(
-      charCount / 4
+      charCount / 3
     );
   },
 
@@ -187,7 +188,36 @@ export default {
     return String(value);
   },
 
-  updateTokenCounter() {
+  async calculateAttachmentChars(
+    attachmentIds = []
+  ) {
+    let total = 0;
+
+    for (const id of attachmentIds) {
+      try {
+        const attachment =
+          await AttachmentStorage.getAttachment(
+            id
+          );
+
+        if (attachment) {
+          total +=
+            (
+              attachment.content ||
+              ""
+            ).length;
+        }
+      } catch (error) {
+        console.error(
+          error
+        );
+      }
+    }
+
+    return total;
+  },
+
+  async updateTokenCounter() {
     const counter =
       this.container.querySelector(
         "#token-counter"
@@ -208,10 +238,28 @@ export default {
     let totalChars =
       input.value.length;
 
-    messages.forEach(msg => {
+    for (const msg of messages) {
       totalChars +=
-        msg.content.length;
-    });
+        (
+          msg.content || ""
+        ).length;
+
+      totalChars +=
+        await this.calculateAttachmentChars(
+          msg.attachmentIds || []
+        );
+    }
+
+    const pending =
+      this.pendingAttachments ||
+      [];
+
+    for (const att of pending) {
+      totalChars +=
+        (
+          att.content || ""
+        ).length;
+    }
 
     const tokens =
       this.estimateTokens(
@@ -232,6 +280,23 @@ export default {
       this.formatTokenLimit(
         contextLimit
       );
+
+    const usage =
+      tokens /
+      contextLimit;
+
+    counter.style.color =
+      "";
+
+    if (usage >= 0.95) {
+      counter.style.color =
+        "#ff4d4d";
+    } else if (
+      usage >= 0.8
+    ) {
+      counter.style.color =
+        "#ffb84d";
+    }
 
     counter.textContent =
       `Used: ${display} / ${limitDisplay}`;
