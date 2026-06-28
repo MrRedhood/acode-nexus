@@ -180,115 +180,108 @@ export default class Nexus {
   }
 
   debugWorkspace() {
-    try {
-      console.log(
-        "[NEXUS] Workspace debug start"
+  try {
+    console.log(
+      "[NEXUS] Workspace debug start"
+    );
+
+    const fs =
+      acode.require("fs");
+
+    const fileList =
+      acode.require(
+        "fileList"
       );
 
-      const fs =
-        acode.require("fs");
+    console.log(
+      "fs type:",
+      typeof fs
+    );
 
-      const fileList =
-        acode.require(
-          "fileList"
-        );
+    console.log(
+      "fs keys:",
+      Object.keys(
+        fs || {}
+      )
+    );
 
-      console.log(
-        "fs type:",
-        typeof fs
-      );
+    console.log(
+      "fs full:",
+      fs
+    );
 
-      console.log(
-        "fs keys:",
-        Object.keys(
-          fs || {}
-        )
-      );
+    console.log(
+      "FS METHODS:"
+    );
 
-      console.log(
-        "fs full:",
+    console.log(
+      Object.getOwnPropertyNames(
         fs
+      )
+    );
+
+    for (const key in fs) {
+      console.log(
+        "method:",
+        key,
+        typeof fs[key]
       );
+    }
+
+    console.log(
+      "fileList type:",
+      typeof fileList
+    );
+
+    console.log(
+      "fileList keys:",
+      Object.keys(
+        fileList || {}
+      )
+    );
+
+    try {
+      const files =
+        fileList(
+          node => ({
+            name:
+              node.name,
+            url:
+              node.url,
+            isDir:
+              !!node.children
+          })
+        );
 
       console.log(
-        "fileList type:",
-        typeof fileList
-      );
-
-      console.log(
-        "fileList keys:",
-        Object.keys(
-          fileList || {}
+        "WORKSPACE FILES:",
+        files.slice(
+          0,
+          20
         )
       );
 
       console.log(
-        "fileList full:",
-        fileList
+        "TOTAL FILES:",
+        files.length
       );
-
-      try {
-        const files =
-          fileList(
-            node => ({
-              name:
-                node.name,
-              url:
-                node.url,
-              isDir:
-                !!node.children
-            })
-          );
-
-        console.log(
-          "WORKSPACE FILES:",
-          files.slice(
-            0,
-            20
-          )
-        );
-
-        console.log(
-          "TOTAL FILES:",
-          files.length
-        );
-      } catch (error) {
-        console.error(
-          "fileList execute failed:",
-          error
-        );
-      }
-
-      if (
-        fileList &&
-        fileList.off
-      ) {
-        console.log(
-          "fileList.off source:"
-        );
-
-        try {
-          console.log(
-            fileList.off.toString()
-          );
-        } catch (error) {
-          console.error(
-            "fileList.off.toString failed:",
-            error
-          );
-        }
-      }
-
-      return true;
     } catch (error) {
       console.error(
-        "[NEXUS] Workspace debug failed:",
+        "fileList execute failed:",
         error
       );
-
-      return false;
     }
+
+    return true;
+  } catch (error) {
+    console.error(
+      "[NEXUS] Workspace debug failed:",
+      error
+    );
+
+    return false;
   }
+}
 
   async init() {
     try {
