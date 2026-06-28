@@ -128,69 +128,48 @@ export default class WorkspaceManager {
 
       await this.scanWorkspace();
 
-      console.log(
-        "editorManager:",
-        typeof editorManager
-      );
-
       if (
         typeof editorManager !==
         "undefined"
       ) {
-        console.log(
-          "ACTIVE FILE:",
-          editorManager.activeFile
-        );
-
-        if (
-          editorManager.activeFile
-        ) {
-          try {
-            console.log(
-              "ACTIVE FILE PROPS:",
-              Object.getOwnPropertyNames(
-                editorManager.activeFile
-              )
-            );
-          } catch (err) {
-            console.error(err);
-          }
-        }
-
         try {
-          const file =
-            editorManager.getFile();
+          const content =
+            editorManager.editor.getValue();
 
           console.log(
-            "getFile():",
-            file
+            "EDITOR CONTENT LENGTH:",
+            content.length
           );
 
-          if (file) {
-            console.log(
-              "getFile props:",
-              Object.getOwnPropertyNames(
-                file
-              )
-            );
-          }
+          console.log(
+            "EDITOR CONTENT SAMPLE:"
+          );
+
+          console.log(
+            content.slice(
+              0,
+              500
+            )
+          );
         } catch (err) {
           console.error(
-            "getFile failed:",
+            "getValue failed:",
             err
           );
         }
 
         try {
           console.log(
-            "editor:",
+            "SESSION:",
             editorManager.editor
+              .session
           );
 
           console.log(
-            "editor props:",
+            "SESSION PROPS:",
             Object.getOwnPropertyNames(
               editorManager.editor
+                .session
             )
           );
         } catch (err) {
