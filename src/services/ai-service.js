@@ -3,6 +3,7 @@ import StorageService from "./storage-service.js";
 import SessionService from "./session-service.js";
 import AttachmentStorage from "./attachment-storage.js";
 import ContextManager from "./context-manager.js";
+import SearchService from "./search-service.js";
 
 const MAX_ATTACHMENT_CHARS =
   120000;
@@ -94,7 +95,10 @@ export default class AIService {
     const remaining =
       match[2] || "";
 
-    if (!COMMANDS[command]) {
+    if (
+      command !== "search" &&
+      !COMMANDS[command]
+    ) {
       return null;
     }
 
@@ -238,10 +242,50 @@ ${finalContent}`,
               "[No additional content provided]";
           }
 
-          cloned.content =
-            COMMANDS[
-              parsed.command
-            ].prefix + content;
+          if (
+            parsed.command ===
+            "search"
+          ) {
+            const results =
+              SearchService.search(
+                content
+              );
+
+            const workspaceText =
+              results.workspace.length
+                ? results.workspace
+                    .map(
+                      file =>
+                        `- ${file.name} (${file.path})`
+                    )
+                    .join("\n")
+                : "No matching files";
+
+            const currentFileText =
+              results.currentFile.length
+                ? results.currentFile
+                    .map(
+                      match =>
+                        `Line ${match.line}: ${match.text}`
+                    )
+                    .join("\n")
+                : "No content matches";
+
+            cloned.content = `
+Search query: ${content}
+
+Workspace matches:
+${workspaceText}
+
+Current file matches:
+${currentFileText}
+`;
+          } else {
+            cloned.content =
+              COMMANDS[
+                parsed.command
+              ].prefix + content;
+          }
         }
 
         if (
@@ -285,7 +329,7 @@ ${finalContent}`,
         }
       }
 
-      processed.push(
+            processed.push(
         cloned
       );
     }
