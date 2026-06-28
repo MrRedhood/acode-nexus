@@ -45,101 +45,79 @@ export default class WorkspaceManager {
         fileList
       );
 
+      const result =
+        fileList();
+
+      console.log(
+        "file count:",
+        result.length
+      );
+
       if (
-        typeof fileList ===
-        "function"
+        Array.isArray(result) &&
+        result.length > 0
       ) {
-        try {
-          const result =
-            fileList();
+        const sample =
+          result[0];
 
-          console.log(
-            "file count:",
-            Array.isArray(
-              result
-            )
-              ? result.length
-              : "not array"
+        console.log(
+          "sample file:",
+          sample
+        );
+
+        console.log(
+          "own keys:",
+          Object.getOwnPropertyNames(
+            sample
+          )
+        );
+
+        const proto =
+          Object.getPrototypeOf(
+            sample
           );
 
-          if (
-            Array.isArray(
-              result
-            ) &&
-            result.length > 0
-          ) {
-            const sample =
-              result[0];
+        console.log(
+          "prototype:",
+          proto
+        );
 
+        console.log(
+          "prototype keys:",
+          Object.getOwnPropertyNames(
+            proto
+          )
+        );
+
+        for (const key of Object.getOwnPropertyNames(
+          proto
+        )) {
+          try {
             console.log(
-              "sample file:",
-              sample
+              "proto prop:",
+              key,
+              sample[key]
             );
-
+          } catch (err) {
             console.log(
-              "sample keys:",
-              Object.getOwnPropertyNames(
-                sample
-              )
+              "proto prop error:",
+              key
             );
-
-            for (const key in sample) {
-              console.log(
-                "sample prop:",
-                key,
-                sample[key]
-              );
-            }
-
-            this.workspaceFiles =
-              result.map(
-                (
-                  file,
-                  index
-                ) => {
-                  let name =
-                    "unknown";
-                  let url = "";
-
-                  try {
-                    if (
-                      file &&
-                      typeof file ===
-                        "object"
-                    ) {
-                      name =
-                        file.name ||
-                        file.filename ||
-                        file.title ||
-                        `file_${index}`;
-
-                      url =
-                        file.url ||
-                        file.uri ||
-                        file.path ||
-                        "";
-                    }
-                  } catch (err) {
-                    console.error(
-                      "file parse error:",
-                      err
-                    );
-                  }
-
-                  return {
-                    name,
-                    url,
-                    raw: file
-                  };
-                }
-              );
           }
-        } catch (error) {
-          console.error(
-            "fileList execute failed:",
-            error
-          );
         }
+
+        this.workspaceFiles =
+          result.map(
+            (
+              file,
+              index
+            ) => ({
+              name:
+                "file_" +
+                index,
+              raw: file
+            })
+          );
       }
 
       console.log(
@@ -186,69 +164,6 @@ export default class WorkspaceManager {
       console.log(
         "===== WORKSPACE DEBUG START ====="
       );
-
-      console.log(
-        "acode exists:",
-        typeof acode
-      );
-
-      if (
-        typeof acode ===
-        "undefined"
-      ) {
-        console.log(
-          "No acode"
-        );
-        return;
-      }
-
-      console.log(
-        "acode keys:",
-        Object.getOwnPropertyNames(
-          acode
-        )
-      );
-
-      if (acode.require) {
-        console.log(
-          "require exists"
-        );
-
-        const modules = [
-          "fs",
-          "fileList",
-          "url",
-          "helpers"
-        ];
-
-        for (const name of modules) {
-          try {
-            const mod =
-              acode.require(
-                name
-              );
-
-            console.log(
-              `MODULE ${name}:`,
-              mod
-            );
-
-            if (mod) {
-              console.log(
-                `${name} props:`,
-                Object.getOwnPropertyNames(
-                  mod
-                )
-              );
-            }
-          } catch (err) {
-            console.error(
-              `Failed loading ${name}:`,
-              err
-            );
-          }
-        }
-      }
 
       await this.scanWorkspace();
 
