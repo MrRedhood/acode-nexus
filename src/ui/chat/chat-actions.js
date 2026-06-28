@@ -42,6 +42,77 @@ export default {
     await this.generateAssistantReply();
   },
 
+  async fakeStreamResponse(
+    assistantNode,
+    fullText
+  ) {
+    return new Promise(resolve => {
+      let index = 0;
+      const chunkSize = 15;
+      const intervalMs = 20;
+
+      const timer =
+        setInterval(() => {
+          if (
+            !this.isGenerating
+          ) {
+            clearInterval(
+              timer
+            );
+            resolve();
+            return;
+          }
+
+          index += chunkSize;
+
+          const partial =
+            fullText.slice(
+              0,
+              index
+            );
+
+          const actions =
+            assistantNode.querySelector(
+              ".nexus-msg-actions"
+            );
+
+          assistantNode.innerHTML = `
+            <strong>Nexus</strong><br>
+            ${partial.replace(
+              /\n/g,
+              "<br>"
+            )}
+          `;
+
+          if (actions) {
+            assistantNode.appendChild(
+              actions
+            );
+          }
+
+          const box =
+            this.container.querySelector(
+              "#chat-messages"
+            );
+
+          if (box) {
+            box.scrollTop =
+              box.scrollHeight;
+          }
+
+          if (
+            index >=
+            fullText.length
+          ) {
+            clearInterval(
+              timer
+            );
+            resolve();
+          }
+        }, intervalMs);
+    });
+  },
+
   async generateAssistantReply() {
     const sendBtn =
       this.container.querySelector(
@@ -104,13 +175,42 @@ export default {
 
       const assistantNode =
         this.appendMessageObject(
-          assistantMessage,
+          {
+            ...assistantMessage,
+            content: ""
+          },
           false,
           true,
           true
         );
 
-      if (assistantNode) {
+      await this.fakeStreamResponse(
+        assistantNode,
+        assistantMessage.content
+      );
+
+      if (
+        assistantNode &&
+        this.isGenerating
+      ) {
+        const actions =
+          assistantNode.querySelector(
+            ".nexus-msg-actions"
+          );
+
+        assistantNode.innerHTML = `
+          <strong>Nexus</strong><br>
+          ${parseMarkdown(
+            assistantMessage.content
+          )}
+        `;
+
+        if (actions) {
+          assistantNode.appendChild(
+            actions
+          );
+        }
+
         this.attachCodeCopyListeners(
           assistantNode
         );
@@ -123,7 +223,8 @@ export default {
       this.stopThinkingAnimation();
 
       if (
-        error?.name === "AbortError"
+        error?.name ===
+        "AbortError"
       ) {
         if (
           thinkingNode &&
