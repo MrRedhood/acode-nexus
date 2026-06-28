@@ -288,73 +288,7 @@ export default {
     }
   },
 
-    async attachClipboard() {
-    try {
-      if (
-        !navigator.clipboard
-      ) {
-        this.showToast(
-          "Clipboard unsupported"
-        );
-        return;
-      }
-
-      const text =
-        await navigator.clipboard.readText();
-
-      if (!text.trim()) {
-        this.showToast(
-          "Clipboard is empty"
-        );
-        return;
-      }
-
-      const attachment = {
-        id:
-          "att_" +
-          Date.now() +
-          "_" +
-          Math.random()
-            .toString(36)
-            .slice(2),
-
-        name:
-          "clipboard.txt",
-
-        size: text.length,
-        type: "clipboard",
-        mimeType:
-          "text/plain",
-        content: text
-      };
-
-      if (
-        !this.pendingAttachments
-      ) {
-        this.pendingAttachments =
-          [];
-      }
-
-      this.pendingAttachments.push(
-        attachment
-      );
-
-      await this.renderAttachmentPreview();
-
-      this.showToast(
-        "Clipboard attached"
-      );
-    } catch (error) {
-      console.error(
-        "Clipboard error:",
-        error
-      );
-
-      this.showToast(
-        "Clipboard access failed"
-      );
-    }
-  },
+  
 
   renderAttachmentCard(
     att,
