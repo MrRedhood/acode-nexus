@@ -145,8 +145,9 @@ export default class WorkspaceManager {
         );
 
         console.log(
-          "editorManager.files:",
-          editorManager.files
+          "editorManager.files length:",
+          editorManager?.files
+            ?.length
         );
 
         if (
@@ -155,49 +156,47 @@ export default class WorkspaceManager {
           ) &&
           editorManager.files.length
         ) {
-          console.log(
-            "first opened file:",
-            editorManager.files[0]
-          );
+          editorManager.files.forEach(
+            (file, index) => {
+              console.log(
+                "EDITOR FILE",
+                index,
+                file
+              );
 
-          console.log(
-            "opened file props:",
-            Object.getOwnPropertyNames(
-              editorManager.files[0]
-            )
+              try {
+                console.log(
+                  "EDITOR FILE PROPS",
+                  index,
+                  Object.getOwnPropertyNames(
+                    file
+                  )
+                );
+              } catch (err) {
+                console.error(
+                  "prop read failed",
+                  err
+                );
+              }
+
+              try {
+                console.log(
+                  "EDITOR FILE JSON",
+                  index,
+                  file.toJSON
+                    ? file.toJSON()
+                    : "no toJSON"
+                );
+              } catch (err) {
+                console.error(
+                  "toJSON failed",
+                  err
+                );
+              }
+            }
           );
         }
       }
-
-      console.log(
-        "acode.fileBrowser:",
-        typeof acode.fileBrowser
-      );
-
-      if (acode.fileBrowser) {
-        console.log(
-          "fileBrowser props:",
-          Object.getOwnPropertyNames(
-            acode.fileBrowser
-          )
-        );
-      }
-
-      const windowKeys =
-        Object.keys(window).filter(
-          key =>
-            key
-              .toLowerCase()
-              .includes("file") ||
-            key
-              .toLowerCase()
-              .includes("editor")
-        );
-
-      console.log(
-        "window suspicious keys:",
-        windowKeys
-      );
 
       console.log(
         "===== WORKSPACE DEBUG END ====="
