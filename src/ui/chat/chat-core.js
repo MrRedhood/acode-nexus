@@ -1,4 +1,5 @@
 import SessionService from "../../services/session-service.js";
+import StorageService from "../../services/storage-service.js";
 
 export default {
   render() {
@@ -8,7 +9,7 @@ export default {
       <div class="nexus-input-area">
         <div class="nexus-token-bar">
           <span id="token-counter">
-            Used: 0 / 128K
+            Used: 0 / 32K
           </span>
         </div>
 
@@ -161,6 +162,31 @@ export default {
     );
   },
 
+  formatTokenLimit(value) {
+    if (value >= 1000000) {
+      return (
+        (
+          value /
+          1000000
+        ).toFixed(1)
+          .replace(".0", "") +
+        "M"
+      );
+    }
+
+    if (value >= 1000) {
+      return (
+        (
+          value / 1000
+        ).toFixed(1)
+          .replace(".0", "") +
+        "K"
+      );
+    }
+
+    return String(value);
+  },
+
   updateTokenCounter() {
     const counter =
       this.container.querySelector(
@@ -193,13 +219,21 @@ export default {
       );
 
     const display =
-      tokens >= 1000
-        ? (
-            tokens / 1000
-          ).toFixed(1) + "K"
-        : tokens;
+      this.formatTokenLimit(
+        tokens
+      );
+
+    const contextLimit =
+      StorageService.get(
+        "contextLimit"
+      ) || 32000;
+
+    const limitDisplay =
+      this.formatTokenLimit(
+        contextLimit
+      );
 
     counter.textContent =
-      `Used: ${display} / 128K`;
+      `Used: ${display} / ${limitDisplay}`;
   }
 };
