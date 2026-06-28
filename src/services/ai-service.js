@@ -223,7 +223,7 @@ ${attachment.content || ""}`;
     return processed;
   }
 
-    static async getModels(
+  static async getModels(
     provider = null,
     apiKey = null
   ) {
@@ -316,9 +316,14 @@ ${attachment.content || ""}`;
           ...msg
         }));
 
-    const processedMessages =
+    let processedMessages =
       await this.preprocessMessages(
         cleanedMessages
+      );
+
+    processedMessages =
+      ContextManager.prepareMessages(
+        processedMessages
       );
 
     return {
@@ -329,7 +334,7 @@ ${attachment.content || ""}`;
     };
   }
 
-    static async sendMessage(
+  static async sendMessage(
     signal = null
   ) {
     const {
