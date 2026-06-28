@@ -38,6 +38,18 @@ export default class ChatView {
       new CommandMenu(
         this
       );
+
+    window.addEventListener(
+      "nexus-settings-updated",
+      () => {
+        if (
+          typeof this.updateTokenCounter ===
+          "function"
+        ) {
+          this.updateTokenCounter();
+        }
+      }
+    );
   }
 
   async attachCurrentFile() {
