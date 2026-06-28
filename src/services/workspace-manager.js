@@ -130,18 +130,50 @@ export default class WorkspaceManager {
   }
 
   static async debug() {
-    try {
-      console.log(
-        "===== WORKSPACE DEBUG START ====="
-      );
+  try {
+    console.log(
+      "===== WORKSPACE DEBUG START ====="
+    );
 
-      await this.scanWorkspace();
+    await this.scanWorkspace();
 
-      console.log(
-        "===== WORKSPACE DEBUG END ====="
-      );
-    } catch (err) {
-      console.error(err);
+    const fs =
+      acode.require("fs");
+
+    console.log(
+      "fs module:",
+      fs
+    );
+
+    console.log(
+      "fs props:",
+      Object.getOwnPropertyNames(
+        fs
+      )
+    );
+
+    for (const key of Object.getOwnPropertyNames(
+      fs
+    )) {
+      try {
+        console.log(
+          "fs method:",
+          key,
+          typeof fs[key]
+        );
+      } catch (err) {
+        console.error(
+          "fs inspect failed:",
+          key,
+          err
+        );
+      }
     }
+
+    console.log(
+      "===== WORKSPACE DEBUG END ====="
+    );
+  } catch (err) {
+    console.error(err);
   }
 }
