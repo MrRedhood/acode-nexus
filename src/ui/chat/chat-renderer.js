@@ -113,18 +113,84 @@ export default {
   },
 
   copyText(content) {
-    navigator.clipboard
-      .writeText(content)
-      .then(() =>
-        this.showToast(
-          "Copied!"
-        )
-      )
-      .catch(() =>
+    if (!content) {
+      this.showToast(
+        "Nothing to copy"
+      );
+      return;
+    }
+
+    const fallbackCopy = () => {
+      try {
+        const textarea =
+          document.createElement(
+            "textarea"
+          );
+
+        textarea.value =
+          content;
+
+        textarea.style.position =
+          "fixed";
+        textarea.style.left =
+          "-9999px";
+        textarea.style.top =
+          "0";
+
+        document.body.appendChild(
+          textarea
+        );
+
+        textarea.focus();
+        textarea.select();
+
+        const success =
+          document.execCommand(
+            "copy"
+          );
+
+        document.body.removeChild(
+          textarea
+        );
+
+        if (success) {
+          this.showToast(
+            "Copied!"
+          );
+        } else {
+          this.showToast(
+            "Copy failed"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Copy fallback failed:",
+          error
+        );
+
         this.showToast(
           "Copy failed"
-        )
-      );
+        );
+      }
+    };
+
+    if (
+      navigator.clipboard &&
+      navigator.clipboard.writeText
+    ) {
+      navigator.clipboard
+        .writeText(content)
+        .then(() => {
+          this.showToast(
+            "Copied!"
+          );
+        })
+        .catch(() => {
+          fallbackCopy();
+        });
+    } else {
+      fallbackCopy();
+    }
   },
 
   attachCodeCopyListeners(
