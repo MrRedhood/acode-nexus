@@ -288,8 +288,6 @@ export default {
     }
   },
 
-  
-
   renderAttachmentCard(
     att,
     removable = false,
