@@ -1,16 +1,38 @@
 {
-  "gemini": {
-    "gemini-2.5-flash": 1048576,
-    "gemini-2.5-pro": 1048576,
-    "gemini-1.5-pro": 2097152
-  },
+  "version": 1,
+  "updatedAt": "2026-06-28",
+  "providers": {
+    "gemini": {
+      "gemini-2.5-pro": 1048576,
+      "gemini-2.5-flash": 1048576,
+      "gemini-2.0-flash": 1048576,
+      "gemini-1.5-pro": 2097152,
+      "gemini-1.5-flash": 1048576
+    },
 
-  "openai": {
-    "gpt-4o": 128000,
-    "gpt-4.1": 1048576
-  },
+    "openrouter": {
+      "openai/gpt-4o": 128000,
+      "openai/gpt-4.1": 1047576,
+      "anthropic/claude-sonnet-4": 200000,
+      "anthropic/claude-opus-4": 200000
+    },
 
-  "anthropic": {
-    "claude-sonnet-4": 200000
+    "deepinfra": {
+      "meta-llama/Meta-Llama-3.1-8B-Instruct": 128000,
+      "meta-llama/Meta-Llama-3.1-70B-Instruct": 128000,
+      "Qwen/Qwen2.5-72B-Instruct": 131072
+    },
+
+    "openai": {
+      "gpt-4o": 128000,
+      "gpt-4.1": 1047576,
+      "gpt-4-turbo": 128000
+    },
+
+    "anthropic": {
+      "claude-sonnet-4": 200000,
+      "claude-opus-4": 200000,
+      "claude-3-7-sonnet": 200000
+    }
   }
 }
