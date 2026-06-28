@@ -48,12 +48,6 @@ export default {
         "#send-btn"
       );
 
-    const escapeHtml = text =>
-      (text || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-
     this.isGenerating = true;
     this.activeController =
       new AbortController();
@@ -77,9 +71,6 @@ export default {
       thinkingNode
     );
 
-    let streamedText = "";
-    let assistantNode = null;
-
     try {
       const assistantMessage = {
         id:
@@ -93,86 +84,33 @@ export default {
         content: ""
       };
 
-      await AIService.sendMessageStream(
-        fullText => {
-          streamedText = fullText;
-
-          if (!assistantNode) {
-            this.stopThinkingAnimation();
-
-            if (
-              thinkingNode &&
-              thinkingNode.parentNode
-            ) {
-              thinkingNode.remove();
-            }
-
-            assistantNode =
-              this.appendMessageObject(
-                assistantMessage,
-                false,
-                true,
-                true
-              );
-          }
-
-          const actions =
-            assistantNode.querySelector(
-              ".nexus-msg-actions"
-            );
-
-          assistantNode.innerHTML = `
-            <strong>Nexus</strong><br>
-            ${escapeHtml(
-              fullText
-            ).replace(
-              /\n/g,
-              "<br>"
-            )}
-          `;
-
-          if (actions) {
-            assistantNode.appendChild(
-              actions
-            );
-          }
-
-          const box =
-            this.container.querySelector(
-              "#chat-messages"
-            );
-
-          if (box) {
-            box.scrollTop =
-              box.scrollHeight;
-          }
-        },
-        this.activeController.signal
-      );
+      const response =
+        await AIService.sendMessage(
+          this.activeController.signal
+        );
 
       assistantMessage.content =
-        streamedText ||
+        response ||
         "No response returned.";
 
+      this.stopThinkingAnimation();
+
+      if (
+        thinkingNode &&
+        thinkingNode.parentNode
+      ) {
+        thinkingNode.remove();
+      }
+
+      const assistantNode =
+        this.appendMessageObject(
+          assistantMessage,
+          false,
+          true,
+          true
+        );
+
       if (assistantNode) {
-        const actions =
-          assistantNode.querySelector(
-            ".nexus-msg-actions"
-          );
-
-        assistantNode.innerHTML = `
-          <strong>Nexus</strong><br>
-          ${parseMarkdown(
-            assistantMessage.content
-          )}
-        `;
-
-        if (actions) {
-          assistantNode.appendChild(
-            actions
-          );
-        }
-
         this.attachCodeCopyListeners(
           assistantNode
         );
@@ -280,10 +218,8 @@ export default {
 
       this.editingMessageId =
         null;
-
       this.editingAttachmentIds =
         [];
-
       this.pendingAttachments =
         [];
 
