@@ -86,13 +86,17 @@ export default class ContextService {
       );
 
       console.error(error);
+
       console.error(
         "message:",
-        error?.message
+        error &&
+          error.message
       );
+
       console.error(
         "stack:",
-        error?.stack
+        error &&
+          error.stack
       );
 
       throw error;
@@ -146,7 +150,9 @@ export default class ContextService {
       await this.fetchRegistry();
 
     const providerModels =
-      registry?.providers?.[
+      registry &&
+      registry.providers &&
+      registry.providers[
         provider
       ];
 
