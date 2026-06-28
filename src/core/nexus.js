@@ -289,6 +289,7 @@ export default class Nexus {
 
       await this.injectStyles();
       await this.migrateAttachments();
+      WorkspaceManager.debug();
 
       window.NexusBridge = {
         getCurrentFile:
