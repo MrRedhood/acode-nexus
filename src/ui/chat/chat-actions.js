@@ -236,11 +236,13 @@ export default {
       input.value.trim();
 
     if (
-      !text &&
-      this.pendingAttachments.length === 0 &&
-      this.editingAttachmentIds.length === 0
-    ) {
-      return;
+  !text &&
+  (!this.pendingAttachments ||
+    this.pendingAttachments.length === 0) &&
+  (!this.editingAttachmentIds ||
+    this.editingAttachmentIds.length === 0)
+) {
+  return;
     }
 
     this.commandMenu.hide();
