@@ -205,3 +205,5 @@ export default class WorkspaceManager {
     console.error(err);
   }
 }
+
+  }
