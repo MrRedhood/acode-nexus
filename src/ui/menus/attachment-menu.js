@@ -20,10 +20,6 @@ export default class AttachmentMenu {
           Attach Code File
         </button>
 
-        <button data-type="clipboard">
-          Attach Clipboard
-        </button>
-
         <button data-type="current-file">
           Attach Current File
         </button>
@@ -65,24 +61,6 @@ export default class AttachmentMenu {
             }
 
             try {
-              if (
-                type ===
-                "clipboard"
-              ) {
-                if (
-                  this.chatView
-                    .attachClipboard
-                ) {
-                  await this.chatView.attachClipboard();
-                } else {
-                  this.chatView.showToast(
-                    "Clipboard not implemented"
-                  );
-                }
-
-                return;
-              }
-
               if (
                 type ===
                 "current-file"
