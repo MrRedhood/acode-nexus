@@ -53,6 +53,21 @@ export default class WorkspaceManager {
       const result =
         fileList();
 
+      try {
+        const sample =
+          result[0];
+
+        console.log(
+          "toJSON:",
+          sample.toJSON()
+        );
+      } catch (e) {
+        console.error(
+          "toJSON failed:",
+          e
+        );
+      }
+
       if (
         !Array.isArray(
           result
