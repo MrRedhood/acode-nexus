@@ -1,75 +1,126 @@
 export default class GeminiProvider {
-  static async fetchWithTimeout(
-    url,
-    options = {},
+  static mergeSignals(
+    externalSignal,
     timeout = 15000
   ) {
     const controller =
       new AbortController();
 
+    let aborted = false;
+
+    const abort = () => {
+      if (aborted) return;
+      aborted = true;
+      controller.abort();
+    };
+
     const timer =
-      setTimeout(() => {
-        controller.abort();
-      }, timeout);
+      setTimeout(
+        abort,
+        timeout
+      );
 
-    try {
-      const response =
-        await fetch(url, {
-          ...options,
-          signal:
-            options.signal ||
-            controller.signal
-        });
-
-      clearTimeout(timer);
-      return response;
-    } catch (error) {
-      clearTimeout(timer);
-      throw error;
+    if (externalSignal) {
+      if (
+        externalSignal.aborted
+      ) {
+        abort();
+      } else {
+        externalSignal.addEventListener(
+          "abort",
+          abort
+        );
+      }
     }
+
+    return {
+      signal:
+        controller.signal,
+      cleanup() {
+        clearTimeout(timer);
+
+        if (
+          externalSignal
+        ) {
+          externalSignal.removeEventListener(
+            "abort",
+            abort
+          );
+        }
+      }
+    };
   }
 
-  static async getModels(apiKey) {
-    console.log(
-      "[Gemini] getModels start"
+  static async fetchWithTimeout(
+    url,
+    options = {},
+    timeout = 15000
+  ) {
+    const {
+      signal,
+      cleanup
+    } = this.mergeSignals(
+      options.signal,
+      timeout
     );
 
     try {
+      return await fetch(
+        url,
+        {
+          ...options,
+          signal
+        }
+      );
+    } finally {
+      cleanup();
+    }
+  }
+
+  static async parseError(
+    response
+  ) {
+    const text =
+      await response.text();
+
+    try {
+      const json =
+        JSON.parse(text);
+
+      return (
+        json?.error
+          ?.message ||
+        text
+      );
+    } catch {
+      return text;
+    }
+  }
+
+  static async getModels(
+    apiKey
+  ) {
+    try {
       const url =
         `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-
-      console.log(
-        "[Gemini] fetching models"
-      );
 
       const response =
         await this.fetchWithTimeout(
           url,
           {},
-          15000
+          30000
         );
 
-      console.log(
-        "[Gemini] status:",
-        response.status
-      );
-
       if (!response.ok) {
-        const errorText =
-          await response.text();
-
         throw new Error(
-          `Gemini API error ${response.status}: ${errorText}`
+          await this.parseError(
+            response
+          )
         );
       }
 
       const data =
         await response.json();
-
-      console.log(
-        "[Gemini] model count:",
-        data.models?.length || 0
-      );
 
       return (
         data.models || []
@@ -119,7 +170,6 @@ export default class GeminiProvider {
         "[Gemini] getModels failed:",
         error
       );
-
       throw error;
     }
   }
@@ -129,7 +179,7 @@ export default class GeminiProvider {
   ) {
     const parts = [];
 
-        if (
+    if (
       message.content &&
       message.content.trim()
     ) {
@@ -161,8 +211,7 @@ export default class GeminiProvider {
         ) {
           parts.push({
             text:
-              `[Attachment: ${attachment.name}]\n\n` +
-              attachment.content
+              `[Attachment: ${attachment.name}]\n\n${attachment.content}`
           });
         }
       }
@@ -170,7 +219,7 @@ export default class GeminiProvider {
 
     if (!parts.length) {
       parts.push({
-        text: ""
+        text: "[Empty]"
       });
     }
 
@@ -198,11 +247,24 @@ export default class GeminiProvider {
   static extractChunkText(
     payload
   ) {
-    return (
-      payload?.candidates?.[0]
-        ?.content?.parts?.[0]
-        ?.text || ""
-    );
+    const parts =
+      payload
+        ?.candidates?.[0]
+        ?.content?.parts;
+
+    if (
+      !parts ||
+      !parts.length
+    ) {
+      return "";
+    }
+
+    return parts
+      .map(
+        part =>
+          part.text || ""
+      )
+      .join("");
   }
 
   static async chat(
@@ -231,15 +293,14 @@ export default class GeminiProvider {
               contents
             })
           },
-          30000
+          60000
         );
 
       if (!response.ok) {
-        const errorText =
-          await response.text();
-
         throw new Error(
-          errorText
+          await this.parseError(
+            response
+          )
         );
       }
 
@@ -255,7 +316,10 @@ export default class GeminiProvider {
     } catch (error) {
       if (
         error.name ===
-        "AbortError"
+          "AbortError" ||
+        error.message?.includes(
+          "aborted"
+        )
       ) {
         throw error;
       }
@@ -269,7 +333,7 @@ export default class GeminiProvider {
     }
   }
 
-    static async streamChat(
+  static async streamChat(
     apiKey,
     model,
     messages,
@@ -296,19 +360,20 @@ export default class GeminiProvider {
               contents
             })
           },
-          30000
+          60000
         );
 
       if (!response.ok) {
-        const errorText =
-          await response.text();
-
         throw new Error(
-          errorText
+          await this.parseError(
+            response
+          )
         );
       }
 
-      if (!response.body) {
+      if (
+        !response.body
+      ) {
         throw new Error(
           "Streaming not supported"
         );
@@ -334,66 +399,83 @@ export default class GeminiProvider {
           break;
         }
 
-        buffer += decoder.decode(
-          value,
-          {
-            stream: true
-          }
-        );
+        buffer +=
+          decoder.decode(
+            value,
+            {
+              stream: true
+            }
+          );
 
-        const lines =
-          buffer.split("\n");
+        const blocks =
+          buffer.split(
+            "\n\n"
+          );
 
         buffer =
-          lines.pop() || "";
+          blocks.pop() ||
+          "";
 
-        for (const line of lines) {
-          const trimmed =
-            line.trim();
+        for (const block of blocks) {
+          const lines =
+            block.split("\n");
 
-          if (
-            !trimmed ||
-            !trimmed.startsWith(
-              "data:"
-            )
-          ) {
-            continue;
-          }
+          for (const line of lines) {
+            const trimmed =
+              line.trim();
 
-          const jsonText =
-            trimmed.replace(
-              /^data:\s*/,
-              ""
-            );
-
-          try {
-            const payload =
-              JSON.parse(
-                jsonText
-              );
-
-            const chunk =
-              this.extractChunkText(
-                payload
-              );
-
-            if (!chunk) {
+            if (
+              !trimmed ||
+              !trimmed.startsWith(
+                "data:"
+              )
+            ) {
               continue;
             }
 
-            fullText += chunk;
+            const jsonText =
+              trimmed.replace(
+                /^data:\s*/,
+                ""
+              );
 
-            if (onChunk) {
-              onChunk(
-                fullText,
-                chunk
+            if (
+              jsonText ===
+              "[DONE]"
+            ) {
+              continue;
+            }
+
+            try {
+              const payload =
+                JSON.parse(
+                  jsonText
+                );
+
+              const chunk =
+                this.extractChunkText(
+                  payload
+                );
+
+              if (!chunk) {
+                continue;
+              }
+
+              fullText +=
+                chunk;
+
+              if (onChunk) {
+                onChunk(
+                  fullText,
+                  chunk
+                );
+              }
+            } catch (error) {
+              console.warn(
+                "Stream parse skip:",
+                error
               );
             }
-          } catch (error) {
-            console.warn(
-              "Stream parse skip:",
-              error
-            );
           }
         }
       }
@@ -405,7 +487,10 @@ export default class GeminiProvider {
     } catch (error) {
       if (
         error.name ===
-        "AbortError"
+          "AbortError" ||
+        error.message?.includes(
+          "aborted"
+        )
       ) {
         throw error;
       }
