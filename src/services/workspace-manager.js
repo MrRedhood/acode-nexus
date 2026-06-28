@@ -121,7 +121,7 @@ export default class WorkspaceManager {
   }
 
   static async debug() {
-  try {
+   try {
     console.log(
       "===== WORKSPACE DEBUG START ====="
     );
@@ -182,3 +182,4 @@ export default class WorkspaceManager {
     console.error(err);
   }
 }
+  }
