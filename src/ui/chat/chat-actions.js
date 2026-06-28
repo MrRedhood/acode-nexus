@@ -186,8 +186,7 @@ export default {
       this.stopThinkingAnimation();
 
       if (
-        error.name ===
-        "AbortError"
+        error?.name === "AbortError"
       ) {
         if (
           thinkingNode &&
