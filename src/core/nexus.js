@@ -130,7 +130,8 @@ export default class Nexus {
       }
 
       const editor =
-        editorManager?.editor;
+        editorManager &&
+        editorManager.editor;
 
       if (!editor) {
         console.error(
@@ -152,10 +153,17 @@ export default class Nexus {
       const content =
         session.getValue();
 
-      const filename =
-        editorManager
-          ?.activeFile?.name ||
+      let filename =
         "current-file.txt";
+
+      if (
+        editorManager &&
+        editorManager.activeFile &&
+        editorManager.activeFile.name
+      ) {
+        filename =
+          editorManager.activeFile.name;
+      }
 
       return {
         name: filename,
@@ -172,122 +180,115 @@ export default class Nexus {
   }
 
   debugWorkspace() {
-  try {
-    console.log(
-      "[NEXUS] Workspace debug start"
-    );
-
-    const fs =
-      acode.require("fs");
-
-    const fileList =
-      acode.require(
-        "fileList"
+    try {
+      console.log(
+        "[NEXUS] Workspace debug start"
       );
 
-    console.log(
-      "fs type:",
-      typeof fs
-    );
+      const fs =
+        acode.require("fs");
 
-    console.log(
-      "fs keys:",
-      Object.keys(
-        fs || {}
-      )
-    );
-
-    console.log(
-      "fs full:",
-      fs
-    );
-
-    console.log(
-      "fileList type:",
-      typeof fileList
-    );
-
-    console.log(
-      "fileList keys:",
-      Object.keys(
-        fileList || {}
-      )
-    );
-
-    console.log(
-      "fileList full:",
-      fileList
-    );
-
-    try {
-      const files =
-        fileList(
-          node => ({
-            name:
-              node.name,
-            url:
-              node.url,
-            isDir:
-              !!node.children
-          })
+      const fileList =
+        acode.require(
+          "fileList"
         );
 
       console.log(
-        "WORKSPACE FILES:",
-        files.slice(
-          0,
-          20
+        "fs type:",
+        typeof fs
+      );
+
+      console.log(
+        "fs keys:",
+        Object.keys(
+          fs || {}
         )
       );
 
       console.log(
-        "TOTAL FILES:",
-        files.length
+        "fs full:",
+        fs
       );
-    } catch (error) {
-      console.error(
-        "fileList execute failed:",
-        error
-      );
-    }
 
-    return true;
-  } catch (error) {
-    console.error(
-      "[NEXUS] Workspace debug failed:",
-      error
-    );
-
-    return false;
-  }
-}
-
-    if (fileList?.off) {
       console.log(
-        "fileList.off source:"
+        "fileList type:",
+        typeof fileList
+      );
+
+      console.log(
+        "fileList keys:",
+        Object.keys(
+          fileList || {}
+        )
+      );
+
+      console.log(
+        "fileList full:",
+        fileList
       );
 
       try {
+        const files =
+          fileList(
+            node => ({
+              name:
+                node.name,
+              url:
+                node.url,
+              isDir:
+                !!node.children
+            })
+          );
+
         console.log(
-          fileList.off.toString()
+          "WORKSPACE FILES:",
+          files.slice(
+            0,
+            20
+          )
+        );
+
+        console.log(
+          "TOTAL FILES:",
+          files.length
         );
       } catch (error) {
         console.error(
-          "fileList.off.toString failed:",
+          "fileList execute failed:",
           error
         );
       }
-    }
 
-    return true;
-  } catch (error) {
-    console.error(
-      "[NEXUS] Workspace debug failed:",
-      error
-    );
-    return false;
+      if (
+        fileList &&
+        fileList.off
+      ) {
+        console.log(
+          "fileList.off source:"
+        );
+
+        try {
+          console.log(
+            fileList.off.toString()
+          );
+        } catch (error) {
+          console.error(
+            "fileList.off.toString failed:",
+            error
+          );
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error(
+        "[NEXUS] Workspace debug failed:",
+        error
+      );
+
+      return false;
+    }
   }
-}
 
   async init() {
     try {
@@ -295,79 +296,41 @@ export default class Nexus {
         "Nexus init start"
       );
 
-      console.log("ACODE FULL:", acode);
+      console.log(
+        "ACODE FULL:",
+        acode
+      );
 
-console.log(
-  "ACODE KEYS:",
-  Object.getOwnPropertyNames(acode)
-);
+      console.log(
+        "ACODE KEYS:",
+        Object.getOwnPropertyNames(
+          acode
+        )
+      );
 
-console.log(
-  "WINDOW KEYS SAMPLE:",
-  Object.getOwnPropertyNames(window)
-    .filter(
-      key =>
-        key.toLowerCase().includes("file") ||
-        key.toLowerCase().includes("acode") ||
-        key.toLowerCase().includes("fs")
-    )
-);
-
-      try {
-        const fs =
-          acode.require("fs");
-
-        console.log(
-          "fs type:",
-          typeof fs
-        );
-
-        console.log(
-          "fs keys:",
-          Object.keys(
-            fs || {}
-          )
-        );
-
-        console.log(
-          "fs full:",
-          fs
-        );
-      } catch (e) {
-        console.error(
-          "fs fail",
-          e
-        );
-      }
-
-      try {
-        const fileList =
-          acode.require(
-            "fileList"
-          );
-
-        console.log(
-          "fileList type:",
-          typeof fileList
-        );
-
-        console.log(
-          "fileList keys:",
-          Object.keys(
-            fileList || {}
-          )
-        );
-
-        console.log(
-          "fileList full:",
-          fileList
-        );
-      } catch (e) {
-        console.error(
-          "fileList fail",
-          e
-        );
-      }
+      console.log(
+        "WINDOW KEYS SAMPLE:",
+        Object.getOwnPropertyNames(
+          window
+        ).filter(
+          key =>
+            key
+              .toLowerCase()
+              .includes(
+                "file"
+              ) ||
+            key
+              .toLowerCase()
+              .includes(
+                "acode"
+              ) ||
+            key
+              .toLowerCase()
+              .includes(
+                "fs"
+              )
+        )
+      );
 
       await this.injectStyles();
       await this.migrateAttachments();
