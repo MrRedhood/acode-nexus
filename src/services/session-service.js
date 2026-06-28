@@ -116,8 +116,9 @@ export default class SessionService {
       !data.currentSessionId
     ) {
       data.currentSessionId =
-        data.sessions[0]?.id ||
-        null;
+        data.sessions.length > 0
+          ? data.sessions[0].id
+          : null;
     }
 
     return data;
@@ -182,7 +183,7 @@ export default class SessionService {
     }
   }
 
-    static save(data) {
+  static save(data) {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify(data)
@@ -307,7 +308,7 @@ export default class SessionService {
     return true;
   }
 
-    static duplicateSession(
+  static duplicateSession(
     sessionId
   ) {
     const data = this.load();
@@ -478,7 +479,7 @@ export default class SessionService {
     return message;
   }
 
-    static addExistingMessage(
+  static addExistingMessage(
     message
   ) {
     const data = this.load();
