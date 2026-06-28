@@ -1,7 +1,7 @@
 import Sidebar from "../ui/sidebar.js";
 import SessionService from "../services/session-service.js";
 import AttachmentStorage from "../services/attachment-storage.js";
-import WorkspaceManager from "../services/workspace-manager.js";
+import WorkspaceManager from "./workspace-manager.js";
 
 export default class Nexus {
   constructor(baseUrl, page, options) {
