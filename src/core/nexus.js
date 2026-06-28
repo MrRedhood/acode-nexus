@@ -172,62 +172,111 @@ export default class Nexus {
   }
 
   debugWorkspace() {
+  try {
+    console.log(
+      "[NEXUS] Workspace debug start"
+    );
+
+    const fs =
+      acode.require("fs");
+
+    const fileList =
+      acode.require(
+        "fileList"
+      );
+
+    console.log(
+      "fs type:",
+      typeof fs
+    );
+
+    console.log(
+      "fs keys:",
+      Object.keys(
+        fs || {}
+      )
+    );
+
+    console.log(
+      "fs full:",
+      fs
+    );
+
+    console.log(
+      "fileList type:",
+      typeof fileList
+    );
+
+    console.log(
+      "fileList keys:",
+      Object.keys(
+        fileList || {}
+      )
+    );
+
+    console.log(
+      "fileList full:",
+      fileList
+    );
+
+    console.log(
+      "fileList source:"
+    );
+
     try {
       console.log(
-        "[NEXUS] Workspace debug start"
+        fileList.toString()
       );
-
-      const fs =
-        acode.require("fs");
-
-      const fileList =
-        acode.require(
-          "fileList"
-        );
-
-      console.log(
-        "fs type:",
-        typeof fs
-      );
-
-      console.log(
-        "fs keys:",
-        Object.keys(
-          fs || {}
-        )
-      );
-
-      console.log(
-        "fs full:",
-        fs
-      );
-
-      console.log(
-        "fileList type:",
-        typeof fileList
-      );
-
-      console.log(
-        "fileList keys:",
-        Object.keys(
-          fileList || {}
-        )
-      );
-
-      console.log(
-        "fileList full:",
-        fileList
-      );
-
-      return true;
     } catch (error) {
       console.error(
-        "[NEXUS] Workspace debug failed:",
+        "fileList.toString failed:",
         error
       );
-      return false;
     }
+
+    if (fileList?.on) {
+      console.log(
+        "fileList.on source:"
+      );
+
+      try {
+        console.log(
+          fileList.on.toString()
+        );
+      } catch (error) {
+        console.error(
+          "fileList.on.toString failed:",
+          error
+        );
+      }
+    }
+
+    if (fileList?.off) {
+      console.log(
+        "fileList.off source:"
+      );
+
+      try {
+        console.log(
+          fileList.off.toString()
+        );
+      } catch (error) {
+        console.error(
+          "fileList.off.toString failed:",
+          error
+        );
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      "[NEXUS] Workspace debug failed:",
+      error
+    );
+    return false;
   }
+}
 
   async init() {
     try {
