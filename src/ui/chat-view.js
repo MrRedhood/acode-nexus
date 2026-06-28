@@ -41,6 +41,10 @@ export default class ChatView {
   }
 
   async attachCurrentFile() {
+    console.log(
+      "[CHAT VIEW] attachCurrentFile entered"
+    );
+
     try {
       if (
         !window.NexusBridge
