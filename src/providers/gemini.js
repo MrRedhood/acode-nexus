@@ -56,13 +56,17 @@ export default class GeminiProvider {
     options = {},
     timeout = 15000
   ) {
-    const {
-      signal,
-      cleanup
-    } = this.mergeSignals(
-      options.signal,
-      timeout
-    );
+    const result =
+      this.mergeSignals(
+        options.signal,
+        timeout
+      );
+
+    const signal =
+      result.signal;
+
+    const cleanup =
+      result.cleanup;
 
     try {
       return await fetch(url, {
@@ -84,11 +88,15 @@ export default class GeminiProvider {
       const json =
         JSON.parse(text);
 
-      return (
-        json?.error
-          ?.message ||
-        text
-      );
+      if (
+        json &&
+        json.error &&
+        json.error.message
+      ) {
+        return json.error.message;
+      }
+
+      return text;
     } catch {
       return text;
     }
@@ -129,7 +137,8 @@ export default class GeminiProvider {
           );
 
         const hasGenerate =
-          model.supportedGenerationMethods?.includes(
+          model.supportedGenerationMethods &&
+          model.supportedGenerationMethods.includes(
             "generateContent"
           );
 
@@ -236,10 +245,18 @@ export default class GeminiProvider {
   static extractChunkText(
     payload
   ) {
-    const parts =
-      payload
-        ?.candidates?.[0]
-        ?.content?.parts;
+    let parts = null;
+
+    if (
+      payload &&
+      payload.candidates &&
+      payload.candidates[0] &&
+      payload.candidates[0].content
+    ) {
+      parts =
+        payload.candidates[0]
+          .content.parts;
+    }
 
     if (
       !parts ||
@@ -356,11 +373,14 @@ export default class GeminiProvider {
     let fullText = "";
 
     while (true) {
-      const {
-        done,
-        value
-      } =
+      const result =
         await reader.read();
+
+      const done =
+        result.done;
+
+      const value =
+        result.value;
 
       if (done) {
         break;
