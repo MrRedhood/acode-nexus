@@ -121,88 +121,87 @@ export default class WorkspaceManager {
   }
 
   static async debug() {
-    try {
-      console.log(
-        "===== WORKSPACE DEBUG START ====="
-      );
+  try {
+    console.log(
+      "===== WORKSPACE DEBUG START ====="
+    );
 
-      await this.scanWorkspace();
+    await this.scanWorkspace();
 
+    console.log(
+      "editorManager:",
+      typeof editorManager
+    );
+
+    if (
+      typeof editorManager !==
+      "undefined"
+    ) {
       console.log(
-        "editorManager:",
-        typeof editorManager
+        "ACTIVE FILE:",
+        editorManager.activeFile
       );
 
       if (
-        typeof editorManager !==
-        "undefined"
+        editorManager.activeFile
       ) {
-        console.log(
-          "editorManager props:",
-          Object.getOwnPropertyNames(
-            editorManager
-          )
-        );
-
-        console.log(
-          "editorManager.files length:",
-          editorManager?.files
-            ?.length
-        );
-
-        if (
-          Array.isArray(
-            editorManager.files
-          ) &&
-          editorManager.files.length
-        ) {
-          editorManager.files.forEach(
-            (file, index) => {
-              console.log(
-                "EDITOR FILE",
-                index,
-                file
-              );
-
-              try {
-                console.log(
-                  "EDITOR FILE PROPS",
-                  index,
-                  Object.getOwnPropertyNames(
-                    file
-                  )
-                );
-              } catch (err) {
-                console.error(
-                  "prop read failed",
-                  err
-                );
-              }
-
-              try {
-                console.log(
-                  "EDITOR FILE JSON",
-                  index,
-                  file.toJSON
-                    ? file.toJSON()
-                    : "no toJSON"
-                );
-              } catch (err) {
-                console.error(
-                  "toJSON failed",
-                  err
-                );
-              }
-            }
+        try {
+          console.log(
+            "ACTIVE FILE PROPS:",
+            Object.getOwnPropertyNames(
+              editorManager.activeFile
+            )
           );
+        } catch (err) {
+          console.error(err);
         }
       }
 
-      console.log(
-        "===== WORKSPACE DEBUG END ====="
-      );
-    } catch (err) {
-      console.error(err);
+      try {
+        const file =
+          editorManager.getFile();
+
+        console.log(
+          "getFile():",
+          file
+        );
+
+        if (file) {
+          console.log(
+            "getFile props:",
+            Object.getOwnPropertyNames(
+              file
+            )
+          );
+        }
+      } catch (err) {
+        console.error(
+          "getFile failed:",
+          err
+        );
+      }
+
+      try {
+        console.log(
+          "editor:",
+          editorManager.editor
+        );
+
+        console.log(
+          "editor props:",
+          Object.getOwnPropertyNames(
+            editorManager.editor
+          )
+        );
+      } catch (err) {
+        console.error(err);
+      }
     }
+
+    console.log(
+      "===== WORKSPACE DEBUG END ====="
+    );
+  } catch (err) {
+    console.error(err);
   }
 }
