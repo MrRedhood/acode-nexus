@@ -104,7 +104,7 @@ export default class ContextManager {
       id:
         "summary_" +
         Date.now(),
-      role: "system",
+      role: "assistant",
       content:
         lines.join("\n")
     };
