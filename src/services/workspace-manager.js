@@ -54,26 +54,84 @@ export default class WorkspaceManager {
             fileList();
 
           console.log(
-            "fileList result:",
-            result
+            "file count:",
+            Array.isArray(
+              result
+            )
+              ? result.length
+              : "not array"
           );
 
           if (
             Array.isArray(
               result
-            )
+            ) &&
+            result.length > 0
           ) {
+            const sample =
+              result[0];
+
+            console.log(
+              "sample file:",
+              sample
+            );
+
+            console.log(
+              "sample keys:",
+              Object.getOwnPropertyNames(
+                sample
+              )
+            );
+
+            for (const key in sample) {
+              console.log(
+                "sample prop:",
+                key,
+                sample[key]
+              );
+            }
+
             this.workspaceFiles =
               result.map(
-                file => ({
-                  name:
-                    file.name ||
-                    "unknown",
-                  url:
-                    file.url ||
-                    "",
-                  raw: file
-                })
+                (
+                  file,
+                  index
+                ) => {
+                  let name =
+                    "unknown";
+                  let url = "";
+
+                  try {
+                    if (
+                      file &&
+                      typeof file ===
+                        "object"
+                    ) {
+                      name =
+                        file.name ||
+                        file.filename ||
+                        file.title ||
+                        `file_${index}`;
+
+                      url =
+                        file.url ||
+                        file.uri ||
+                        file.path ||
+                        "";
+                    }
+                  } catch (err) {
+                    console.error(
+                      "file parse error:",
+                      err
+                    );
+                  }
+
+                  return {
+                    name,
+                    url,
+                    raw: file
+                  };
+                }
               );
           }
         } catch (error) {
