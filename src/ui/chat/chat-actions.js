@@ -8,6 +8,16 @@ export default {
     if (this.activeController) {
       this.activeController.abort();
     }
+
+    if (this.fakeStreamTimer) {
+      clearInterval(
+        this.fakeStreamTimer
+      );
+      this.fakeStreamTimer =
+        null;
+    }
+
+    this.isGenerating = false;
   },
 
   startEditMessage(message) {
@@ -51,15 +61,19 @@ export default {
       const chunkSize = 15;
       const intervalMs = 20;
 
-      const timer =
+      this.fakeStreamTimer =
         setInterval(() => {
           if (
             !this.isGenerating
           ) {
             clearInterval(
-              timer
+              this.fakeStreamTimer
             );
-            resolve();
+
+            this.fakeStreamTimer =
+              null;
+
+            resolve(false);
             return;
           }
 
@@ -105,9 +119,13 @@ export default {
             fullText.length
           ) {
             clearInterval(
-              timer
+              this.fakeStreamTimer
             );
-            resolve();
+
+            this.fakeStreamTimer =
+              null;
+
+            resolve(true);
           }
         }, intervalMs);
     });
@@ -184,15 +202,31 @@ export default {
           true
         );
 
-      await this.fakeStreamResponse(
-        assistantNode,
-        assistantMessage.content
-      );
+      const completed =
+        await this.fakeStreamResponse(
+          assistantNode,
+          assistantMessage.content
+        );
 
-      if (
-        assistantNode &&
-        this.isGenerating
-      ) {
+      if (!completed) {
+        const actions =
+          assistantNode.querySelector(
+            ".nexus-msg-actions"
+          );
+
+        assistantNode.innerHTML =
+          `<strong>Nexus</strong><br>Generation stopped`;
+
+        if (actions) {
+          assistantNode.appendChild(
+            actions
+          );
+        }
+
+        return;
+      }
+
+      if (assistantNode) {
         const actions =
           assistantNode.querySelector(
             ".nexus-msg-actions"
