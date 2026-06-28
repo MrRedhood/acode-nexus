@@ -304,6 +304,16 @@ export default class SettingsView {
     const apiKey =
       keyEl.value.trim();
 
+    console.log(
+      "[Settings] provider:",
+      provider
+    );
+
+    console.log(
+      "[Settings] apiKey exists:",
+      !!apiKey
+    );
+
     if (!apiKey) {
       modelEl.innerHTML =
         `<option>Enter API key first</option>`;
@@ -314,12 +324,31 @@ export default class SettingsView {
       `<option>Loading...</option>`;
 
     try {
+      console.log(
+        "[STEP A] before getModels"
+      );
+
       const models =
         await Promise.race([
-          AIService.getModels(
-            provider,
-            apiKey
-          ),
+          (async () => {
+            console.log(
+              "[STEP B] calling AIService.getModels"
+            );
+
+            const result =
+              await AIService.getModels(
+                provider,
+                apiKey
+              );
+
+            console.log(
+              "[STEP C] getModels returned",
+              result
+            );
+
+            return result;
+          })(),
+
           new Promise(
             (_, reject) =>
               setTimeout(
@@ -333,6 +362,11 @@ export default class SettingsView {
               )
           )
         ]);
+
+      console.log(
+        "[Settings] models:",
+        models
+      );
 
       modelEl.innerHTML = "";
 
@@ -387,8 +421,27 @@ export default class SettingsView {
       );
     } catch (error) {
       console.error(
-        "[Settings] loadModels failed:",
+        "[Settings] loadModels failed"
+      );
+
+      console.error(
+        "error object:",
         error
+      );
+
+      console.error(
+        "message:",
+        error?.message
+      );
+
+      console.error(
+        "stack:",
+        error?.stack
+      );
+
+      alert(
+        error?.message ||
+        "Unknown model load error"
       );
 
       modelEl.innerHTML =
