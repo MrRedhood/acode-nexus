@@ -1,5 +1,6 @@
 import AIService from "../services/ai-service.js";
 import StorageService from "../services/storage-service.js";
+import ContextService from "../services/context-service.js";
 
 export default class SettingsView {
   constructor() {
@@ -166,7 +167,7 @@ export default class SettingsView {
       }
     );
 
-        this.modal
+    this.modal
       .querySelector(
         "#settings-load-models"
       )
@@ -183,21 +184,58 @@ export default class SettingsView {
       )
       .addEventListener(
         "click",
-        () => {
+        async () => {
+          const provider =
+            providerEl.value;
+
+          const apiKey =
+            keyEl.value.trim();
+
+          const model =
+            modelEl.value;
+
           StorageService.set(
             "provider",
-            providerEl.value
+            provider
           );
 
           StorageService.set(
             "apiKey",
-            keyEl.value.trim()
+            apiKey
           );
 
           StorageService.set(
             "model",
-            modelEl.value
+            model
           );
+
+          try {
+            const contextLimit =
+              await ContextService.getContextLimit(
+                provider,
+                model
+              );
+
+            StorageService.set(
+              "contextLimit",
+              contextLimit
+            );
+
+            console.log(
+              "[Settings] context limit:",
+              contextLimit
+            );
+          } catch (error) {
+            console.error(
+              "[Settings] context lookup failed:",
+              error
+            );
+
+            StorageService.set(
+              "contextLimit",
+              32000
+            );
+          }
 
           alert(
             "Settings saved"
@@ -266,16 +304,6 @@ export default class SettingsView {
     const apiKey =
       keyEl.value.trim();
 
-    console.log(
-      "[Settings] provider:",
-      provider
-    );
-
-    console.log(
-      "[Settings] apiKey exists:",
-      !!apiKey
-    );
-
     if (!apiKey) {
       modelEl.innerHTML =
         `<option>Enter API key first</option>`;
@@ -286,10 +314,6 @@ export default class SettingsView {
       `<option>Loading...</option>`;
 
     try {
-      console.log(
-        "[Settings] calling AIService.getModels"
-      );
-
       const models =
         await Promise.race([
           AIService.getModels(
@@ -309,11 +333,6 @@ export default class SettingsView {
               )
           )
         ]);
-
-      console.log(
-        "[Settings] models:",
-        models
-      );
 
       modelEl.innerHTML = "";
 
