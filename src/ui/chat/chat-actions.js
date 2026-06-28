@@ -246,28 +246,41 @@ export default {
       }
 
       if (assistantNode) {
-        const actions =
-          assistantNode.querySelector(
-            ".nexus-msg-actions"
-          );
+  const actions =
+    assistantNode.querySelector(
+      ".nexus-msg-actions"
+    );
 
-        assistantNode.innerHTML = `
-          <strong>Nexus</strong><br>
-          ${parseMarkdown(
-            assistantMessage.content
-          )}
-        `;
+  assistantNode.innerHTML = `
+    <strong>Nexus</strong><br>
+    ${parseMarkdown(
+      assistantMessage.content
+    )}
+  `;
 
-        if (actions) {
-          assistantNode.appendChild(
-            actions
-          );
-        }
+  if (actions) {
+    assistantNode.appendChild(
+      actions
+    );
 
-        this.attachCodeCopyListeners(
-          assistantNode
+    const copyBtn =
+      assistantNode.querySelector(
+        ".nexus-copy-btn"
+      );
+
+    if (copyBtn) {
+      copyBtn.onclick = () => {
+        this.copyText(
+          assistantMessage.content
         );
-      }
+      };
+    }
+  }
+
+  this.attachCodeCopyListeners(
+    assistantNode
+  );
+}
 
       SessionService.addExistingMessage(
         assistantMessage
