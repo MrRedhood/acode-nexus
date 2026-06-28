@@ -154,17 +154,28 @@ export default class WorkspaceManager {
             sample.raw
           );
 
-        console.log(
-          "raw proto props:",
+        const protoProps =
           Object.getOwnPropertyNames(
             proto
-          )
+          );
+
+        console.log(
+          "raw proto props count:",
+          protoProps.length
+        );
+
+        protoProps.forEach(
+          (prop, index) => {
+            console.log(
+              "proto prop",
+              index,
+              prop
+            );
+          }
         );
 
         for (
-          const key of Object.getOwnPropertyNames(
-            proto
-          )
+          const key of protoProps
         ) {
           try {
             console.log(
@@ -175,7 +186,9 @@ export default class WorkspaceManager {
               ]
             );
           } catch (err) {
-            console.error(err);
+            console.error(
+              err
+            );
           }
         }
       }
