@@ -9,14 +9,6 @@ export default {
       this.activeController.abort();
     }
 
-    if (this.fakeStreamTimer) {
-      clearInterval(
-        this.fakeStreamTimer
-      );
-      this.fakeStreamTimer =
-        null;
-    }
-
     this.isGenerating = false;
 
     const sendBtn =
@@ -25,8 +17,7 @@ export default {
       );
 
     if (sendBtn) {
-      sendBtn.textContent =
-        "↑";
+      sendBtn.textContent = "↑";
     }
   },
 
@@ -60,94 +51,6 @@ export default {
     this.renderMessages();
 
     await this.generateAssistantReply();
-  },
-
-  async fakeStreamResponse(
-    assistantNode,
-    fullText
-  ) {
-    return new Promise(resolve => {
-      let index = 0;
-
-      const chunkSize = 8;
-      const intervalMs = 35;
-
-      const escapeHtml = text =>
-        (text || "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
-
-      this.fakeStreamTimer =
-        setInterval(() => {
-          if (
-            !this.isGenerating
-          ) {
-            clearInterval(
-              this.fakeStreamTimer
-            );
-
-            this.fakeStreamTimer =
-              null;
-
-            resolve(false);
-            return;
-          }
-
-          index += chunkSize;
-
-          const partial =
-            fullText.slice(
-              0,
-              index
-            );
-
-          const actions =
-            assistantNode.querySelector(
-              ".nexus-msg-actions"
-            );
-
-          assistantNode.innerHTML = `
-            <strong>Nexus</strong><br>
-            ${escapeHtml(
-              partial
-            ).replace(
-              /\n/g,
-              "<br>"
-            )}
-          `;
-
-          if (actions) {
-            assistantNode.appendChild(
-              actions
-            );
-          }
-
-          const box =
-            this.container.querySelector(
-              "#chat-messages"
-            );
-
-          if (box) {
-            box.scrollTop =
-              box.scrollHeight;
-          }
-
-          if (
-            index >=
-            fullText.length
-          ) {
-            clearInterval(
-              this.fakeStreamTimer
-            );
-
-            this.fakeStreamTimer =
-              null;
-
-            resolve(true);
-          }
-        }, intervalMs);
-    });
   },
 
   async generateAssistantReply() {
@@ -192,57 +95,93 @@ export default {
         content: ""
       };
 
-      const response =
-        await AIService.sendMessage(
+      let assistantNode = null;
+
+      const finalResponse =
+        await AIService.sendMessageStream(
+          fullText => {
+            assistantMessage.content =
+              fullText;
+
+            if (
+              thinkingNode &&
+              thinkingNode.parentNode
+            ) {
+              this.stopThinkingAnimation();
+              thinkingNode.remove();
+
+              assistantNode =
+                this.appendMessageObject(
+                  {
+                    id:
+                      assistantMessage.id,
+                    role:
+                      "assistant",
+                    content: ""
+                  },
+                  false,
+                  true,
+                  true
+                );
+            }
+
+            if (assistantNode) {
+              const actions =
+                assistantNode.querySelector(
+                  ".nexus-msg-actions"
+                );
+
+              assistantNode.innerHTML = `
+                <strong>Nexus</strong><br>
+                ${fullText
+                  .replace(/&/g, "&amp;")
+                  .replace(/</g, "&lt;")
+                  .replace(/>/g, "&gt;")
+                  .replace(/\n/g, "<br>")}
+              `;
+
+              if (actions) {
+                assistantNode.appendChild(
+                  actions
+                );
+              }
+
+              const box =
+                this.container.querySelector(
+                  "#chat-messages"
+                );
+
+              if (box) {
+                box.scrollTop =
+                  box.scrollHeight;
+              }
+            }
+          },
           this.activeController.signal
         );
 
       assistantMessage.content =
-        response ||
+        finalResponse ||
+        assistantMessage.content ||
         "No response returned.";
 
-      this.stopThinkingAnimation();
+      if (!assistantNode) {
+        this.stopThinkingAnimation();
 
-      if (
-        thinkingNode &&
-        thinkingNode.parentNode
-      ) {
-        thinkingNode.remove();
-      }
-
-      const assistantNode =
-        this.appendMessageObject(
-          {
-            ...assistantMessage,
-            content: ""
-          },
-          false,
-          true,
-          true
-        );
-
-      const completed =
-        await this.fakeStreamResponse(
-          assistantNode,
-          assistantMessage.content
-        );
-
-      if (!completed) {
-        const actions =
-          assistantNode.querySelector(
-            ".nexus-msg-actions"
-          );
-
-        assistantNode.innerHTML =
-          `<strong>Nexus</strong><br>Generation stopped`;
-
-        if (actions) {
-          assistantNode.appendChild(
-            actions
-          );
+        if (
+          thinkingNode &&
+          thinkingNode.parentNode
+        ) {
+          thinkingNode.remove();
         }
 
-        return;
+        assistantNode =
+          this.appendMessageObject(
+            assistantMessage,
+            false,
+            true,
+            true
+          );
       }
 
       if (assistantNode) {
@@ -285,7 +224,7 @@ export default {
       SessionService.addExistingMessage(
         assistantMessage
       );
-          } catch (error) {
+    } catch (error) {
       this.stopThinkingAnimation();
 
       if (
