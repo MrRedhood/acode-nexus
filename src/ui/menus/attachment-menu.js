@@ -65,12 +65,24 @@ export default class AttachmentMenu {
                 type ===
                 "current-file"
               ) {
+                console.log(
+                  "[ATTACH MENU] current-file clicked"
+                );
+
                 if (
                   this.chatView
                     .attachCurrentFile
                 ) {
+                  console.log(
+                    "[ATTACH MENU] calling chatView.attachCurrentFile"
+                  );
+
                   await this.chatView.attachCurrentFile();
                 } else {
+                  console.log(
+                    "[ATTACH MENU] attachCurrentFile missing"
+                  );
+
                   this.chatView.showToast(
                     "Current file not implemented"
                   );
