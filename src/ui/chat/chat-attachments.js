@@ -151,8 +151,13 @@ export default {
     input.addEventListener(
       "change",
       async function (e) {
+        const files =
+          e.target &&
+          e.target.files;
+
         const file =
-          e.target.files?.[0];
+          files &&
+          files[0];
 
         if (!file) {
           return;
@@ -403,7 +408,7 @@ export default {
       allAttachments
     );
 
-         preview
+    preview
       .querySelectorAll(
         ".nexus-attachment-remove"
       )
