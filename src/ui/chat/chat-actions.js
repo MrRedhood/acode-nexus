@@ -246,51 +246,51 @@ export default {
       }
 
       if (assistantNode) {
-  const actions =
-    assistantNode.querySelector(
-      ".nexus-msg-actions"
-    );
+        const actions =
+          assistantNode.querySelector(
+            ".nexus-msg-actions"
+          );
 
-  assistantNode.innerHTML = `
-    <strong>Nexus</strong><br>
-    ${parseMarkdown(
-      assistantMessage.content
-    )}
-  `;
+        assistantNode.innerHTML = `
+          <strong>Nexus</strong><br>
+          ${parseMarkdown(
+            assistantMessage.content
+          )}
+        `;
 
-  if (actions) {
-    assistantNode.appendChild(
-      actions
-    );
+        if (actions) {
+          assistantNode.appendChild(
+            actions
+          );
 
-    const copyBtn =
-      assistantNode.querySelector(
-        ".nexus-copy-btn"
-      );
+          const copyBtn =
+            assistantNode.querySelector(
+              ".nexus-copy-btn"
+            );
 
-    if (copyBtn) {
-      copyBtn.onclick = () => {
-        this.copyText(
-          assistantMessage.content
+          if (copyBtn) {
+            copyBtn.onclick = () => {
+              this.copyText(
+                assistantMessage.content
+              );
+            };
+          }
+        }
+
+        this.attachCodeCopyListeners(
+          assistantNode
         );
-      };
-    }
-  }
-
-  this.attachCodeCopyListeners(
-    assistantNode
-  );
-}
+      }
 
       SessionService.addExistingMessage(
         assistantMessage
-      );
-    } catch (error) {
+      );    } catch (error) {
       this.stopThinkingAnimation();
 
       if (
-        error?.name ===
-        "AbortError"
+        error &&
+        error.name ===
+          "AbortError"
       ) {
         if (
           thinkingNode &&
@@ -306,12 +306,14 @@ export default {
         ) {
           thinkingNode.innerHTML =
             `<strong>Error</strong><br>${
-              error?.message ||
+              (error &&
+                error.message) ||
               "Unknown error"
             }`;
         } else {
           this.showToast(
-            error?.message ||
+            (error &&
+              error.message) ||
               "Generation failed"
           );
         }
