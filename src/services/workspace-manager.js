@@ -71,7 +71,7 @@ export default class WorkspaceManager {
               ...file.toJSON(),
               raw: file
             };
-          } catch (error) {
+          } catch {
             return {
               name:
                 "unknown",
@@ -85,15 +85,6 @@ export default class WorkspaceManager {
       console.log(
         "Workspace files:",
         this.workspaceFiles.length
-      );
-
-      console.log(
-        "Sample parsed file:",
-        this.workspaceFiles[0]
-      );
-
-      console.log(
-        "===== WORKSPACE SCAN END ====="
       );
 
       return this.workspaceFiles;
@@ -137,38 +128,55 @@ export default class WorkspaceManager {
 
       await this.scanWorkspace();
 
-      const fs =
-        acode.require("fs");
+      const sample =
+        this.workspaceFiles[0];
 
       console.log(
-        "fs module:",
-        fs
+        "sample file:",
+        sample
       );
 
-      console.log(
-        "fs props:",
-        Object.getOwnPropertyNames(
-          fs
-        )
-      );
+      if (sample?.raw) {
+        console.log(
+          "raw object:",
+          sample.raw
+        );
 
-      for (
-        const key of Object.getOwnPropertyNames(
-          fs
-        )
-      ) {
-        try {
-          console.log(
-            "fs method:",
-            key,
-            typeof fs[key]
+        console.log(
+          "raw props:",
+          Object.getOwnPropertyNames(
+            sample.raw
+          )
+        );
+
+        const proto =
+          Object.getPrototypeOf(
+            sample.raw
           );
-        } catch (err) {
-          console.error(
-            "fs inspect failed:",
-            key,
-            err
-          );
+
+        console.log(
+          "raw proto props:",
+          Object.getOwnPropertyNames(
+            proto
+          )
+        );
+
+        for (
+          const key of Object.getOwnPropertyNames(
+            proto
+          )
+        ) {
+          try {
+            console.log(
+              "raw method:",
+              key,
+              typeof sample.raw[
+                key
+              ]
+            );
+          } catch (err) {
+            console.error(err);
+          }
         }
       }
 
