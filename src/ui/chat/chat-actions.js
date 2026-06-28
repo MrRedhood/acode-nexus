@@ -301,8 +301,7 @@ export default {
 
     const attachmentIds = [];
 
-    for (const att of this
-      .pendingAttachments) {
+    for (const att of (this.pendingAttachments || [])) {
       await AttachmentStorage.saveAttachment(
         att
       );
