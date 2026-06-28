@@ -140,23 +140,16 @@ export default class AIService {
       return "";
     }
 
-    if (
+    const typeLabel =
       attachment.type ===
-      "image"
-    ) {
-      return `[IMAGE ATTACHMENT]
-Name: ${attachment.name}`;
-    }
+      "clipboard"
+        ? "CLIPBOARD"
+        : attachment.type ===
+          "current-file"
+        ? "CURRENT FILE"
+        : "FILE";
 
-    if (
-      attachment.type ===
-      "pdf"
-    ) {
-      return `[PDF ATTACHMENT]
-Name: ${attachment.name}`;
-    }
-
-    return `[FILE ATTACHMENT]
+    return `[${typeLabel} ATTACHMENT]
 Name: ${attachment.name}
 
 Content:
@@ -202,10 +195,24 @@ ${attachment.content || ""}`;
               parsed.command
             ].prefix + content;
         }
-      }
 
-      cloned.attachments =
-        attachments;
+        if (
+          attachments.length > 0
+        ) {
+          const attachmentText =
+            attachments
+              .map(att =>
+                this.attachmentToText(
+                  att
+                )
+              )
+              .join("\n\n");
+
+          cloned.content +=
+            "\n\nAttached Files:\n\n" +
+            attachmentText;
+        }
+      }
 
       processed.push(
         cloned
@@ -321,7 +328,7 @@ ${attachment.content || ""}`;
     };
   }
 
-  static async sendMessage(
+    static async sendMessage(
     signal = null
   ) {
     const {
