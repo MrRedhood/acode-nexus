@@ -32,13 +32,34 @@ export default class Sidebar {
 
       console.log("SIDEBAR DONE");
     } catch (err) {
-      console.error("Sidebar init error:", err);
-      console.error("Message:", err?.message);
-      console.error("Stack:", err?.stack);
+      console.error(
+        "Sidebar init error:",
+        err
+      );
+
+      console.error(
+        "Message:",
+        err
+          ? err.message
+          : undefined
+      );
+
+      console.error(
+        "Stack:",
+        err
+          ? err.stack
+          : undefined
+      );
 
       alert(
         "Sidebar crash:\n" +
-        (err?.stack || err?.message || String(err))
+          (
+            (err &&
+              err.stack) ||
+            (err &&
+              err.message) ||
+            String(err)
+          )
       );
     }
   }
@@ -46,22 +67,40 @@ export default class Sidebar {
   createFab() {
     console.log("createFab");
 
-    this.fab = document.createElement("button");
-    this.fab.className = "nexus-fab";
-    this.fab.textContent = "N";
+    this.fab =
+      document.createElement(
+        "button"
+      );
 
-    this.fab.addEventListener("click", () => {
-      this.togglePanel();
-    });
+    this.fab.className =
+      "nexus-fab";
+    this.fab.textContent =
+      "N";
 
-    document.body.appendChild(this.fab);
+    this.fab.addEventListener(
+      "click",
+      () => {
+        this.togglePanel();
+      }
+    );
+
+    document.body.appendChild(
+      this.fab
+    );
   }
 
   createPanel() {
-    console.log("createPanel start");
+    console.log(
+      "createPanel start"
+    );
 
-    this.panel = document.createElement("div");
-    this.panel.className = "nexus-panel";
+    this.panel =
+      document.createElement(
+        "div"
+      );
+
+    this.panel.className =
+      "nexus-panel";
 
     this.panel.innerHTML = `
       <div class="nexus-header">
@@ -79,104 +118,180 @@ export default class Sidebar {
       <div id="chat-root" class="nexus-chat-full"></div>
     `;
 
-    document.body.appendChild(this.panel);
-    console.log("panel appended");
-
-    this.drawer = document.createElement("div");
-    this.drawer.className = "nexus-drawer";
-    document.body.appendChild(this.drawer);
-    console.log("drawer appended");
-
-    console.log("creating settings");
-    this.settingsView = new SettingsView(this.page);
-
-    const chatRoot =
-      this.panel.querySelector("#chat-root");
-
-    if (!chatRoot) {
-      throw new Error("chat-root not found");
-    }
-
-    console.log("creating chat view");
-    this.chatView = new ChatView(chatRoot);
-
-    console.log("creating sessions view");
-    this.sessionsView = new SessionsView(
-      this.drawer,
-      () => {
-        this.sessionsView.render();
-        this.chatView.render();
-        this.closeDrawer();
-      }
+    document.body.appendChild(
+      this.panel
     );
 
-    console.log("render sessions");
+    console.log(
+      "panel appended"
+    );
+
+    this.drawer =
+      document.createElement(
+        "div"
+      );
+
+    this.drawer.className =
+      "nexus-drawer";
+
+    document.body.appendChild(
+      this.drawer
+    );
+
+    console.log(
+      "drawer appended"
+    );
+
+    console.log(
+      "creating settings"
+    );
+
+    this.settingsView =
+      new SettingsView(
+        this.page
+      );
+
+    const chatRoot =
+      this.panel.querySelector(
+        "#chat-root"
+      );
+
+    if (!chatRoot) {
+      throw new Error(
+        "chat-root not found"
+      );
+    }
+
+    console.log(
+      "creating chat view"
+    );
+
+    this.chatView =
+      new ChatView(
+        chatRoot
+      );
+
+    console.log(
+      "creating sessions view"
+    );
+
+    this.sessionsView =
+      new SessionsView(
+        this.drawer,
+        () => {
+          this.sessionsView.render();
+          this.chatView.render();
+          this.closeDrawer();
+        }
+      );
+
+    console.log(
+      "render sessions"
+    );
+
     this.sessionsView.render();
 
-    console.log("render chat");
+    console.log(
+      "render chat"
+    );
+
     this.chatView.render();
 
     const drawerBtn =
-      this.panel.querySelector("#drawer-btn");
+      this.panel.querySelector(
+        "#drawer-btn"
+      );
 
     const settingsBtn =
-      this.panel.querySelector("#settings-btn");
+      this.panel.querySelector(
+        "#settings-btn"
+      );
 
     const closeBtn =
-      this.panel.querySelector("#nexus-close");
+      this.panel.querySelector(
+        "#nexus-close"
+      );
 
     if (!drawerBtn) {
-      throw new Error("drawer-btn missing");
+      throw new Error(
+        "drawer-btn missing"
+      );
     }
 
     if (!settingsBtn) {
-      throw new Error("settings-btn missing");
+      throw new Error(
+        "settings-btn missing"
+      );
     }
 
     if (!closeBtn) {
-      throw new Error("close-btn missing");
+      throw new Error(
+        "close-btn missing"
+      );
     }
 
-    drawerBtn.addEventListener("click", () => {
-      this.toggleDrawer();
-    });
+    drawerBtn.addEventListener(
+      "click",
+      () => {
+        this.toggleDrawer();
+      }
+    );
 
-    settingsBtn.addEventListener("click", () => {
-      this.settingsView.open();
-    });
+    settingsBtn.addEventListener(
+      "click",
+      () => {
+        this.settingsView.open();
+      }
+    );
 
-    closeBtn.addEventListener("click", () => {
-      this.closePanel();
-    });
+    closeBtn.addEventListener(
+      "click",
+      () => {
+        this.closePanel();
+      }
+    );
 
-    console.log("createPanel done");
+    console.log(
+      "createPanel done"
+    );
   }
 
   updatePanelHeight() {
     if (this.panel) {
       this.panel.style.height =
-        window.innerHeight + "px";
+        window.innerHeight +
+        "px";
     }
 
     if (this.drawer) {
       this.drawer.style.height =
-        window.innerHeight + "px";
+        window.innerHeight +
+        "px";
     }
   }
 
   toggleDrawer() {
-    if (!this.drawer) return;
+    if (!this.drawer)
+      return;
 
-    if (this.drawer.classList.contains("open")) {
+    if (
+      this.drawer.classList.contains(
+        "open"
+      )
+    ) {
       this.closeDrawer();
     } else {
-      this.drawer.classList.add("open");
+      this.drawer.classList.add(
+        "open"
+      );
     }
   }
 
   closeDrawer() {
     if (this.drawer) {
-      this.drawer.classList.remove("open");
+      this.drawer.classList.remove(
+        "open"
+      );
     }
   }
 
@@ -189,20 +304,40 @@ export default class Sidebar {
   }
 
   openPanel() {
-    if (!this.panel || !this.fab) return;
+    if (
+      !this.panel ||
+      !this.fab
+    ) {
+      return;
+    }
 
-    this.panel.classList.add("open");
-    this.fab.style.display = "none";
+    this.panel.classList.add(
+      "open"
+    );
+
+    this.fab.style.display =
+      "none";
+
     this.isOpen = true;
   }
 
   closePanel() {
-    if (!this.panel || !this.fab) return;
+    if (
+      !this.panel ||
+      !this.fab
+    ) {
+      return;
+    }
 
-    this.panel.classList.remove("open");
+    this.panel.classList.remove(
+      "open"
+    );
+
     this.closeDrawer();
 
-    this.fab.style.display = "block";
+    this.fab.style.display =
+      "block";
+
     this.isOpen = false;
   }
 
