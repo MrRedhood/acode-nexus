@@ -94,9 +94,7 @@ export default class Nexus {
     }
 
     if (migrated > 0) {
-      SessionService.save(
-        data
-      );
+      SessionService.save(data);
 
       console.log(
         `[Nexus] Migrated ${migrated} attachments`
@@ -110,6 +108,64 @@ export default class Nexus {
     return migrated;
   }
 
+  async getClipboardText() {
+    try {
+      if (
+        !navigator.clipboard
+      ) {
+        throw new Error(
+          "Clipboard API unavailable"
+        );
+      }
+
+      return await navigator.clipboard.readText();
+    } catch (error) {
+      console.error(
+        "Clipboard read failed:",
+        error
+      );
+
+      return "";
+    }
+  }
+
+  async getCurrentFile() {
+    try {
+      const editor =
+        editorManager?.editor;
+
+      if (!editor) {
+        return null;
+      }
+
+      const session =
+        editor.session;
+
+      if (!session) {
+        return null;
+      }
+
+      const content =
+        session.getValue();
+
+      const filename =
+        editorManager?.activeFile?.name ||
+        "current-file.txt";
+
+      return {
+        name: filename,
+        content
+      };
+    } catch (error) {
+      console.error(
+        "Current file read failed:",
+        error
+      );
+
+      return null;
+    }
+  }
+
   async init() {
     try {
       console.log(
@@ -117,8 +173,18 @@ export default class Nexus {
       );
 
       await this.injectStyles();
-
       await this.migrateAttachments();
+
+      window.NexusBridge = {
+        getClipboardText:
+          this.getClipboardText.bind(
+            this
+          ),
+        getCurrentFile:
+          this.getCurrentFile.bind(
+            this
+          )
+      };
 
       console.log(
         "Creating sidebar"
@@ -146,6 +212,8 @@ export default class Nexus {
     if (this.sidebar) {
       this.sidebar.destroy();
     }
+
+    delete window.NexusBridge;
 
     const style =
       document.getElementById(
