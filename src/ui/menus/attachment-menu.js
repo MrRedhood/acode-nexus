@@ -12,11 +12,25 @@ export default class AttachmentMenu {
 
     overlay.innerHTML = `
       <div class="nexus-action-sheet">
-        <button data-type="image">Upload Image</button>
-        <button data-type="txt">Upload Text File</button>
-        <button data-type="pdf">Upload PDF</button>
-        <button data-type="code">Upload Code File</button>
-        <button data-type="cancel">Cancel</button>
+        <button data-type="txt">
+          Attach Text File
+        </button>
+
+        <button data-type="code">
+          Attach Code File
+        </button>
+
+        <button data-type="clipboard">
+          Attach Clipboard
+        </button>
+
+        <button data-type="current-file">
+          Attach Current File
+        </button>
+
+        <button data-type="cancel">
+          Cancel
+        </button>
       </div>
     `;
 
@@ -38,14 +52,9 @@ export default class AttachmentMenu {
       .forEach(btn => {
         btn.addEventListener(
           "click",
-          () => {
+          async () => {
             const type =
               btn.dataset.type;
-
-            console.log(
-              "Attachment type:",
-              type
-            );
 
             overlay.remove();
 
@@ -55,9 +64,55 @@ export default class AttachmentMenu {
               return;
             }
 
-            this.chatView.openFilePicker(
-              type
-            );
+            try {
+              if (
+                type ===
+                "clipboard"
+              ) {
+                if (
+                  this.chatView
+                    .attachClipboard
+                ) {
+                  await this.chatView.attachClipboard();
+                } else {
+                  this.chatView.showToast(
+                    "Clipboard not implemented"
+                  );
+                }
+
+                return;
+              }
+
+              if (
+                type ===
+                "current-file"
+              ) {
+                if (
+                  this.chatView
+                    .attachCurrentFile
+                ) {
+                  await this.chatView.attachCurrentFile();
+                } else {
+                  this.chatView.showToast(
+                    "Current file not implemented"
+                  );
+                }
+
+                return;
+              }
+
+              this.chatView.openFilePicker(
+                type
+              );
+            } catch (error) {
+              console.error(
+                error
+              );
+
+              this.chatView.showToast(
+                "Attachment failed"
+              );
+            }
           }
         );
       });
