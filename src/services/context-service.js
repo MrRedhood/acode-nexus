@@ -42,18 +42,61 @@ export default class ContextService {
   }
 
   static async fetchRegistry() {
-    const response =
-      await fetch(
-        REGISTRY_URL
+    console.log(
+      "[ContextService] fetch start"
+    );
+
+    console.log(
+      "[ContextService] URL:",
+      REGISTRY_URL
+    );
+
+    try {
+      const response =
+        await fetch(
+          REGISTRY_URL,
+          {
+            method: "GET",
+            cache: "no-store"
+          }
+        );
+
+      console.log(
+        "[ContextService] status:",
+        response.status
       );
 
-    if (!response.ok) {
-      throw new Error(
-        `Registry fetch failed: ${response.status}`
+      if (!response.ok) {
+        throw new Error(
+          `Registry fetch failed: ${response.status}`
+        );
+      }
+
+      const json =
+        await response.json();
+
+      console.log(
+        "[ContextService] registry loaded"
       );
+
+      return json;
+    } catch (error) {
+      console.error(
+        "[ContextService] fetch failed"
+      );
+
+      console.error(error);
+      console.error(
+        "message:",
+        error?.message
+      );
+      console.error(
+        "stack:",
+        error?.stack
+      );
+
+      throw error;
     }
-
-    return await response.json();
   }
 
   static normalizeModelName(
@@ -99,10 +142,6 @@ export default class ContextService {
       return cache[provider][model];
     }
 
-    console.log(
-      "[ContextService] fetching registry"
-    );
-
     const registry =
       await this.fetchRegistry();
 
@@ -117,7 +156,6 @@ export default class ContextService {
       console.warn(
         "[ContextService] provider not found"
       );
-
       return 32000;
     }
 
@@ -128,9 +166,9 @@ export default class ContextService {
 
     if (!limit) {
       console.warn(
-        "[ContextService] model not found"
+        "[ContextService] model not found:",
+        model
       );
-
       return 32000;
     }
 
