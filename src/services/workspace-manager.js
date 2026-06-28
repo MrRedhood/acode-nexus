@@ -121,35 +121,76 @@ export default class WorkspaceManager {
   }
 
   static async debug() {
-  try {
-    console.log(
-      "===== WORKSPACE DEBUG START ====="
-    );
-
-    await this.scanWorkspace();
-
-    console.log(
-      "editorManager:",
-      typeof editorManager
-    );
-
-    if (
-      typeof editorManager !==
-      "undefined"
-    ) {
+    try {
       console.log(
-        "ACTIVE FILE:",
-        editorManager.activeFile
+        "===== WORKSPACE DEBUG START ====="
+      );
+
+      await this.scanWorkspace();
+
+      console.log(
+        "editorManager:",
+        typeof editorManager
       );
 
       if (
-        editorManager.activeFile
+        typeof editorManager !==
+        "undefined"
       ) {
+        console.log(
+          "ACTIVE FILE:",
+          editorManager.activeFile
+        );
+
+        if (
+          editorManager.activeFile
+        ) {
+          try {
+            console.log(
+              "ACTIVE FILE PROPS:",
+              Object.getOwnPropertyNames(
+                editorManager.activeFile
+              )
+            );
+          } catch (err) {
+            console.error(err);
+          }
+        }
+
+        try {
+          const file =
+            editorManager.getFile();
+
+          console.log(
+            "getFile():",
+            file
+          );
+
+          if (file) {
+            console.log(
+              "getFile props:",
+              Object.getOwnPropertyNames(
+                file
+              )
+            );
+          }
+        } catch (err) {
+          console.error(
+            "getFile failed:",
+            err
+          );
+        }
+
         try {
           console.log(
-            "ACTIVE FILE PROPS:",
+            "editor:",
+            editorManager.editor
+          );
+
+          console.log(
+            "editor props:",
             Object.getOwnPropertyNames(
-              editorManager.activeFile
+              editorManager.editor
             )
           );
         } catch (err) {
@@ -157,53 +198,11 @@ export default class WorkspaceManager {
         }
       }
 
-      try {
-        const file =
-          editorManager.getFile();
-
-        console.log(
-          "getFile():",
-          file
-        );
-
-        if (file) {
-          console.log(
-            "getFile props:",
-            Object.getOwnPropertyNames(
-              file
-            )
-          );
-        }
-      } catch (err) {
-        console.error(
-          "getFile failed:",
-          err
-        );
-      }
-
-      try {
-        console.log(
-          "editor:",
-          editorManager.editor
-        );
-
-        console.log(
-          "editor props:",
-          Object.getOwnPropertyNames(
-            editorManager.editor
-          )
-        );
-      } catch (err) {
-        console.error(err);
-      }
+      console.log(
+        "===== WORKSPACE DEBUG END ====="
+      );
+    } catch (err) {
+      console.error(err);
     }
-
-    console.log(
-      "===== WORKSPACE DEBUG END ====="
-    );
-  } catch (err) {
-    console.error(err);
   }
 }
-
-  }
