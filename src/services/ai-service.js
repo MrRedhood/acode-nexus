@@ -2,6 +2,7 @@ import GeminiProvider from "../providers/gemini.js";
 import StorageService from "./storage-service.js";
 import SessionService from "./session-service.js";
 import AttachmentStorage from "./attachment-storage.js";
+import ContextManager from "./context-manager.js";
 
 const COMMANDS = {
   explain: {
