@@ -284,7 +284,8 @@ export default {
 
       SessionService.addExistingMessage(
         assistantMessage
-      );    } catch (error) {
+      );
+          } catch (error) {
       this.stopThinkingAnimation();
 
       if (
