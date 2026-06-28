@@ -25,7 +25,7 @@ export default class WorkspaceManager {
         return [];
       }
 
-      let fileList = null;
+      let fileList;
 
       try {
         fileList =
@@ -40,89 +40,69 @@ export default class WorkspaceManager {
         return [];
       }
 
-      console.log(
-        "fileList:",
-        fileList
-      );
+      if (
+        typeof fileList !==
+        "function"
+      ) {
+        console.error(
+          "fileList not function"
+        );
+        return [];
+      }
 
       const result =
         fileList();
 
-      console.log(
-        "file count:",
-        result.length
-      );
-
       if (
-        Array.isArray(result) &&
-        result.length > 0
+        !Array.isArray(
+          result
+        )
       ) {
-        const sample =
-          result[0];
-
-        console.log(
-          "sample file:",
-          sample
+        console.error(
+          "fileList returned non-array"
         );
-
-        console.log(
-          "own keys:",
-          Object.getOwnPropertyNames(
-            sample
-          )
-        );
-
-        const proto =
-          Object.getPrototypeOf(
-            sample
-          );
-
-        console.log(
-          "prototype:",
-          proto
-        );
-
-        console.log(
-          "prototype keys:",
-          Object.getOwnPropertyNames(
-            proto
-          )
-        );
-
-        for (const key of Object.getOwnPropertyNames(
-          proto
-        )) {
-          try {
-            console.log(
-              "proto prop:",
-              key,
-              sample[key]
-            );
-          } catch (err) {
-            console.log(
-              "proto prop error:",
-              key
-            );
-          }
-        }
-
-        this.workspaceFiles =
-          result.map(
-            (
-              file,
-              index
-            ) => ({
-              name:
-                "file_" +
-                index,
-              raw: file
-            })
-          );
+        return [];
       }
+
+      this.workspaceFiles =
+        result.map(file => {
+          let name =
+            "unknown";
+          let url = "";
+          let path = "";
+
+          try {
+            name =
+              file.name ||
+              "unknown";
+          } catch {}
+
+          try {
+            url =
+              file.url || "";
+          } catch {}
+
+          try {
+            path =
+              file.path || "";
+          } catch {}
+
+          return {
+            name,
+            url,
+            path,
+            raw: file
+          };
+        });
 
       console.log(
         "Workspace files:",
         this.workspaceFiles.length
+      );
+
+      console.log(
+        "Sample parsed file:",
+        this.workspaceFiles[0]
       );
 
       console.log(
@@ -154,6 +134,9 @@ export default class WorkspaceManager {
     return this.workspaceFiles.filter(
       file =>
         file.name
+          .toLowerCase()
+          .includes(lower) ||
+        file.path
           .toLowerCase()
           .includes(lower)
     );
