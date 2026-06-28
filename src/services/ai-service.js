@@ -4,6 +4,12 @@ import SessionService from "./session-service.js";
 import AttachmentStorage from "./attachment-storage.js";
 import ContextManager from "./context-manager.js";
 
+const MAX_ATTACHMENT_CHARS =
+  120000;
+
+const MAX_TOTAL_ATTACHMENT_CHARS =
+  250000;
+
 const COMMANDS = {
   explain: {
     prefix: `You are an expert teacher.
@@ -135,10 +141,14 @@ export default class AIService {
   }
 
   static attachmentToText(
-    attachment
+    attachment,
+    remainingBudget
   ) {
     if (!attachment) {
-      return "";
+      return {
+        text: "",
+        usedChars: 0
+      };
     }
 
     const typeLabel =
@@ -150,11 +160,48 @@ export default class AIService {
         ? "CURRENT FILE"
         : "FILE";
 
-    return `[${typeLabel} ATTACHMENT]
-Name: ${attachment.name}
+    const content =
+      attachment.content || "";
+
+    const allowedChars =
+      Math.max(
+        0,
+        Math.min(
+          MAX_ATTACHMENT_CHARS,
+          remainingBudget
+        )
+      );
+
+    const truncated =
+      content.length >
+      allowedChars;
+
+    const finalContent =
+      truncated
+        ? content.slice(
+            0,
+            allowedChars
+          )
+        : content;
+
+    const warning =
+      truncated
+        ? `
+
+WARNING: Attachment truncated
+Original size: ${content.length} chars
+Sent size: ${finalContent.length} chars`
+        : "";
+
+    return {
+      text: `[${typeLabel} ATTACHMENT]
+Name: ${attachment.name}${warning}
 
 Content:
-${attachment.content || ""}`;
+${finalContent}`,
+      usedChars:
+        finalContent.length
+    };
   }
 
   static async preprocessMessages(
@@ -200,18 +247,41 @@ ${attachment.content || ""}`;
         if (
           attachments.length > 0
         ) {
-          const attachmentText =
-            attachments
-              .map(att =>
-                this.attachmentToText(
-                  att
-                )
-              )
-              .join("\n\n");
+          let remainingBudget =
+            MAX_TOTAL_ATTACHMENT_CHARS;
+
+          const attachmentTexts =
+            [];
+
+          for (const att of attachments) {
+            if (
+              remainingBudget <= 0
+            ) {
+              attachmentTexts.push(
+                "[ATTACHMENT SKIPPED: Budget exceeded]"
+              );
+              continue;
+            }
+
+            const result =
+              this.attachmentToText(
+                att,
+                remainingBudget
+              );
+
+            attachmentTexts.push(
+              result.text
+            );
+
+            remainingBudget -=
+              result.usedChars;
+          }
 
           cloned.content +=
             "\n\nAttached Files:\n\n" +
-            attachmentText;
+            attachmentTexts.join(
+              "\n\n"
+            );
         }
       }
 
