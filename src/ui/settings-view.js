@@ -7,48 +7,84 @@ export default class SettingsView {
   }
 
   open() {
-    if (this.modal) return;
+    if (this.modal) {
+      return;
+    }
 
-    this.modal = document.createElement("div");
-    this.modal.className = "nexus-settings-overlay";
+    this.modal =
+      document.createElement("div");
+
+    this.modal.className =
+      "nexus-settings-overlay";
 
     const savedProvider =
-      StorageService.get("provider") || "gemini";
+      StorageService.get(
+        "provider"
+      ) || "gemini";
 
     const savedKey =
-      StorageService.get("apiKey") || "";
+      StorageService.get(
+        "apiKey"
+      ) || "";
 
     let savedModel =
-      StorageService.get("model") || "";
+      StorageService.get(
+        "model"
+      ) || "";
 
     if (
       savedModel &&
-      typeof savedModel === "object"
+      typeof savedModel ===
+        "object"
     ) {
       savedModel =
         savedModel.id ||
         savedModel.name ||
         "";
 
-      StorageService.set("model", savedModel);
+      StorageService.set(
+        "model",
+        savedModel
+      );
     }
 
     this.modal.innerHTML = `
       <div class="nexus-settings-modal">
         <div class="nexus-settings-header">
           <h2>Settings</h2>
-          <button id="settings-close" class="nexus-close">×</button>
+
+          <button
+            id="settings-close"
+            class="nexus-close"
+          >
+            ×
+          </button>
         </div>
 
         <label>Provider</label>
-        <select id="settings-provider" class="nexus-input">
-          <option value="gemini">Gemini</option>
-          <option value="openrouter">OpenRouter</option>
-          <option value="deepinfra">DeepInfra</option>
-          <option value="litellm">LiteLLM</option>
+        <select
+          id="settings-provider"
+          class="nexus-input"
+        >
+          <option value="gemini">
+            Gemini
+          </option>
+
+          <option value="openrouter">
+            OpenRouter
+          </option>
+
+          <option value="deepinfra">
+            DeepInfra
+          </option>
+
+          <option value="litellm">
+            LiteLLM
+          </option>
         </select>
 
         <label>API Key</label>
+
         <input
           id="settings-key"
           class="nexus-input"
@@ -57,87 +93,188 @@ export default class SettingsView {
         />
 
         <label>Model</label>
-        <select id="settings-model" class="nexus-input"></select>
 
-        <button id="settings-load-models" class="nexus-button">
+        <select
+          id="settings-model"
+          class="nexus-input"
+        ></select>
+
+        <button
+          id="settings-load-models"
+          class="nexus-button"
+        >
           Load Models
         </button>
 
-        <button id="settings-save" class="nexus-button">
+        <button
+          id="settings-save"
+          class="nexus-button"
+        >
           Save
         </button>
       </div>
     `;
 
-    document.documentElement.appendChild(this.modal);
+    document.documentElement.appendChild(
+      this.modal
+    );
 
     const providerEl =
-      this.modal.querySelector("#settings-provider");
+      this.modal.querySelector(
+        "#settings-provider"
+      );
 
     const keyEl =
-      this.modal.querySelector("#settings-key");
+      this.modal.querySelector(
+        "#settings-key"
+      );
 
     const modelEl =
-      this.modal.querySelector("#settings-model");
+      this.modal.querySelector(
+        "#settings-model"
+      );
 
-    providerEl.value = savedProvider;
+    providerEl.value =
+      savedProvider;
+
     keyEl.value = savedKey;
 
     if (savedKey) {
-      this.loadModels(savedModel);
+      this.loadModels(
+        savedModel
+      );
     } else {
       modelEl.innerHTML =
         `<option>Enter API key first</option>`;
     }
 
     this.modal
-      .querySelector("#settings-close")
-      .addEventListener("click", () => {
-        this.close();
-      });
+      .querySelector(
+        "#settings-close"
+      )
+      .addEventListener(
+        "click",
+        () => {
+          this.close();
+        }
+      );
 
-    providerEl.addEventListener("change", () => {
-      this.loadModels();
-    });
-
-    this.modal
-      .querySelector("#settings-load-models")
-      .addEventListener("click", async () => {
-        await this.loadModels();
-      });
-
-    this.modal
-      .querySelector("#settings-save")
-      .addEventListener("click", () => {
-        StorageService.set("provider", providerEl.value);
-        StorageService.set("apiKey", keyEl.value.trim());
-        StorageService.set("model", modelEl.value);
-
-        alert("Settings saved");
-        this.close();
-      });
-
-    this.modal.addEventListener("click", e => {
-      if (e.target === this.modal) {
-        this.close();
+    providerEl.addEventListener(
+      "change",
+      () => {
+        this.loadModels();
       }
-    });
+    );
+
+        this.modal
+      .querySelector(
+        "#settings-load-models"
+      )
+      .addEventListener(
+        "click",
+        async () => {
+          await this.loadModels();
+        }
+      );
+
+    this.modal
+      .querySelector(
+        "#settings-save"
+      )
+      .addEventListener(
+        "click",
+        () => {
+          StorageService.set(
+            "provider",
+            providerEl.value
+          );
+
+          StorageService.set(
+            "apiKey",
+            keyEl.value.trim()
+          );
+
+          StorageService.set(
+            "model",
+            modelEl.value
+          );
+
+          alert(
+            "Settings saved"
+          );
+
+          this.close();
+        }
+      );
+
+    this.modal.addEventListener(
+      "click",
+      e => {
+        if (
+          e.target ===
+          this.modal
+        ) {
+          this.close();
+        }
+      }
+    );
   }
 
-  async loadModels(selected = "") {
-    if (!this.modal) return;
+  async loadModels(
+    selected = ""
+  ) {
+    console.log(
+      "[Settings] loadModels called"
+    );
+
+    if (!this.modal) {
+      console.log(
+        "[Settings] modal missing"
+      );
+      return;
+    }
 
     const modelEl =
-      this.modal.querySelector("#settings-model");
+      this.modal.querySelector(
+        "#settings-model"
+      );
 
     const providerEl =
-      this.modal.querySelector("#settings-provider");
+      this.modal.querySelector(
+        "#settings-provider"
+      );
 
     const keyEl =
-      this.modal.querySelector("#settings-key");
+      this.modal.querySelector(
+        "#settings-key"
+      );
 
-    const provider = providerEl.value;
-    const apiKey = keyEl.value.trim();
+    if (
+      !modelEl ||
+      !providerEl ||
+      !keyEl
+    ) {
+      console.error(
+        "[Settings] DOM elements missing"
+      );
+      return;
+    }
+
+    const provider =
+      providerEl.value;
+
+    const apiKey =
+      keyEl.value.trim();
+
+    console.log(
+      "[Settings] provider:",
+      provider
+    );
+
+    console.log(
+      "[Settings] apiKey exists:",
+      !!apiKey
+    );
 
     if (!apiKey) {
       modelEl.innerHTML =
@@ -149,45 +286,91 @@ export default class SettingsView {
       `<option>Loading...</option>`;
 
     try {
+      console.log(
+        "[Settings] calling AIService.getModels"
+      );
+
       const models =
-        await AIService.getModels(
-          provider,
-          apiKey
-        );
+        await Promise.race([
+          AIService.getModels(
+            provider,
+            apiKey
+          ),
+          new Promise(
+            (_, reject) =>
+              setTimeout(
+                () =>
+                  reject(
+                    new Error(
+                      "Model load timeout (15s)"
+                    )
+                  ),
+                15000
+              )
+          )
+        ]);
+
+      console.log(
+        "[Settings] models:",
+        models
+      );
 
       modelEl.innerHTML = "";
 
-      if (!models.length) {
+      if (
+        !models ||
+        !models.length
+      ) {
         modelEl.innerHTML =
           `<option>No models found</option>`;
         return;
       }
 
-      models.forEach(model => {
-        const option =
-          document.createElement("option");
+      models.forEach(
+        model => {
+          const option =
+            document.createElement(
+              "option"
+            );
 
-        const value =
-          typeof model === "string"
-            ? model
-            : model.id || model.name;
+          const value =
+            typeof model ===
+            "string"
+              ? model
+              : model.id ||
+                model.name;
 
-        const label =
-          typeof model === "string"
-            ? model
-            : model.name || model.id;
+          const label =
+            typeof model ===
+            "string"
+              ? model
+              : model.name ||
+                model.id;
 
-        option.value = value;
-        option.textContent = label;
+          option.value =
+            value;
 
-        if (value === selected) {
-          option.selected = true;
+          option.textContent =
+            label;
+
+          if (
+            value ===
+            selected
+          ) {
+            option.selected =
+              true;
+          }
+
+          modelEl.appendChild(
+            option
+          );
         }
-
-        modelEl.appendChild(option);
-      });
+      );
     } catch (error) {
-      console.error(error);
+      console.error(
+        "[Settings] loadModels failed:",
+        error
+      );
 
       modelEl.innerHTML =
         `<option>Failed to load</option>`;
