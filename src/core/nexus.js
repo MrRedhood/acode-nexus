@@ -235,10 +235,23 @@ export default class Nexus {
         "Nexus init start"
       );
 
-      console.log(
-        "acode keys:",
-        Object.keys(acode)
-      );
+      console.log("ACODE FULL:", acode);
+
+console.log(
+  "ACODE KEYS:",
+  Object.getOwnPropertyNames(acode)
+);
+
+console.log(
+  "WINDOW KEYS SAMPLE:",
+  Object.getOwnPropertyNames(window)
+    .filter(
+      key =>
+        key.toLowerCase().includes("file") ||
+        key.toLowerCase().includes("acode") ||
+        key.toLowerCase().includes("fs")
+    )
+);
 
       try {
         const fs =
