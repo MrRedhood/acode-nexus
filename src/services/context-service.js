@@ -1,11 +1,11 @@
-const CACHE_KEY =
-  "acode_nexus_context_cache";
-
 const REGISTRY_URL =
-  "https://raw.githubusercontent.com/MRREDHOOD/acode-nexus/main/model-contexts.json";
+  "https://raw.githubusercontent.com/MrRedhood/acode-nexus/main/model-contexts.json";
+
+const CACHE_KEY =
+  "acode_nexus_model_context_cache";
 
 export default class ContextService {
-  static getCache() {
+  static loadCache() {
     try {
       const raw =
         localStorage.getItem(
@@ -16,21 +16,10 @@ export default class ContextService {
         return {};
       }
 
-      const parsed =
-        JSON.parse(raw);
-
-      if (
-        !parsed ||
-        typeof parsed !==
-          "object"
-      ) {
-        return {};
-      }
-
-      return parsed;
+      return JSON.parse(raw);
     } catch (error) {
       console.error(
-        "[ContextService] Cache read failed:",
+        "[ContextService] cache load failed",
         error
       );
 
@@ -46,74 +35,49 @@ export default class ContextService {
       );
     } catch (error) {
       console.error(
-        "[ContextService] Cache save failed:",
+        "[ContextService] cache save failed",
         error
       );
     }
-  }
-
-  static getCacheKey(
-    provider,
-    model
-  ) {
-    return `${provider}:${model}`;
   }
 
   static async fetchRegistry() {
-    try {
-      const response =
-        await fetch(
-          REGISTRY_URL
-        );
-
-      if (!response.ok) {
-        throw new Error(
-          `Registry fetch failed: ${response.status}`
-        );
-      }
-
-      const data =
-        await response.json();
-
-      if (
-        !data ||
-        typeof data !==
-          "object"
-      ) {
-        return null;
-      }
-
-      return data;
-    } catch (error) {
-      console.error(
-        "[ContextService] Registry fetch failed:",
-        error
+    const response =
+      await fetch(
+        REGISTRY_URL
       );
 
-      return null;
+    if (!response.ok) {
+      throw new Error(
+        `Registry fetch failed: ${response.status}`
+      );
     }
+
+    return await response.json();
   }
 
-  static async getProviderContextLimit(
-    provider,
+  static normalizeModelName(
     model
   ) {
-    /*
-      Phase 5.2:
-      Provider-specific metadata lookup.
-
-      Gemini can later be implemented here
-      if we fetch model metadata with
-      inputTokenLimit.
-    */
-
-    return null;
+    return (
+      model || ""
+    ).trim();
   }
 
   static async getContextLimit(
     provider,
     model
   ) {
+    provider =
+      (provider || "")
+        .toLowerCase()
+        .trim();
+
+    model =
+      this.normalizeModelName(
+        model
+      );
+
     if (
       !provider ||
       !model
@@ -121,86 +85,64 @@ export default class ContextService {
       return 32000;
     }
 
-    const cacheKey =
-      this.getCacheKey(
-        provider,
-        model
-      );
-
     const cache =
-      this.getCache();
+      this.loadCache();
 
-    if (cache[cacheKey]) {
+    if (
+      cache[provider] &&
+      cache[provider][model]
+    ) {
       console.log(
-        "[ContextService] Cache hit:",
-        cacheKey,
-        cache[cacheKey]
+        "[ContextService] cache hit"
       );
 
-      return cache[cacheKey];
+      return cache[provider][model];
     }
 
-    const providerLimit =
-      await this.getProviderContextLimit(
-        provider,
-        model
-      );
-
-    if (providerLimit) {
-      cache[cacheKey] =
-        providerLimit;
-
-      this.saveCache(
-        cache
-      );
-
-      console.log(
-        "[ContextService] Provider hit:",
-        providerLimit
-      );
-
-      return providerLimit;
-    }
+    console.log(
+      "[ContextService] fetching registry"
+    );
 
     const registry =
       await this.fetchRegistry();
 
-    const registryLimit =
-      registry?.[
+    const providerModels =
+      registry?.providers?.[
         provider
-      ]?.[model];
+      ];
 
-    if (registryLimit) {
-      cache[cacheKey] =
-        registryLimit;
-
-      this.saveCache(
-        cache
+    if (
+      !providerModels
+    ) {
+      console.warn(
+        "[ContextService] provider not found"
       );
 
-      console.log(
-        "[ContextService] Registry hit:",
-        registryLimit
-      );
-
-      return registryLimit;
+      return 32000;
     }
 
-    const fallback =
-      32000;
+    const limit =
+      providerModels[
+        model
+      ];
 
-    cache[cacheKey] =
-      fallback;
+    if (!limit) {
+      console.warn(
+        "[ContextService] model not found"
+      );
 
-    this.saveCache(
-      cache
-    );
+      return 32000;
+    }
 
-    console.log(
-      "[ContextService] Fallback:",
-      fallback
-    );
+    if (!cache[provider]) {
+      cache[provider] = {};
+    }
 
-    return fallback;
+    cache[provider][model] =
+      limit;
+
+    this.saveCache(cache);
+
+    return limit;
   }
 }
