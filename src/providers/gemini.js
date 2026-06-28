@@ -1,11 +1,58 @@
 export default class GeminiProvider {
+  static async fetchWithTimeout(
+    url,
+    options = {},
+    timeout = 15000
+  ) {
+    const controller =
+      new AbortController();
+
+    const timer =
+      setTimeout(() => {
+        controller.abort();
+      }, timeout);
+
+    try {
+      const response =
+        await fetch(url, {
+          ...options,
+          signal:
+            options.signal ||
+            controller.signal
+        });
+
+      clearTimeout(timer);
+      return response;
+    } catch (error) {
+      clearTimeout(timer);
+      throw error;
+    }
+  }
+
   static async getModels(apiKey) {
+    console.log(
+      "[Gemini] getModels start"
+    );
+
     try {
       const url =
         `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
 
+      console.log(
+        "[Gemini] fetching models"
+      );
+
       const response =
-        await fetch(url);
+        await this.fetchWithTimeout(
+          url,
+          {},
+          15000
+        );
+
+      console.log(
+        "[Gemini] status:",
+        response.status
+      );
 
       if (!response.ok) {
         const errorText =
@@ -18,6 +65,11 @@ export default class GeminiProvider {
 
       const data =
         await response.json();
+
+      console.log(
+        "[Gemini] model count:",
+        data.models?.length || 0
+      );
 
       return (
         data.models || []
@@ -77,7 +129,7 @@ export default class GeminiProvider {
   ) {
     const parts = [];
 
-    if (
+        if (
       message.content &&
       message.content.trim()
     ) {
@@ -135,7 +187,6 @@ export default class GeminiProvider {
           "assistant"
             ? "model"
             : "user",
-
         parts:
           this.buildParts(
             msg
@@ -154,7 +205,7 @@ export default class GeminiProvider {
     );
   }
 
-    static async chat(
+  static async chat(
     apiKey,
     model,
     messages,
@@ -167,7 +218,7 @@ export default class GeminiProvider {
         );
 
       const response =
-        await fetch(
+        await this.fetchWithTimeout(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
           {
             method: "POST",
@@ -179,7 +230,8 @@ export default class GeminiProvider {
             body: JSON.stringify({
               contents
             })
-          }
+          },
+          30000
         );
 
       if (!response.ok) {
@@ -217,7 +269,7 @@ export default class GeminiProvider {
     }
   }
 
-  static async streamChat(
+    static async streamChat(
     apiKey,
     model,
     messages,
@@ -231,7 +283,7 @@ export default class GeminiProvider {
         );
 
       const response =
-        await fetch(
+        await this.fetchWithTimeout(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`,
           {
             method: "POST",
@@ -243,7 +295,8 @@ export default class GeminiProvider {
             body: JSON.stringify({
               contents
             })
-          }
+          },
+          30000
         );
 
       if (!response.ok) {
@@ -255,9 +308,7 @@ export default class GeminiProvider {
         );
       }
 
-      if (
-        !response.body
-      ) {
+      if (!response.body) {
         throw new Error(
           "Streaming not supported"
         );
@@ -283,13 +334,12 @@ export default class GeminiProvider {
           break;
         }
 
-        buffer +=
-          decoder.decode(
-            value,
-            {
-              stream: true
-            }
-          );
+        buffer += decoder.decode(
+          value,
+          {
+            stream: true
+          }
+        );
 
         const lines =
           buffer.split("\n");
@@ -348,8 +398,10 @@ export default class GeminiProvider {
         }
       }
 
-      return fullText ||
-        "No response returned.";
+      return (
+        fullText ||
+        "No response returned."
+      );
     } catch (error) {
       if (
         error.name ===
