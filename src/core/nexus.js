@@ -219,37 +219,48 @@ export default class Nexus {
       fileList
     );
 
-    console.log(
-      "fileList source:"
-    );
-
     try {
+      const files =
+        fileList(
+          node => ({
+            name:
+              node.name,
+            url:
+              node.url,
+            isDir:
+              !!node.children
+          })
+        );
+
       console.log(
-        fileList.toString()
+        "WORKSPACE FILES:",
+        files.slice(
+          0,
+          20
+        )
+      );
+
+      console.log(
+        "TOTAL FILES:",
+        files.length
       );
     } catch (error) {
       console.error(
-        "fileList.toString failed:",
+        "fileList execute failed:",
         error
       );
     }
 
-    if (fileList?.on) {
-      console.log(
-        "fileList.on source:"
-      );
+    return true;
+  } catch (error) {
+    console.error(
+      "[NEXUS] Workspace debug failed:",
+      error
+    );
 
-      try {
-        console.log(
-          fileList.on.toString()
-        );
-      } catch (error) {
-        console.error(
-          "fileList.on.toString failed:",
-          error
-        );
-      }
-    }
+    return false;
+  }
+}
 
     if (fileList?.off) {
       console.log(
