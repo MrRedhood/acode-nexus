@@ -121,83 +121,64 @@ export default class WorkspaceManager {
   }
 
   static async debug() {
-    try {
+  try {
+    console.log(
+      "===== WORKSPACE DEBUG START ====="
+    );
+
+    await this.scanWorkspace();
+
+    console.log(
+      "editorManager:",
+      typeof editorManager
+    );
+
+    if (
+      typeof editorManager !==
+      "undefined"
+    ) {
       console.log(
-        "===== WORKSPACE DEBUG START ====="
+        "editorManager props:",
+        Object.getOwnPropertyNames(
+          editorManager
+        )
       );
-
-      await this.scanWorkspace();
-
-      const sample =
-        this.workspaceFiles[0];
-
-      console.log(
-        "sample file:",
-        sample
-      );
-
-      if (sample?.raw) {
-        console.log(
-          "raw object:",
-          sample.raw
-        );
-
-        console.log(
-          "raw props:",
-          Object.getOwnPropertyNames(
-            sample.raw
-          )
-        );
-
-        const proto =
-          Object.getPrototypeOf(
-            sample.raw
-          );
-
-        const protoProps =
-          Object.getOwnPropertyNames(
-            proto
-          );
-
-        console.log(
-          "raw proto props count:",
-          protoProps.length
-        );
-
-        protoProps.forEach(
-          (prop, index) => {
-            console.log(
-              "proto prop",
-              index,
-              prop
-            );
-          }
-        );
-
-        for (
-          const key of protoProps
-        ) {
-          try {
-            console.log(
-              "raw method:",
-              key,
-              typeof sample.raw[
-                key
-              ]
-            );
-          } catch (err) {
-            console.error(
-              err
-            );
-          }
-        }
-      }
-
-      console.log(
-        "===== WORKSPACE DEBUG END ====="
-      );
-    } catch (err) {
-      console.error(err);
     }
+
+    console.log(
+      "acode.fileBrowser:",
+      typeof acode.fileBrowser
+    );
+
+    if (acode.fileBrowser) {
+      console.log(
+        "fileBrowser props:",
+        Object.getOwnPropertyNames(
+          acode.fileBrowser
+        )
+      );
+    }
+
+    const windowKeys =
+      Object.keys(window).filter(
+        key =>
+          key.toLowerCase().includes(
+            "file"
+          ) ||
+          key.toLowerCase().includes(
+            "editor"
+          )
+      );
+
+    console.log(
+      "window suspicious keys:",
+      windowKeys
+    );
+
+    console.log(
+      "===== WORKSPACE DEBUG END ====="
+    );
+  } catch (err) {
+    console.error(err);
   }
 }
