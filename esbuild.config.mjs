@@ -6,7 +6,8 @@ await esbuild.build({
   outfile: "dist/main.js",
   format: "esm",
   sourcemap: true,
-  minify: false
+  minify: false,
+  target: "es2020"
 });
 
 console.log("Build complete");
