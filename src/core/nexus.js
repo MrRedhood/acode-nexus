@@ -111,6 +111,10 @@ export default class Nexus {
   async getCurrentFile() {
     try {
       console.log(
+        "[NEXUS] getCurrentFile entered"
+      );
+
+      console.log(
         "window.editorManager:",
         window.editorManager
       );
@@ -173,7 +177,6 @@ export default class Nexus {
         "Nexus init start"
       );
 
-      // ===== PHASE 5 DEBUG =====
       console.log(
         "acode keys:",
         Object.keys(acode)
@@ -210,16 +213,19 @@ export default class Nexus {
           e
         );
       }
-      // =========================
 
       await this.injectStyles();
       await this.migrateAttachments();
 
       window.NexusBridge = {
         getCurrentFile:
-          this.getCurrentFile.bind(
-            this
-          )
+          async () => {
+            console.log(
+              "[NEXUS BRIDGE] getCurrentFile called"
+            );
+
+            return await this.getCurrentFile();
+          }
       };
 
       console.log(
