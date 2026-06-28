@@ -95,8 +95,7 @@ export default {
 
       await AIService.sendMessageStream(
         fullText => {
-          streamedText =
-            fullText;
+          streamedText = fullText;
 
           if (!assistantNode) {
             this.stopThinkingAnimation();
@@ -201,10 +200,13 @@ export default {
           thinkingNode.parentNode
         ) {
           thinkingNode.innerHTML =
-            `<strong>Error</strong><br>${error.message}`;
+            `<strong>Error</strong><br>${
+              error?.message ||
+              "Unknown error"
+            }`;
         } else {
           this.showToast(
-            error.message ||
+            error?.message ||
               "Generation failed"
           );
         }
@@ -234,14 +236,18 @@ export default {
     const text =
       input.value.trim();
 
+    const pendingAttachments =
+      this.pendingAttachments || [];
+
+    const editingAttachmentIds =
+      this.editingAttachmentIds || [];
+
     if (
-  !text &&
-  (!this.pendingAttachments ||
-    this.pendingAttachments.length === 0) &&
-  (!this.editingAttachmentIds ||
-    this.editingAttachmentIds.length === 0)
-) {
-  return;
+      !text &&
+      pendingAttachments.length === 0 &&
+      editingAttachmentIds.length === 0
+    ) {
+      return;
     }
 
     this.commandMenu.hide();
@@ -249,8 +255,7 @@ export default {
     if (this.editingMessageId) {
       const newAttachmentIds = [];
 
-      for (const att of this
-        .pendingAttachments) {
+      for (const att of pendingAttachments) {
         await AttachmentStorage.saveAttachment(
           att
         );
@@ -264,8 +269,7 @@ export default {
         this.editingMessageId,
         text || "[Attachment]",
         [
-          ...this
-            .editingAttachmentIds,
+          ...editingAttachmentIds,
           ...newAttachmentIds
         ]
       );
@@ -299,9 +303,8 @@ export default {
     }
 
     const attachmentIds = [];
-for (const att of (
-  this.pendingAttachments || []
-)) {
+
+    for (const att of pendingAttachments) {
       await AttachmentStorage.saveAttachment(
         att
       );
