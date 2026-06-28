@@ -94,9 +94,7 @@ export default class Nexus {
     }
 
     if (migrated > 0) {
-      SessionService.save(
-        data
-      );
+      SessionService.save(data);
 
       console.log(
         `[Nexus] Migrated ${migrated} attachments`
@@ -174,6 +172,45 @@ export default class Nexus {
       console.log(
         "Nexus init start"
       );
+
+      // ===== PHASE 5 DEBUG =====
+      console.log(
+        "acode keys:",
+        Object.keys(acode)
+      );
+
+      try {
+        const fs =
+          acode.require("fs");
+
+        console.log(
+          "fs:",
+          fs
+        );
+      } catch (e) {
+        console.error(
+          "fs fail",
+          e
+        );
+      }
+
+      try {
+        const fileList =
+          acode.require(
+            "fileList"
+          );
+
+        console.log(
+          "fileList:",
+          fileList
+        );
+      } catch (e) {
+        console.error(
+          "fileList fail",
+          e
+        );
+      }
+      // =========================
 
       await this.injectStyles();
       await this.migrateAttachments();
