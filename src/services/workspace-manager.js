@@ -53,21 +53,6 @@ export default class WorkspaceManager {
       const result =
         fileList();
 
-      try {
-        const sample =
-          result[0];
-
-        console.log(
-          "toJSON:",
-          sample.toJSON()
-        );
-      } catch (e) {
-        console.error(
-          "toJSON failed:",
-          e
-        );
-      }
-
       if (
         !Array.isArray(
           result
@@ -81,33 +66,20 @@ export default class WorkspaceManager {
 
       this.workspaceFiles =
         result.map(file => {
-          let name =
-            "unknown";
-          let url = "";
-          let path = "";
-
           try {
-            name =
-              file.name ||
-              "unknown";
-          } catch {}
-
-          try {
-            url =
-              file.url || "";
-          } catch {}
-
-          try {
-            path =
-              file.path || "";
-          } catch {}
-
-          return {
-            name,
-            url,
-            path,
-            raw: file
-          };
+            return {
+              ...file.toJSON(),
+              raw: file
+            };
+          } catch {
+            return {
+              name:
+                "unknown",
+              path: "",
+              url: "",
+              raw: file
+            };
+          }
         });
 
       console.log(
@@ -148,10 +120,10 @@ export default class WorkspaceManager {
 
     return this.workspaceFiles.filter(
       file =>
-        file.name
+        (file.name || "")
           .toLowerCase()
           .includes(lower) ||
-        file.path
+        (file.path || "")
           .toLowerCase()
           .includes(lower)
     );
