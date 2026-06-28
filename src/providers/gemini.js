@@ -65,13 +65,10 @@ export default class GeminiProvider {
     );
 
     try {
-      return await fetch(
-        url,
-        {
-          ...options,
-          signal
-        }
-      );
+      return await fetch(url, {
+        ...options,
+        signal
+      });
     } finally {
       cleanup();
     }
@@ -100,78 +97,70 @@ export default class GeminiProvider {
   static async getModels(
     apiKey
   ) {
-    try {
-      const url =
-        `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+    const url =
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
 
-      const response =
-        await this.fetchWithTimeout(
-          url,
-          {},
-          30000
-        );
-
-      if (!response.ok) {
-        throw new Error(
-          await this.parseError(
-            response
-          )
-        );
-      }
-
-      const data =
-        await response.json();
-
-      return (
-        data.models || []
-      )
-        .filter(model => {
-          const id =
-            model.name.replace(
-              "models/",
-              ""
-            );
-
-          const hasGenerate =
-            model.supportedGenerationMethods?.includes(
-              "generateContent"
-            );
-
-          const badTypes =
-            id.includes(
-              "embedding"
-            ) ||
-            id.includes(
-              "tts"
-            ) ||
-            id.includes(
-              "aqa"
-            );
-
-          return (
-            hasGenerate &&
-            !badTypes
-          );
-        })
-        .map(model => ({
-          id:
-            model.name.replace(
-              "models/",
-              ""
-            ),
-          name:
-            model.name.replace(
-              "models/",
-              ""
-            )
-        }));
-    } catch (error) {
-      console.error(
-        "[Gemini] getModels failed:",
-        error
+    const response =
+      await this.fetchWithTimeout(
+        url,
+        {},
+        30000
       );
-      throw error;
+
+    if (!response.ok) {
+      throw new Error(
+        await this.parseError(
+          response
+        )
+      );
     }
+
+    const data =
+      await response.json();
+
+    return (
+      data.models || []
+    )
+      .filter(model => {
+        const id =
+          model.name.replace(
+            "models/",
+            ""
+          );
+
+        const hasGenerate =
+          model.supportedGenerationMethods?.includes(
+            "generateContent"
+          );
+
+        const badTypes =
+          id.includes(
+            "embedding"
+          ) ||
+          id.includes(
+            "tts"
+          ) ||
+          id.includes(
+            "aqa"
+          );
+
+        return (
+          hasGenerate &&
+          !badTypes
+        );
+      })
+      .map(model => ({
+        id:
+          model.name.replace(
+            "models/",
+            ""
+          ),
+        name:
+          model.name.replace(
+            "models/",
+            ""
+          )
+      }));
   }
 
   static buildParts(
@@ -273,64 +262,45 @@ export default class GeminiProvider {
     messages,
     signal = null
   ) {
-    try {
-      const contents =
-        this.buildContents(
-          messages
-        );
+    const contents =
+      this.buildContents(
+        messages
+      );
 
-      const response =
-        await this.fetchWithTimeout(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            signal,
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-            body: JSON.stringify({
-              contents
-            })
+    const response =
+      await this.fetchWithTimeout(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          signal,
+          headers: {
+            "Content-Type":
+              "application/json"
           },
-          60000
-        );
-
-      if (!response.ok) {
-        throw new Error(
-          await this.parseError(
-            response
-          )
-        );
-      }
-
-      const data =
-        await response.json();
-
-      return (
-        this.extractChunkText(
-          data
-        ) ||
-        "No response returned."
+          body: JSON.stringify({
+            contents
+          })
+        },
+        60000
       );
-    } catch (error) {
-      if (
-        error.name ===
-          "AbortError" ||
-        error.message?.includes(
-          "aborted"
+
+    if (!response.ok) {
+      throw new Error(
+        await this.parseError(
+          response
         )
-      ) {
-        throw error;
-      }
-
-      console.error(
-        "[Gemini] chat failed:",
-        error
       );
-
-      throw error;
     }
+
+    const data =
+      await response.json();
+
+    return (
+      this.extractChunkText(
+        data
+      ) ||
+      "No response returned."
+    );
   }
 
   static async streamChat(
@@ -340,167 +310,144 @@ export default class GeminiProvider {
     onChunk,
     signal = null
   ) {
-    try {
-      const contents =
-        this.buildContents(
-          messages
-        );
+    const contents =
+      this.buildContents(
+        messages
+      );
 
-      const response =
-        await this.fetchWithTimeout(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`,
-          {
-            method: "POST",
-            signal,
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-            body: JSON.stringify({
-              contents
-            })
+    const response =
+      await this.fetchWithTimeout(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`,
+        {
+          method: "POST",
+          signal,
+          headers: {
+            "Content-Type":
+              "application/json"
           },
-          60000
-        );
-
-      if (!response.ok) {
-        throw new Error(
-          await this.parseError(
-            response
-          )
-        );
-      }
-
-      if (
-        !response.body
-      ) {
-        throw new Error(
-          "Streaming not supported"
-        );
-      }
-
-      const reader =
-        response.body.getReader();
-
-      const decoder =
-        new TextDecoder();
-
-      let buffer = "";
-      let fullText = "";
-
-      while (true) {
-        const {
-          done,
-          value
-        } =
-          await reader.read();
-
-        if (done) {
-          break;
-        }
-
-        buffer +=
-          decoder.decode(
-            value,
-            {
-              stream: true
-            }
-          );
-
-        const blocks =
-          buffer.split(
-            "\n\n"
-          );
-
-        buffer =
-          blocks.pop() ||
-          "";
-
-        for (const block of blocks) {
-          const lines =
-            block.split("\n");
-
-          for (const line of lines) {
-            const trimmed =
-              line.trim();
-
-            if (
-              !trimmed ||
-              !trimmed.startsWith(
-                "data:"
-              )
-            ) {
-              continue;
-            }
-
-            const jsonText =
-              trimmed.replace(
-                /^data:\s*/,
-                ""
-              );
-
-            if (
-              jsonText ===
-              "[DONE]"
-            ) {
-              continue;
-            }
-
-            try {
-              const payload =
-                JSON.parse(
-                  jsonText
-                );
-
-              const chunk =
-                this.extractChunkText(
-                  payload
-                );
-
-              if (!chunk) {
-                continue;
-              }
-
-              fullText +=
-                chunk;
-
-              if (onChunk) {
-                onChunk(
-                  fullText,
-                  chunk
-                );
-              }
-            } catch (error) {
-              console.warn(
-                "Stream parse skip:",
-                error
-              );
-            }
-          }
-        }
-      }
-
-      return (
-        fullText ||
-        "No response returned."
+          body: JSON.stringify({
+            contents
+          })
+        },
+        60000
       );
-    } catch (error) {
-      if (
-        error.name ===
-          "AbortError" ||
-        error.message?.includes(
-          "aborted"
+
+    if (!response.ok) {
+      throw new Error(
+        await this.parseError(
+          response
         )
-      ) {
-        throw error;
+      );
+    }
+
+    if (!response.body) {
+      throw new Error(
+        "Streaming not supported"
+      );
+    }
+
+    const reader =
+      response.body.getReader();
+
+    const decoder =
+      new TextDecoder();
+
+    let buffer = "";
+    let fullText = "";
+
+    while (true) {
+      const {
+        done,
+        value
+      } =
+        await reader.read();
+
+      if (done) {
+        break;
       }
 
-      console.error(
-        "[Gemini] streamChat failed:",
-        error
-      );
+      buffer +=
+        decoder.decode(
+          value,
+          {
+            stream: true
+          }
+        );
 
-      throw error;
+      const lines =
+        buffer.split("\n");
+
+      buffer =
+        lines.pop() || "";
+
+      for (const line of lines) {
+        const trimmed =
+          line.trim();
+
+        if (
+          !trimmed ||
+          !trimmed.startsWith(
+            "data:"
+          )
+        ) {
+          continue;
+        }
+
+        const jsonText =
+          trimmed.replace(
+            /^data:\s*/,
+            ""
+          );
+
+        if (
+          jsonText ===
+          "[DONE]"
+        ) {
+          continue;
+        }
+
+        try {
+          const payload =
+            JSON.parse(
+              jsonText
+            );
+
+          const chunk =
+            this.extractChunkText(
+              payload
+            );
+
+          if (!chunk) {
+            continue;
+          }
+
+          fullText +=
+            chunk;
+
+          console.log(
+            "[Gemini chunk]",
+            chunk
+          );
+
+          if (onChunk) {
+            onChunk(
+              fullText,
+              chunk
+            );
+          }
+        } catch (error) {
+          console.warn(
+            "Stream parse skip:",
+            error,
+            jsonText
+          );
+        }
+      }
     }
+
+    return (
+      fullText ||
+      "No response returned."
+    );
   }
 }
