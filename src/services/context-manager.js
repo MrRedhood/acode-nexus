@@ -72,10 +72,14 @@ export default class ContextManager {
     ];
 
     for (const msg of messages) {
-      const role =
-        msg.role === "assistant"
-          ? "ASSISTANT"
-          : "USER";
+      if (
+        msg.id &&
+        String(msg.id).startsWith(
+          "summary_"
+        )
+      ) {
+        continue;
+      }
 
       let content =
         msg.content || "";
@@ -85,19 +89,32 @@ export default class ContextManager {
           .replace(/\s+/g, " ")
           .trim();
 
+      if (!content) {
+        continue;
+      }
+
+      const role =
+        msg.role === "assistant"
+          ? "ASSISTANT"
+          : "USER";
+
       if (
-        content.length > 120
+        content.length > 80
       ) {
         content =
           content.slice(
             0,
-            120
+            80
           ) + "...";
       }
 
       lines.push(
         `- ${role}: ${content}`
       );
+    }
+
+    if (lines.length === 1) {
+      return null;
     }
 
     return {
@@ -232,6 +249,16 @@ export default class ContextManager {
 
     console.warn(
       "[ContextManager] Overflow detected"
+    );
+
+    console.warn(
+      "Current:",
+      totalTokens
+    );
+
+    console.warn(
+      "Limit:",
+      usableLimit
     );
 
     messages =
