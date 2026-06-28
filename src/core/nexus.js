@@ -45,10 +45,6 @@ export default class Nexus {
   }
 
   async migrateAttachments() {
-    console.log(
-      "[Nexus] Attachment migration start"
-    );
-
     const data =
       SessionService.load();
 
@@ -62,10 +58,6 @@ export default class Nexus {
         Object.keys(
           attachments
         );
-
-      if (!ids.length) {
-        continue;
-      }
 
       for (const id of ids) {
         const attachment =
@@ -95,14 +87,6 @@ export default class Nexus {
 
     if (migrated > 0) {
       SessionService.save(data);
-
-      console.log(
-        `[Nexus] Migrated ${migrated} attachments`
-      );
-    } else {
-      console.log(
-        "[Nexus] No attachment migration needed"
-      );
     }
 
     return migrated;
@@ -110,22 +94,10 @@ export default class Nexus {
 
   async getCurrentFile() {
     try {
-      console.log(
-        "[NEXUS] getCurrentFile entered"
-      );
-
-      console.log(
-        "window.editorManager:",
-        window.editorManager
-      );
-
       if (
         typeof editorManager ===
         "undefined"
       ) {
-        console.error(
-          "editorManager not found"
-        );
         return null;
       }
 
@@ -134,9 +106,6 @@ export default class Nexus {
         editorManager.editor;
 
       if (!editor) {
-        console.error(
-          "editor missing"
-        );
         return null;
       }
 
@@ -144,9 +113,6 @@ export default class Nexus {
         editor.session;
 
       if (!session) {
-        console.error(
-          "session missing"
-        );
         return null;
       }
 
@@ -170,159 +136,154 @@ export default class Nexus {
         content
       };
     } catch (error) {
-      console.error(
-        "Current file read failed:",
-        error
-      );
-
+      console.error(error);
       return null;
     }
   }
 
   debugWorkspace() {
-  try {
-    console.log(
-      "[NEXUS] Workspace debug start"
-    );
-
-    const fs =
-      acode.require("fs");
-
-    const fileList =
-      acode.require(
-        "fileList"
-      );
-
-    console.log(
-      "fs type:",
-      typeof fs
-    );
-
-    console.log(
-      "fs keys:",
-      Object.keys(
-        fs || {}
-      )
-    );
-
-    console.log(
-      "fs full:",
-      fs
-    );
-
-    console.log(
-      "FS METHODS:"
-    );
-
-    console.log(
-      Object.getOwnPropertyNames(
-        fs
-      )
-    );
-
-    for (const key in fs) {
-      console.log(
-        "method:",
-        key,
-        typeof fs[key]
-      );
-    }
-
-    console.log(
-      "fileList type:",
-      typeof fileList
-    );
-
-    console.log(
-      "fileList keys:",
-      Object.keys(
-        fileList || {}
-      )
-    );
-
     try {
-      const files =
-        fileList(
-          node => ({
-            name:
-              node.name,
-            url:
-              node.url,
-            isDir:
-              !!node.children
-          })
+      console.log(
+        "===== NEXUS DEBUG START ====="
+      );
+
+      console.log(
+        "window.resolveLocalFileSystemURL:",
+        typeof window.resolveLocalFileSystemURL
+      );
+
+      console.log(
+        "window.requestFileSystem:",
+        typeof window.requestFileSystem
+      );
+
+      try {
+        const fs =
+          acode.require("fs");
+
+        console.log(
+          "fs type:",
+          typeof fs
         );
 
-      console.log(
-        "WORKSPACE FILES:",
-        files.slice(
-          0,
-          20
-        )
-      );
+        console.log(
+          "fs keys:",
+          Object.keys(
+            fs || {}
+          )
+        );
+
+        console.log(
+          "fs own props:",
+          Object.getOwnPropertyNames(
+            fs
+          )
+        );
+
+        for (const key in fs) {
+          console.log(
+            "fs method:",
+            key,
+            typeof fs[key]
+          );
+        }
+      } catch (error) {
+        console.error(
+          "fs debug failed:",
+          error
+        );
+      }
+
+      try {
+        const fileList =
+          acode.require(
+            "fileList"
+          );
+
+        console.log(
+          "fileList type:",
+          typeof fileList
+        );
+
+        console.log(
+          "fileList value:",
+          fileList
+        );
+
+        console.log(
+          "fileList string:",
+          String(fileList)
+        );
+
+        console.log(
+          "fileList props:",
+          Object.getOwnPropertyNames(
+            fileList
+          )
+        );
+
+        if (
+          typeof fileList ===
+          "function"
+        ) {
+          try {
+            const result =
+              fileList();
+
+            console.log(
+              "fileList() result:",
+              result
+            );
+
+            if (
+              Array.isArray(
+                result
+              )
+            ) {
+              console.log(
+                "fileList length:",
+                result.length
+              );
+
+              console.log(
+                "first 20:",
+                result.slice(
+                  0,
+                  20
+                )
+              );
+            }
+          } catch (error) {
+            console.error(
+              "fileList call failed:",
+              error
+            );
+          }
+        }
+      } catch (error) {
+        console.error(
+          "fileList debug failed:",
+          error
+        );
+      }
 
       console.log(
-        "TOTAL FILES:",
-        files.length
+        "===== NEXUS DEBUG END ====="
       );
+
+      return true;
     } catch (error) {
       console.error(
-        "fileList execute failed:",
         error
       );
+      return false;
     }
-
-    return true;
-  } catch (error) {
-    console.error(
-      "[NEXUS] Workspace debug failed:",
-      error
-    );
-
-    return false;
   }
-}
 
   async init() {
     try {
       console.log(
         "Nexus init start"
-      );
-
-      console.log(
-        "ACODE FULL:",
-        acode
-      );
-
-      console.log(
-        "ACODE KEYS:",
-        Object.getOwnPropertyNames(
-          acode
-        )
-      );
-
-      console.log(
-        "WINDOW KEYS SAMPLE:",
-        Object.getOwnPropertyNames(
-          window
-        ).filter(
-          key =>
-            key
-              .toLowerCase()
-              .includes(
-                "file"
-              ) ||
-            key
-              .toLowerCase()
-              .includes(
-                "acode"
-              ) ||
-            key
-              .toLowerCase()
-              .includes(
-                "fs"
-              )
-        )
       );
 
       await this.injectStyles();
@@ -331,10 +292,6 @@ export default class Nexus {
       window.NexusBridge = {
         getCurrentFile:
           async () => {
-            console.log(
-              "[NEXUS BRIDGE] getCurrentFile called"
-            );
-
             return await this.getCurrentFile();
           },
 
@@ -344,20 +301,12 @@ export default class Nexus {
           }
       };
 
-      console.log(
-        "Creating sidebar"
-      );
-
       this.sidebar =
         new Sidebar(
           this.page
         );
 
       this.sidebar.init();
-
-      console.log(
-        "Sidebar initialized"
-      );
     } catch (err) {
       console.error(
         "Nexus init crash:",
