@@ -53,51 +53,15 @@ export default {
     return attachments;
   },
 
-  openImagePreview(src) {
-    const old =
-      document.querySelector(
-        ".nexus-image-preview-overlay"
-      );
-
-    if (old) old.remove();
-
-    const overlay =
-      document.createElement("div");
-
-    overlay.className =
-      "nexus-image-preview-overlay";
-
-    overlay.innerHTML = `
-      <button class="nexus-image-preview-close">×</button>
-      <img src="${src}" class="nexus-image-preview-img">
-    `;
-
-    overlay.addEventListener(
-      "click",
-      e => {
-        if (
-          e.target === overlay ||
-          e.target.classList.contains(
-            "nexus-image-preview-close"
-          )
-        ) {
-          overlay.remove();
-        }
-      }
-    );
-
-    document.body.appendChild(
-      overlay
-    );
-  },
-
   openTextPreview(att) {
     const old =
       document.querySelector(
         ".nexus-text-preview-overlay"
       );
 
-    if (old) old.remove();
+    if (old) {
+      old.remove();
+    }
 
     const overlay =
       document.createElement("div");
@@ -111,6 +75,7 @@ export default {
           <div class="nexus-text-preview-title">
             ${att.name}
           </div>
+
           <button class="nexus-text-preview-close">
             ×
           </button>
@@ -150,17 +115,6 @@ export default {
   ) {
     root
       .querySelectorAll(
-        ".nexus-attachment-thumb"
-      )
-      .forEach(img => {
-        img.onclick = () =>
-          this.openImagePreview(
-            img.src
-          );
-      });
-
-    root
-      .querySelectorAll(
         ".nexus-file-card"
       )
       .forEach(card => {
@@ -172,7 +126,9 @@ export default {
             a => a.id === id
           );
 
-        if (!att) return;
+        if (!att) {
+          return;
+        }
 
         card.onclick = () =>
           this.openTextPreview(
@@ -190,24 +146,7 @@ export default {
       );
 
     input.type = "file";
-
-    if (type === "image") {
-      input.accept = "image/*";
-    } else if (
-      type === "txt"
-    ) {
-      input.accept =
-        "text/plain,.txt";
-    } else if (
-      type === "pdf"
-    ) {
-      input.accept =
-        "application/pdf,.pdf";
-    } else if (
-      type === "code"
-    ) {
-      input.accept = "*/*";
-    }
+    input.accept = "*/*";
 
     input.addEventListener(
       "change",
@@ -236,7 +175,8 @@ export default {
             ".css",
             ".json",
             ".xml",
-            ".md"
+            ".md",
+            ".txt"
           ];
 
           const lower =
@@ -249,7 +189,7 @@ export default {
 
           if (!valid) {
             self.showToast(
-              "Unsupported code file"
+              "Unsupported file"
             );
             return;
           }
@@ -263,43 +203,6 @@ export default {
     );
 
     input.click();
-  },
-
-  fileToBase64(file) {
-    return new Promise(
-      (resolve, reject) => {
-        const reader =
-          new FileReader();
-
-        reader.onload = () => {
-          try {
-            const result =
-              String(
-                reader.result || ""
-              );
-
-            resolve(
-              result.split(",")[1] ||
-                ""
-            );
-          } catch (error) {
-            reject(error);
-          }
-        };
-
-        reader.onerror = () =>
-          reject(
-            reader.error ||
-              new Error(
-                "File read failed"
-              )
-          );
-
-        reader.readAsDataURL(
-          file
-        );
-      }
-    );
   },
 
   fileToText(file) {
@@ -331,18 +234,7 @@ export default {
     );
   },
 
-  getMimeType(file, type) {
-    if (type === "pdf") {
-      return "application/pdf";
-    }
-
-    if (type === "image") {
-      return (
-        file.type ||
-        "image/png"
-      );
-    }
-
+  getMimeType() {
     return "text/plain";
   },
 
@@ -364,27 +256,13 @@ export default {
         size: file.size,
         type,
         mimeType:
-          file.type ||
-          this.getMimeType(
-            file,
-            type
-          )
-      };
+          "text/plain",
 
-      if (
-        type === "image" ||
-        type === "pdf"
-      ) {
-        attachment.data =
-          await this.fileToBase64(
-            file
-          );
-      } else {
-        attachment.content =
+        content:
           await this.fileToText(
             file
-          );
-      }
+          )
+      };
 
       if (
         !this.pendingAttachments
@@ -409,7 +287,7 @@ export default {
       );
 
       this.showToast(
-        "Unsupported file format"
+        "Attachment failed"
       );
     }
   },
@@ -434,55 +312,22 @@ export default {
       `
       : "";
 
-    if (att.type === "image") {
-      const imageSrc =
-        att.data
-          ? `data:${att.mimeType};base64,${att.data}`
-          : "";
-
-      return `
-        <div class="nexus-attachment-card nexus-image-card">
-          ${
-            imageSrc
-              ? `<img src="${imageSrc}" class="nexus-attachment-thumb">`
-              : `<div class="nexus-attachment-thumb-placeholder">📷</div>`
-          }
-
-          <div class="nexus-attachment-meta">
-            <div>${att.name}</div>
-            <small>${this.formatFileSize(att.size)}</small>
-          </div>
-
-          ${removeButton}
-        </div>
-      `;
-    }
-
-    if (att.type === "pdf") {
-      return `
-        <div class="nexus-attachment-card nexus-pdf-card">
-          <div class="nexus-attachment-icon">📕</div>
-
-          <div class="nexus-attachment-meta">
-            <div>${att.name}</div>
-            <small>${this.formatFileSize(att.size)}</small>
-          </div>
-
-          ${removeButton}
-        </div>
-      `;
-    }
-
     return `
       <div
         class="nexus-attachment-card nexus-file-card"
         data-id="${att.id}"
       >
-        <div class="nexus-attachment-icon">📎</div>
+        <div class="nexus-attachment-icon">
+          📎
+        </div>
 
         <div class="nexus-attachment-meta">
           <div>${att.name}</div>
-          <small>${this.formatFileSize(att.size)}</small>
+          <small>
+            ${this.formatFileSize(
+              att.size
+            )}
+          </small>
         </div>
 
         ${removeButton}
@@ -610,7 +455,9 @@ export default {
     }
 
     container.innerHTML =
-      `<div class="nexus-message-attachment-chip">Loading...</div>`;
+      `<div class="nexus-message-attachment-chip">
+        Loading...
+      </div>`;
 
     const attachments =
       await this.getAttachmentsHybrid(
