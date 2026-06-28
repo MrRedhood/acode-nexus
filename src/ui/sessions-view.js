@@ -53,14 +53,19 @@ export default class SessionsView {
         "#new-chat-btn"
       );
 
-    newBtn?.addEventListener(
-      "click",
-      () => {
-        SessionService.createSession();
-        this.render();
-        this.onSelect?.();
-      }
-    );
+    if (newBtn) {
+      newBtn.addEventListener(
+        "click",
+        () => {
+          SessionService.createSession();
+          this.render();
+
+          if (this.onSelect) {
+            this.onSelect();
+          }
+        }
+      );
+    }
 
     this.attachSessionEvents();
   }
@@ -157,7 +162,10 @@ export default class SessionsView {
             );
 
             this.render();
-            this.onSelect?.();
+
+            if (this.onSelect) {
+              this.onSelect();
+            }
           }
         );
       });
@@ -217,7 +225,10 @@ export default class SessionsView {
                 sessionId
               );
               this.render();
-              this.onSelect?.();
+
+              if (this.onSelect) {
+                this.onSelect();
+              }
             } else if (
               action === "export"
             ) {
@@ -308,11 +319,17 @@ export default class SessionsView {
         "#rename-input"
       );
 
-    input?.focus();
+    if (input) {
+      input.focus();
+    }
 
-        overlay
-      .querySelector("#rename-save")
-      ?.addEventListener(
+    const saveBtn =
+      overlay.querySelector(
+        "#rename-save"
+      );
+
+    if (saveBtn) {
+      saveBtn.addEventListener(
         "click",
         () => {
           const newTitle =
@@ -332,20 +349,27 @@ export default class SessionsView {
 
           overlay.remove();
           this.render();
-          this.onSelect?.();
+
+          if (this.onSelect) {
+            this.onSelect();
+          }
         }
       );
+    }
 
-    overlay
-      .querySelector(
+    const cancelBtn =
+      overlay.querySelector(
         "#rename-cancel"
-      )
-      ?.addEventListener(
+      );
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener(
         "click",
         () => {
           overlay.remove();
         }
       );
+    }
   }
 
   openDeleteModal(sessionId) {
@@ -376,11 +400,13 @@ export default class SessionsView {
       overlay
     );
 
-    overlay
-      .querySelector(
+    const confirmBtn =
+      overlay.querySelector(
         "#delete-confirm"
-      )
-      ?.addEventListener(
+      );
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener(
         "click",
         () => {
           SessionService.deleteSession(
@@ -389,20 +415,27 @@ export default class SessionsView {
 
           overlay.remove();
           this.render();
-          this.onSelect?.();
+
+          if (this.onSelect) {
+            this.onSelect();
+          }
         }
       );
+    }
 
-    overlay
-      .querySelector(
+    const cancelBtn =
+      overlay.querySelector(
         "#delete-cancel"
-      )
-      ?.addEventListener(
+      );
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener(
         "click",
         () => {
           overlay.remove();
         }
       );
+    }
   }
 
   exportSession(sessionId) {
