@@ -87,6 +87,30 @@ export default class WorkspaceManager {
         this.workspaceFiles.length
       );
 
+      console.log(
+        "FIRST FILE OBJECT:",
+        this.workspaceFiles[0]
+      );
+
+      console.log(
+        "FIRST FILE RAW:",
+        this.workspaceFiles[0]
+          ?.raw
+      );
+
+      if (
+        this.workspaceFiles[0]
+          ?.raw
+      ) {
+        console.log(
+          "RAW PROPS:",
+          Object.getOwnPropertyNames(
+            this.workspaceFiles[0]
+              .raw
+          )
+        );
+      }
+
       return this.workspaceFiles;
     } catch (error) {
       console.error(
