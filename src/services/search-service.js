@@ -183,13 +183,61 @@ export default class SearchService {
       return null;
     }
 
-    const files =
-      WorkspaceManager.getFiles();
-
     const lower =
       path.toLowerCase();
 
-    return (
+    if (
+      typeof editorManager !==
+      "undefined" &&
+      editorManager.files
+    ) {
+      const openFile =
+        editorManager.files.find(
+          file => {
+            const filename =
+              (
+                file.filename ||
+                file.name ||
+                ""
+              ).toLowerCase();
+
+            const uri =
+              (
+                file.uri || ""
+              ).toLowerCase();
+
+            const location =
+              (
+                file.location ||
+                ""
+              ).toLowerCase();
+
+            return (
+              filename.includes(
+                lower
+              ) ||
+              uri.includes(
+                lower
+              ) ||
+              location.includes(
+                lower
+              )
+            );
+          }
+        );
+
+      if (openFile) {
+        return {
+          type: "editor",
+          file: openFile
+        };
+      }
+    }
+
+    const files =
+      WorkspaceManager.getFiles();
+
+    const workspaceFile =
       files.find(file =>
         (
           file.path || ""
@@ -201,7 +249,15 @@ export default class SearchService {
         )
           .toLowerCase()
           .includes(lower)
-      ) || null
-    );
+      );
+
+    if (workspaceFile) {
+      return {
+        type: "workspace",
+        file: workspaceFile
+      };
+    }
+
+    return null;
   }
 }
