@@ -287,7 +287,7 @@ export default {
     const pendingAttachments =
       this.pendingAttachments || [];
 
-        const editingAttachmentIds =
+    const editingAttachmentIds =
       this.editingAttachmentIds || [];
 
     if (
@@ -304,13 +304,8 @@ export default {
       const newAttachmentIds = [];
 
       for (const att of pendingAttachments) {
-        await AttachmentStorage.saveAttachment(
-          att
-        );
-
-        newAttachmentIds.push(
-          att.id
-        );
+        await AttachmentStorage.saveAttachment(att);
+        newAttachmentIds.push(att.id);
       }
 
       SessionService.updateMessageWithAttachments(
@@ -326,24 +321,16 @@ export default {
         this.editingMessageId
       );
 
-      this.editingMessageId =
-        null;
-
-      this.editingAttachmentIds =
-        [];
-
-      this.pendingAttachments =
-        [];
+      this.editingMessageId = null;
+      this.editingAttachmentIds = [];
+      this.pendingAttachments = [];
 
       this.renderAttachmentPreview();
       this.renderMessages();
 
       input.value = "";
 
-      this.autoResizeTextarea(
-        input
-      );
-
+      this.autoResizeTextarea(input);
       this.updateTokenCounter();
 
       await this.generateAssistantReply();
@@ -353,10 +340,7 @@ export default {
     const attachmentIds = [];
 
     for (const att of pendingAttachments) {
-      await AttachmentStorage.saveAttachment(
-        att
-      );
-
+      await AttachmentStorage.saveAttachment(att);
       attachmentIds.push(att.id);
     }
 
@@ -379,44 +363,30 @@ export default {
     this.editingAttachmentIds = [];
 
     this.renderAttachmentPreview();
-    this.autoResizeTextarea(
-      input
-    );
+    this.autoResizeTextarea(input);
     this.updateTokenCounter();
 
-    if (
-      text.startsWith("/files ")
-    ) {
-      const query =
-        text.slice(7).trim();
-
+    if (text.startsWith("/files ")) {
+      const query = text.slice(7).trim();
       const results =
-        SearchService.searchFiles(
-          query
-        );
+        SearchService.searchFiles(query);
 
       let content =
         `File results for: ${query}\n\n`;
 
       if (results.length) {
-        results.forEach(
-          file => {
-            content +=
-              `• ${file.name} (${file.path})\n`;
-          }
-        );
+        results.forEach(file => {
+          content +=
+            `• ${file.name} (${file.path})\n`;
+        });
       } else {
-        content +=
-          "No files found.";
+        content += "No files found.";
       }
 
       this.appendMessageObject(
         {
-          id:
-            "msg_" +
-            Date.now(),
-          role:
-            "assistant",
+          id: "msg_" + Date.now(),
+          role: "assistant",
           content
         },
         true,
@@ -427,11 +397,8 @@ export default {
       return;
     }
 
-    if (
-      text.startsWith("/code ")
-    ) {
-      const query =
-        text.slice(6).trim();
+    if (text.startsWith("/code ")) {
+      const query = text.slice(6).trim();
 
       const results =
         await SearchService.searchCode(
@@ -442,12 +409,10 @@ export default {
         `Code results for: ${query}\n\n`;
 
       if (results.length) {
-        results.forEach(
-          match => {
-            content +=
-              `• ${match.file}:${match.line} ${match.text}\n`;
-          }
-        );
+        results.forEach(match => {
+          content +=
+            `• ${match.file}:${match.line} ${match.text}\n`;
+        });
       } else {
         content +=
           "No code matches found.";
@@ -455,11 +420,8 @@ export default {
 
       this.appendMessageObject(
         {
-          id:
-            "msg_" +
-            Date.now(),
-          role:
-            "assistant",
+          id: "msg_" + Date.now(),
+          role: "assistant",
           content
         },
         true,
@@ -470,22 +432,29 @@ export default {
       return;
     }
 
-    if (
-      text.startsWith("/open ")
-    ) {
+    if (text.startsWith("/open ")) {
       const path =
         text.slice(6).trim();
 
-      const file =
-        SearchService.openFile(
-          path
-        );
+      const result =
+        SearchService.openFile(path);
 
       let content;
 
-      if (file) {
-        content =
-          `File found:\n\n${file.name}\n${file.path}`;
+      if (result) {
+        if (
+          result.type === "editor"
+        ) {
+          editorManager.switchFile(
+            result.file.id
+          );
+
+          content =
+            `Opened file:\n\n${result.file.filename}`;
+        } else {
+          content =
+            `File found in workspace:\n\n${result.file.name}\n${result.file.path}`;
+        }
       } else {
         content =
           "File not found.";
@@ -493,11 +462,8 @@ export default {
 
       this.appendMessageObject(
         {
-          id:
-            "msg_" +
-            Date.now(),
-          role:
-            "assistant",
+          id: "msg_" + Date.now(),
+          role: "assistant",
           content
         },
         true,
@@ -508,11 +474,8 @@ export default {
       return;
     }
 
-    if (
-      text.startsWith("/grep ")
-    ) {
-      const query =
-        text.slice(6).trim();
+    if (text.startsWith("/grep ")) {
+      const query = text.slice(6).trim();
 
       const results =
         await SearchService.searchAllFiles(
@@ -523,12 +486,10 @@ export default {
         `Global code results for: ${query}\n\n`;
 
       if (results.length) {
-        results.forEach(
-          match => {
-            content +=
-              `• ${match.file}:${match.line}\n${match.text}\n\n`;
-          }
-        );
+        results.forEach(match => {
+          content +=
+            `• ${match.file}:${match.line}\n${match.text}\n\n`;
+        });
       } else {
         content +=
           "No global matches found.";
@@ -536,11 +497,8 @@ export default {
 
       this.appendMessageObject(
         {
-          id:
-            "msg_" +
-            Date.now(),
-          role:
-            "assistant",
+          id: "msg_" + Date.now(),
+          role: "assistant",
           content
         },
         true,
