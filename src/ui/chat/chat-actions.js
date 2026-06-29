@@ -631,7 +631,12 @@ if (isSearchQuery) {
       );
   }
 
-  if (symbol) {
+  console.log(
+  "EXTRACTED SYMBOL:",
+  symbol
+);
+
+if (symbol) {
     const results =
       await SearchService.searchCode(
         symbol
