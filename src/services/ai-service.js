@@ -226,9 +226,6 @@ ${finalContent}`,
     if (
       cloned.role === "user"
     ) {
-      const originalContent =
-        cloned.content;
-
       const parsed =
         this.parseSlashCommand(
           cloned.content
@@ -300,104 +297,6 @@ ${codeText}
               parsed.command
             ].prefix + content;
         }
-      } else {
-        const lower =
-          originalContent.toLowerCase();
-
-        const searchHints = [
-          "where is ",
-          "find ",
-          "implemented",
-          "defined",
-          "locate"
-        ];
-
-        const needsSearch =
-          searchHints.some(
-            hint =>
-              lower.includes(
-                hint
-              )
-          );
-
-        if (needsSearch) {
-          const words =
-            originalContent.match(
-              /[A-Za-z_][A-Za-z0-9_]*/g
-            ) || [];
-
-          let symbol =
-            words.find(
-              word =>
-                /[a-z][A-Z]/.test(
-                  word
-                )
-            );
-
-          if (!symbol) {
-            const ignored = [
-              "where",
-              "find",
-              "implemented",
-              "defined",
-              "locate",
-              "function",
-              "method",
-              "class",
-              "is"
-            ];
-
-            symbol =
-              words.find(
-                word =>
-                  word.length >
-                    2 &&
-                  !ignored.includes(
-                    word.toLowerCase()
-                  )
-              );
-          }
-
-          if (symbol) {
-            const results =
-              await SearchService.searchCode(
-                symbol
-              );
-
-            if (
-              results.length
-            ) {
-              const toolContext =
-                results
-                  .slice(0, 10)
-                  .map(
-                    match =>
-                      `FILE: ${match.file}
-LINE: ${match.line}
-
-${match.snippet || match.text}`
-                  )
-                  .join(
-                    "\n\n====================\n\n"
-                  );
-
-              cloned.content =
-`You are a codebase assistant.
-
-Rules:
-1. Use ONLY the search results below.
-2. Do NOT say "likely", "probably", or "check manually".
-3. Answer directly using exact file names and line numbers.
-4. If search results exist, trust them.
-
-User question:
-${originalContent}
-
-Search results:
-${toolContext}`;
-            }
-          }
-        }
       }
 
       if (
@@ -450,218 +349,180 @@ ${toolContext}`;
 }
 
   static async getModels(
-    provider = null,
-    apiKey = null
-  ) {
-    provider ??=
-      StorageService.get(
-        "provider"
-      );
-
-    apiKey ??=
-      StorageService.get(
-        "apiKey"
-      );
-
-    if (
-      !provider ||
-      !apiKey
-    ) {
-      throw new Error(
-        "Provider or API key missing"
-      );
-    }
-
-    if (
-      provider ===
-      "gemini"
-    ) {
-      return await GeminiProvider.getModels(
-        apiKey
-      );
-    }
-
-    throw new Error(
-      "Unsupported provider"
-    );
-  }
-
-  static async prepareMessages() {
-    const provider =
-      StorageService.get(
-        "provider"
-      );
-
-    const apiKey =
-      StorageService.get(
-        "apiKey"
-      );
-
-    const model =
-      StorageService.get(
-        "model"
-      );
-
-    if (!provider) {
-      throw new Error(
-        "No provider selected"
-      );
-    }
-
-    if (!apiKey) {
-      throw new Error(
-        "No API key saved"
-      );
-    }
-
-    if (!model) {
-      throw new Error(
-        "No model selected"
-      );
-    }
-
-    const messages =
-      SessionService.getMessages();
-
-    if (!messages.length) {
-      throw new Error(
-        "No messages found"
-      );
-    }
-
-    const cleanedMessages =
-  messages
-    .filter(
-      msg =>
-        msg &&
-        msg.role &&
-        typeof msg.content ===
-          "string"
-    )
-    .filter((msg, index, arr) => {
-      if (
-        msg.role !== "assistant"
-      ) {
-        return true;
-      }
-
-      const previous =
-        arr[index - 1];
-
-      if (
-        previous &&
-        previous.role === "user"
-      ) {
-        const text =
-          previous.content.toLowerCase();
-
-        const searchHints = [
-          "where is ",
-          "find ",
-          "implemented",
-          "defined",
-          "locate"
-        ];
-
-        const isSearchQuery =
-          searchHints.some(
-            hint =>
-              text.includes(hint)
-          );
-
-        if (isSearchQuery) {
-          return false;
-        }
-      }
-
-      return true;
-    })
-    .map(msg => ({
-      ...msg
-    }));
-
-    let processedMessages =
-      await this.preprocessMessages(
-        cleanedMessages
-      );
-
-    processedMessages =
-      ContextManager.prepareMessages(
-        processedMessages
-      );
-
-    return {
-      provider,
-      apiKey,
-      model,
-      processedMessages
-    };
-  }
-
-  static async sendMessage(
-    signal = null
-  ) {
-    const {
-      provider,
-      apiKey,
-      model,
-      processedMessages
-    } =
-      await this.prepareMessages();
-
-    if (
-      provider ===
-      "gemini"
-    ) {
-      return await GeminiProvider.chat(
-        apiKey,
-        model,
-        processedMessages,
-        signal
-      );
-    }
-
-    throw new Error(
-      "Unsupported provider"
-    );
-  }
-
-  static async sendMessageStream(
-    onChunk,
-    signal = null
-  ) {
-    const {
-      provider,
-      apiKey,
-      model,
-      processedMessages
-    } =
-      await this.prepareMessages();
-
-    if (
-  provider ===
-  "gemini"
+  provider = null,
+  apiKey = null
 ) {
-  console.log(
-  "FINAL MESSAGE CONTENT:",
-  JSON.stringify(
-    processedMessages,
-    null,
-    2
-  )
-);
+  provider ??=
+    StorageService.get(
+      "provider"
+    );
 
-  return await GeminiProvider.streamChat(
+  apiKey ??=
+    StorageService.get(
+      "apiKey"
+    );
+
+  if (
+    !provider ||
+    !apiKey
+  ) {
+    throw new Error(
+      "Provider or API key missing"
+    );
+  }
+
+  if (
+    provider ===
+    "gemini"
+  ) {
+    return await GeminiProvider.getModels(
+      apiKey
+    );
+  }
+
+  throw new Error(
+    "Unsupported provider"
+  );
+}
+
+static async prepareMessages() {
+  const provider =
+    StorageService.get(
+      "provider"
+    );
+
+  const apiKey =
+    StorageService.get(
+      "apiKey"
+    );
+
+  const model =
+    StorageService.get(
+      "model"
+    );
+
+  if (!provider) {
+    throw new Error(
+      "No provider selected"
+    );
+  }
+
+  if (!apiKey) {
+    throw new Error(
+      "No API key saved"
+    );
+  }
+
+  if (!model) {
+    throw new Error(
+      "No model selected"
+    );
+  }
+
+  const messages =
+    SessionService.getMessages();
+
+  if (!messages.length) {
+    throw new Error(
+      "No messages found"
+    );
+  }
+
+  const cleanedMessages =
+    messages
+      .filter(
+        msg =>
+          msg &&
+          msg.role &&
+          typeof msg.content ===
+            "string"
+      )
+      .map(msg => ({
+        ...msg
+      }));
+
+  let processedMessages =
+    await this.preprocessMessages(
+      cleanedMessages
+    );
+
+  processedMessages =
+    ContextManager.prepareMessages(
+      processedMessages
+    );
+
+  return {
+    provider,
     apiKey,
     model,
-    processedMessages,
-    onChunk,
-    signal
-  );
-    }
+    processedMessages
+  };
+}
 
-    throw new Error(
-      "Unsupported provider"
+static async sendMessage(
+  signal = null
+) {
+  const {
+    provider,
+    apiKey,
+    model,
+    processedMessages
+  } =
+    await this.prepareMessages();
+
+  if (
+    provider ===
+    "gemini"
+  ) {
+    return await GeminiProvider.chat(
+      apiKey,
+      model,
+      processedMessages,
+      signal
     );
   }
+
+  throw new Error(
+    "Unsupported provider"
+  );
+}
+
+static async sendMessageStream(
+  onChunk,
+  signal = null
+) {
+  const {
+    provider,
+    apiKey,
+    model,
+    processedMessages
+  } =
+    await this.prepareMessages();
+
+  if (
+    provider ===
+    "gemini"
+  ) {
+    console.log(
+      "FINAL MESSAGE CONTENT:",
+      JSON.stringify(
+        processedMessages,
+        null,
+        2
+      )
+    );
+
+    return await GeminiProvider.streamChat(
+      apiKey,
+      model,
+      processedMessages,
+      onChunk,
+      signal
+    );
+  }
+
+  throw new Error(
+    "Unsupported provider"
+  );
+}
 }
