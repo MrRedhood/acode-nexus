@@ -1,6 +1,7 @@
 import AIService from "../../services/ai-service.js";
 import SessionService from "../../services/session-service.js";
 import AttachmentStorage from "../../services/attachment-storage.js";
+import SearchService from "../../services/search-service.js";
 import parseMarkdown from "../../utils/markdown.js";
 
 export default {
@@ -270,7 +271,7 @@ export default {
     }
   },
 
-  async sendMessage() {
+    async sendMessage() {
     if (this.isGenerating) {
       return;
     }
@@ -327,8 +328,10 @@ export default {
 
       this.editingMessageId =
         null;
+
       this.editingAttachmentIds =
         [];
+
       this.pendingAttachments =
         [];
 
@@ -354,7 +357,9 @@ export default {
         att
       );
 
-      attachmentIds.push(att.id);
+      attachmentIds.push(
+        att.id
+      );
     }
 
     const message =
@@ -380,6 +385,78 @@ export default {
       input
     );
     this.updateTokenCounter();
+
+    if (
+      text.startsWith(
+        "/search "
+      )
+    ) {
+      const query =
+        text.slice(8).trim();
+
+      const results =
+        SearchService.search(
+          query
+        );
+
+      let content =
+        `Search results for: ${query}\n\n`;
+
+      if (
+        results.workspace.length
+      ) {
+        content +=
+          "Workspace matches:\n";
+
+        results.workspace.forEach(
+          file => {
+            content +=
+              `• ${file.name} (${file.path})\n`;
+          }
+        );
+
+        content += "\n";
+      }
+
+      if (
+        results.currentFile.length
+      ) {
+        content +=
+          "Current file matches:\n";
+
+        results.currentFile.forEach(
+          match => {
+            content +=
+              `• Line ${match.line}: ${match.text}\n`;
+          }
+        );
+      }
+
+      if (
+        !results.workspace.length &&
+        !results.currentFile.length
+      ) {
+        content +=
+          "No matches found.";
+      }
+
+      const assistantMessage = {
+        id:
+          "msg_" +
+          Date.now(),
+        role: "assistant",
+        content
+      };
+
+      this.appendMessageObject(
+        assistantMessage,
+        true,
+        true,
+        true
+      );
+
+      return;
+    }
 
     await this.generateAssistantReply();
   }
