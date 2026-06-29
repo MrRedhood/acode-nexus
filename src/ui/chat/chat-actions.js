@@ -573,6 +573,11 @@ ${result.content}`;
       return;
     }
 
+    console.log(
+  "SEARCH BLOCK REACHED",
+  text
+);
+
     const searchHints = [
   "where is ",
   "find ",
