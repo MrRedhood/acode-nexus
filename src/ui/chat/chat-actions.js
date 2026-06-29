@@ -328,10 +328,8 @@ export default {
 
       this.editingMessageId =
         null;
-
       this.editingAttachmentIds =
         [];
-
       this.pendingAttachments =
         [];
 
@@ -424,7 +422,7 @@ export default {
       return;
     }
 
-    if (
+        if (
       text.startsWith("/code ")
     ) {
       const query =
@@ -483,6 +481,46 @@ export default {
       } else {
         content =
           "File not found.";
+      }
+
+      this.appendMessageObject(
+        {
+          id: "msg_" + Date.now(),
+          role: "assistant",
+          content
+        },
+        true,
+        true,
+        true
+      );
+
+      return;
+    }
+
+    if (
+      text.startsWith("/grep ")
+    ) {
+      const query =
+        text.slice(6).trim();
+
+      const results =
+        SearchService.searchAllFiles(
+          query
+        );
+
+      let content =
+        `Global code results for: ${query}\n\n`;
+
+      if (results.length) {
+        results.forEach(
+          match => {
+            content +=
+              `• ${match.file}:${match.line}\n${match.text}\n\n`;
+          }
+        );
+      } else {
+        content +=
+          "No global matches found.";
       }
 
       this.appendMessageObject(
