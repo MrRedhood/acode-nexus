@@ -271,7 +271,7 @@ export default {
     }
   },
 
-    async sendMessage() {
+  async sendMessage() {
     if (this.isGenerating) {
       return;
     }
@@ -357,9 +357,7 @@ export default {
         att
       );
 
-      attachmentIds.push(
-        att.id
-      );
+      attachmentIds.push(att.id);
     }
 
     const message =
@@ -387,69 +385,112 @@ export default {
     this.updateTokenCounter();
 
     if (
-      text.startsWith(
-        "/search "
-      )
+      text.startsWith("/files ")
     ) {
       const query =
-        text.slice(8).trim();
+        text.slice(7).trim();
 
       const results =
-        SearchService.search(
+        SearchService.searchFiles(
           query
         );
 
       let content =
-        `Search results for: ${query}\n\n`;
+        `File results for: ${query}\n\n`;
 
-      if (
-        results.workspace.length
-      ) {
-        content +=
-          "Workspace matches:\n";
-
-        results.workspace.forEach(
+      if (results.length) {
+        results.forEach(
           file => {
             content +=
               `• ${file.name} (${file.path})\n`;
           }
         );
-
-        content += "\n";
+      } else {
+        content +=
+          "No files found.";
       }
 
-      if (
-        results.currentFile.length
-      ) {
-        content +=
-          "Current file matches:\n";
+      this.appendMessageObject(
+        {
+          id: "msg_" + Date.now(),
+          role: "assistant",
+          content
+        },
+        true,
+        true,
+        true
+      );
 
-        results.currentFile.forEach(
+      return;
+    }
+
+    if (
+      text.startsWith("/code ")
+    ) {
+      const query =
+        text.slice(6).trim();
+
+      const results =
+        SearchService.searchCode(
+          query
+        );
+
+      let content =
+        `Code results for: ${query}\n\n`;
+
+      if (results.length) {
+        results.forEach(
           match => {
             content +=
               `• Line ${match.line}: ${match.text}\n`;
           }
         );
-      }
-
-      if (
-        !results.workspace.length &&
-        !results.currentFile.length
-      ) {
+      } else {
         content +=
-          "No matches found.";
+          "No code matches found.";
       }
-
-      const assistantMessage = {
-        id:
-          "msg_" +
-          Date.now(),
-        role: "assistant",
-        content
-      };
 
       this.appendMessageObject(
-        assistantMessage,
+        {
+          id: "msg_" + Date.now(),
+          role: "assistant",
+          content
+        },
+        true,
+        true,
+        true
+      );
+
+      return;
+    }
+
+    if (
+      text.startsWith("/open ")
+    ) {
+      const path =
+        text.slice(6).trim();
+
+      const file =
+        SearchService.openFile(
+          path
+        );
+
+      let content;
+
+      if (file) {
+        content =
+          `File found:\n\n${file.name}\n${file.path}`;
+      } else {
+        content =
+          "File not found.";
+      }
+
+      this.appendMessageObject(
+        {
+          id: "msg_" + Date.now(),
+          role: "assistant",
+          content
+        },
         true,
         true,
         true
