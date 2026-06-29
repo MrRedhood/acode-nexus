@@ -170,6 +170,14 @@ export default class SearchService {
     return matches;
   }
 
+  static async searchAllFiles(
+    query
+  ) {
+    return await this.searchCode(
+      query
+    );
+  }
+
   static openFile(path) {
     if (!path) {
       return null;
