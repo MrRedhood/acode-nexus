@@ -30,9 +30,19 @@ export default class CommandMenu {
           "Summarize content"
       },
       {
-        name: "search",
+        name: "files",
         description:
           "Search workspace files"
+      },
+      {
+        name: "code",
+        description:
+          "Search code in current file"
+      },
+      {
+        name: "open",
+        description:
+          "Open/find file by path"
       }
     ];
   }
