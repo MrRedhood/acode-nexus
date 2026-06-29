@@ -209,133 +209,202 @@ ${finalContent}`,
   }
 
   static async preprocessMessages(
-    messages
-  ) {
-    const processed = [];
+  messages
+) {
+  const processed = [];
 
-    for (const msg of messages) {
-      const cloned = {
-        ...msg
-      };
+  for (const msg of messages) {
+    const cloned = {
+      ...msg
+    };
 
-      const attachments =
-        await this.getMessageAttachments(
-          cloned
+    const attachments =
+      await this.getMessageAttachments(
+        cloned
+      );
+
+    if (
+      cloned.role === "user"
+    ) {
+      const originalContent =
+        cloned.content;
+
+      const parsed =
+        this.parseSlashCommand(
+          cloned.content
         );
 
-      if (
-        cloned.role === "user"
-      ) {
-        const parsed =
-          this.parseSlashCommand(
-            cloned.content
-          );
+      if (parsed) {
+        let content =
+          parsed.content;
 
-        if (parsed) {
-          let content =
-            parsed.content;
+        if (
+          !content.trim()
+        ) {
+          content =
+            "[No additional content provided]";
+        }
 
-          if (
-            !content.trim()
-          ) {
-            content =
-              "[No additional content provided]";
-          }
+        if (
+          parsed.command ===
+          "search"
+        ) {
+          const fileResults =
+            SearchService.searchFiles(
+              content
+            );
 
-          if (
-            parsed.command ===
-            "search"
-          ) {
-            const results =
-              SearchService.search(
-                content
-              );
+          const codeResults =
+            await SearchService.searchCode(
+              content
+            );
 
-            const workspaceText =
-              results.workspace.length
-                ? results.workspace
-                    .map(
-                      file =>
-                        `- ${file.name} (${file.path})`
-                    )
-                    .join("\n")
-                : "No matching files";
+          const workspaceText =
+            fileResults.length
+              ? fileResults
+                  .map(
+                    file =>
+                      `- ${file.name} (${file.path})`
+                  )
+                  .join("\n")
+              : "No matching files";
 
-            const currentFileText =
-              results.currentFile.length
-                ? results.currentFile
-                    .map(
-                      match =>
-                        `Line ${match.line}: ${match.text}`
-                    )
-                    .join("\n")
-                : "No content matches";
+          const codeText =
+            codeResults.length
+              ? codeResults
+                  .slice(0, 20)
+                  .map(
+                    match =>
+                      `${match.file}:${match.line} ${match.text}`
+                  )
+                  .join("\n")
+              : "No code matches";
 
-            cloned.content = `
+          cloned.content = `
 Search query: ${content}
 
 Workspace matches:
 ${workspaceText}
 
-Current file matches:
-${currentFileText}
+Code matches:
+${codeText}
 `;
-          } else {
-            cloned.content =
-              COMMANDS[
-                parsed.command
-              ].prefix + content;
-          }
+        } else {
+          cloned.content =
+            COMMANDS[
+              parsed.command
+            ].prefix + content;
         }
+      } else {
+        const lower =
+          originalContent.toLowerCase();
 
-        if (
-          attachments.length > 0
-        ) {
-          let remainingBudget =
-            MAX_TOTAL_ATTACHMENT_CHARS;
+        const searchHints = [
+          "where is ",
+          "find ",
+          "implemented",
+          "defined",
+          "locate"
+        ];
 
-          const attachmentTexts =
-            [];
+        const needsSearch =
+          searchHints.some(
+            hint =>
+              lower.includes(
+                hint
+              )
+          );
 
-          for (const att of attachments) {
+        if (needsSearch) {
+          const words =
+            originalContent.match(
+              /[A-Za-z_][A-Za-z0-9_]*/g
+            ) || [];
+
+          let symbol =
+            words.find(
+              word =>
+                word.length > 3
+            );
+
+          if (symbol) {
+            const results =
+              await SearchService.searchCode(
+                symbol
+              );
+
             if (
-              remainingBudget <= 0
+              results.length
             ) {
-              attachmentTexts.push(
-                "[ATTACHMENT SKIPPED: Budget exceeded]"
-              );
-              continue;
+              const toolContext =
+                results
+                  .slice(0, 10)
+                  .map(
+                    match =>
+                      `${match.file}:${match.line} ${match.text}`
+                  )
+                  .join(
+                    "\n"
+                  );
+
+              cloned.content =
+                `${originalContent}
+
+Relevant code search results:
+${toolContext}`;
             }
-
-            const result =
-              this.attachmentToText(
-                att,
-                remainingBudget
-              );
-
-            attachmentTexts.push(
-              result.text
-            );
-
-            remainingBudget -=
-              result.usedChars;
           }
-
-          cloned.content +=
-            "\n\nAttached Files:\n\n" +
-            attachmentTexts.join(
-              "\n\n"
-            );
         }
       }
 
-            processed.push(
-        cloned
-      );
+      if (
+        attachments.length > 0
+      ) {
+        let remainingBudget =
+          MAX_TOTAL_ATTACHMENT_CHARS;
+
+        const attachmentTexts =
+          [];
+
+        for (const att of attachments) {
+          if (
+            remainingBudget <= 0
+          ) {
+            attachmentTexts.push(
+              "[ATTACHMENT SKIPPED: Budget exceeded]"
+            );
+            continue;
+          }
+
+          const result =
+            this.attachmentToText(
+              att,
+              remainingBudget
+            );
+
+          attachmentTexts.push(
+            result.text
+          );
+
+          remainingBudget -=
+            result.usedChars;
+        }
+
+        cloned.content +=
+          "\n\nAttached Files:\n\n" +
+          attachmentTexts.join(
+            "\n\n"
+          );
+      }
     }
 
-    return processed;
+    processed.push(
+      cloned
+    );
   }
+
+  return processed;
+}
 
   static async getModels(
     provider = null,
