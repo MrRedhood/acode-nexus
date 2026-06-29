@@ -350,11 +350,11 @@ export default {
     }
 
     const message =
-      SessionService.createMessage(
-        "user",
-        text || "[Attachment]",
-        attachmentIds
-      );
+  SessionService.addMessage(
+    "user",
+    text || "[Attachment]",
+    attachmentIds
+  );
 
     this.appendMessageObject(
       message,
@@ -677,7 +677,6 @@ if (symbol) {
 };
 
 const node =
-  const node =
   this.appendMessageObject(
     assistantMessage,
     true,
