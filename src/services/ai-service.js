@@ -382,9 +382,18 @@ ${match.snippet || match.text}`
                   );
 
               cloned.content =
-                `${originalContent}
+`You are a codebase assistant.
 
-Relevant code search results:
+Rules:
+1. Use ONLY the search results below.
+2. Do NOT say "likely", "probably", or "check manually".
+3. Answer directly using exact file names and line numbers.
+4. If search results exist, trust them.
+
+User question:
+${originalContent}
+
+Search results:
 ${toolContext}`;
             }
           }
