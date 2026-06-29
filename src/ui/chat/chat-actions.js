@@ -688,6 +688,11 @@ SessionService.addExistingMessage(
   assistantMessage
 );
 
+  console.log(
+  "SESSION MESSAGES:",
+  SessionService.getMessages()
+);
+
 return;
   }
 }
