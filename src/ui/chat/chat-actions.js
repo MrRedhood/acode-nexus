@@ -362,11 +362,11 @@ export default {
 );
 
     this.appendMessageObject(
-      message,
-      true,
-      false,
-      false
-    );
+  message,
+  false,
+  false,
+  false
+);
 
     input.value = "";
     this.pendingAttachments = [];
