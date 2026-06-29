@@ -145,64 +145,65 @@ export default class WorkspaceManager {
   }
 
   static async debug() {
-  try {
-    console.log(
-      "===== WORKSPACE DEBUG START ====="
-    );
-
-    await this.scanWorkspace();
-
-    console.log(
-      "acode.fileBrowser:",
-      acode.fileBrowser
-    );
-
-    if (acode.fileBrowser) {
+    try {
       console.log(
-        "fileBrowser props:",
-        Object.getOwnPropertyNames(
-          acode.fileBrowser
-        )
+        "===== WORKSPACE DEBUG START ====="
       );
 
-      const proto =
-        Object.getPrototypeOf(
-          acode.fileBrowser
-        );
+      await this.scanWorkspace();
 
-      if (proto) {
+      console.log(
+        "acode.fileBrowser:",
+        acode.fileBrowser
+      );
+
+      if (acode.fileBrowser) {
         console.log(
-          "fileBrowser proto props:",
+          "fileBrowser props:",
           Object.getOwnPropertyNames(
-            proto
+            acode.fileBrowser
           )
         );
-      }
-    }
 
-    const suspicious =
-      Object.keys(window).filter(
-        key =>
-          key.toLowerCase().includes(
-            "git"
-          ) ||
-          key.toLowerCase().includes(
-            "repo"
-          ) ||
-          key.toLowerCase().includes(
-            "file"
-          )
+        const proto =
+          Object.getPrototypeOf(
+            acode.fileBrowser
+          );
+
+        if (proto) {
+          console.log(
+            "fileBrowser proto props:",
+            Object.getOwnPropertyNames(
+              proto
+            )
+          );
+        }
+      }
+
+      const suspicious =
+        Object.keys(window).filter(
+          key =>
+            key
+              .toLowerCase()
+              .includes("git") ||
+            key
+              .toLowerCase()
+              .includes("repo") ||
+            key
+              .toLowerCase()
+              .includes("file")
+        );
+
+      console.log(
+        "window suspicious:",
+        suspicious
       );
 
-    console.log(
-      "window suspicious:",
-      suspicious
-    );
-
-    console.log(
-      "===== WORKSPACE DEBUG END ====="
-    );
-  } catch (err) {
-    console.error(err);
+      console.log(
+        "===== WORKSPACE DEBUG END ====="
+      );
+    } catch (err) {
+      console.error(err);
+    }
   }
 }
