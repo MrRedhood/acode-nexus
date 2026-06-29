@@ -272,9 +272,14 @@ export default {
   },
 
   async sendMessage() {
-    if (this.isGenerating) {
-      return;
-    }
+  console.log(
+    "SEND MESSAGE CALLED",
+    Date.now()
+  );
+
+  if (this.isGenerating) {
+    return;
+  }
 
     const input =
       this.container.querySelector(
