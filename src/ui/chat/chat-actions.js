@@ -642,6 +642,11 @@ if (symbol) {
         symbol
       );
 
+  console.log(
+  "SEARCH RESULTS:",
+  results
+);
+
     let content =
       `${symbol} found in:\n\n`;
 
