@@ -209,83 +209,83 @@ ${finalContent}`,
   }
 
   static async preprocessMessages(
-    messages
-  ) {
-    const processed = [];
+  messages
+) {
+  const processed = [];
 
-    for (const msg of messages) {
-      const cloned = {
-        ...msg
-      };
+  for (const msg of messages) {
+    const cloned = {
+      ...msg
+    };
 
-      const attachments =
-        await this.getMessageAttachments(
-          cloned
+    const attachments =
+      await this.getMessageAttachments(
+        cloned
+      );
+
+    if (
+      cloned.role === "user"
+    ) {
+      const originalContent =
+        cloned.content;
+
+      const parsed =
+        this.parseSlashCommand(
+          cloned.content
         );
 
-      if (
-        cloned.role === "user"
-      ) {
-        const originalContent =
-          cloned.content;
+      if (parsed) {
+        let content =
+          parsed.content;
 
-        const parsed =
-          this.parseSlashCommand(
-            cloned.content
-          );
+        if (
+          !content.trim()
+        ) {
+          content =
+            "[No additional content provided]";
+        }
 
-        if (parsed) {
-          let content =
-            parsed.content;
+        if (
+          parsed.command ===
+          "search"
+        ) {
+          const fileResults =
+            SearchService.searchFiles(
+              content
+            );
 
-          if (
-            !content.trim()
-          ) {
-            content =
-              "[No additional content provided]";
-          }
+          const codeResults =
+            await SearchService.searchCode(
+              content
+            );
 
-          if (
-            parsed.command ===
-            "search"
-          ) {
-            const fileResults =
-              SearchService.searchFiles(
-                content
-              );
+          const workspaceText =
+            fileResults.length
+              ? fileResults
+                  .map(
+                    file =>
+                      `- ${file.name} (${file.path})`
+                  )
+                  .join("\n")
+              : "No matching files";
 
-            const codeResults =
-              await SearchService.searchCode(
-                content
-              );
-
-            const workspaceText =
-              fileResults.length
-                ? fileResults
-                    .map(
-                      file =>
-                        `- ${file.name} (${file.path})`
-                    )
-                    .join("\n")
-                : "No matching files";
-
-                        const codeText =
-              codeResults.length
-                ? codeResults
-                    .slice(0, 20)
-                    .map(
-                      match =>
-                        `FILE: ${match.file}
+          const codeText =
+            codeResults.length
+              ? codeResults
+                  .slice(0, 20)
+                  .map(
+                    match =>
+                      `FILE: ${match.file}
 LINE: ${match.line}
 
 ${match.snippet || match.text}`
-                    )
-                    .join(
-                      "\n\n--------------------\n\n"
-                    )
-                : "No code matches";
+                  )
+                  .join(
+                    "\n\n--------------------\n\n"
+                  )
+              : "No code matches";
 
-            cloned.content = `
+          cloned.content = `
 Search query: ${content}
 
 Workspace matches:
@@ -294,125 +294,151 @@ ${workspaceText}
 Code matches:
 ${codeText}
 `;
-          } else {
-            cloned.content =
-              COMMANDS[
-                parsed.command
-              ].prefix + content;
-          }
         } else {
-          const lower =
-            originalContent.toLowerCase();
+          cloned.content =
+            COMMANDS[
+              parsed.command
+            ].prefix + content;
+        }
+      } else {
+        const lower =
+          originalContent.toLowerCase();
 
-          const searchHints = [
-            "where is ",
-            "find ",
-            "implemented",
-            "defined",
-            "locate"
-          ];
+        const searchHints = [
+          "where is ",
+          "find ",
+          "implemented",
+          "defined",
+          "locate"
+        ];
 
-          const needsSearch =
-            searchHints.some(
-              hint =>
-                lower.includes(
-                  hint
+        const needsSearch =
+          searchHints.some(
+            hint =>
+              lower.includes(
+                hint
+              )
+          );
+
+        if (needsSearch) {
+          const words =
+            originalContent.match(
+              /[A-Za-z_][A-Za-z0-9_]*/g
+            ) || [];
+
+          let symbol =
+            words.find(
+              word =>
+                /[a-z][A-Z]/.test(
+                  word
                 )
             );
 
-          if (needsSearch) {
-            const words =
-              originalContent.match(
-                /[A-Za-z_][A-Za-z0-9_]*/g
-              ) || [];
+          if (!symbol) {
+            const ignored = [
+              "where",
+              "find",
+              "implemented",
+              "defined",
+              "locate",
+              "function",
+              "method",
+              "class",
+              "is"
+            ];
 
-            const symbol =
+            symbol =
               words.find(
                 word =>
-                  word.length > 3
+                  word.length >
+                    2 &&
+                  !ignored.includes(
+                    word.toLowerCase()
+                  )
+              );
+          }
+
+          if (symbol) {
+            const results =
+              await SearchService.searchCode(
+                symbol
               );
 
-            if (symbol) {
-              const results =
-                await SearchService.searchCode(
-                  symbol
-                );
-
-              if (
-                results.length
-              ) {
-                const toolContext =
-                  results
-                    .slice(0, 10)
-                    .map(
-                      match =>
-                        `FILE: ${match.file}
+            if (
+              results.length
+            ) {
+              const toolContext =
+                results
+                  .slice(0, 10)
+                  .map(
+                    match =>
+                      `FILE: ${match.file}
 LINE: ${match.line}
 
 ${match.snippet || match.text}`
-                    )
-                    .join(
-                      "\n\n====================\n\n"
-                    );
+                  )
+                  .join(
+                    "\n\n====================\n\n"
+                  );
 
-                cloned.content =
-                  `${originalContent}
+              cloned.content =
+                `${originalContent}
 
 Relevant code search results:
 ${toolContext}`;
-              }
             }
           }
-        }
-
-        if (
-          attachments.length > 0
-        ) {
-          let remainingBudget =
-            MAX_TOTAL_ATTACHMENT_CHARS;
-
-          const attachmentTexts =
-            [];
-
-          for (const att of attachments) {
-            if (
-              remainingBudget <= 0
-            ) {
-              attachmentTexts.push(
-                "[ATTACHMENT SKIPPED: Budget exceeded]"
-              );
-              continue;
-            }
-
-            const result =
-              this.attachmentToText(
-                att,
-                remainingBudget
-              );
-
-            attachmentTexts.push(
-              result.text
-            );
-
-            remainingBudget -=
-              result.usedChars;
-          }
-
-                    cloned.content +=
-            "\n\nAttached Files:\n\n" +
-            attachmentTexts.join(
-              "\n\n"
-            );
         }
       }
 
-      processed.push(
-        cloned
-      );
+      if (
+        attachments.length > 0
+      ) {
+        let remainingBudget =
+          MAX_TOTAL_ATTACHMENT_CHARS;
+
+        const attachmentTexts =
+          [];
+
+        for (const att of attachments) {
+          if (
+            remainingBudget <= 0
+          ) {
+            attachmentTexts.push(
+              "[ATTACHMENT SKIPPED: Budget exceeded]"
+            );
+            continue;
+          }
+
+          const result =
+            this.attachmentToText(
+              att,
+              remainingBudget
+            );
+
+          attachmentTexts.push(
+            result.text
+          );
+
+          remainingBudget -=
+            result.usedChars;
+        }
+
+        cloned.content +=
+          "\n\nAttached Files:\n\n" +
+          attachmentTexts.join(
+            "\n\n"
+          );
+      }
     }
 
-    return processed;
+    processed.push(
+      cloned
+    );
   }
+
+  return processed;
+}
 
   static async getModels(
     provider = null,
