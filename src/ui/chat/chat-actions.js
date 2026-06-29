@@ -689,7 +689,7 @@ if (symbol) {
 const node =
   this.appendMessageObject(
     assistantMessage,
-    true,
+    false,
     true,
     true
   );
