@@ -572,7 +572,7 @@ ${toolContext}`;
       console.log(
   "FINAL MESSAGES:",
   processedMessages
-);
+      );
       return await GeminiProvider.streamChat(
         apiKey,
         model,
