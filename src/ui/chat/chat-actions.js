@@ -678,11 +678,11 @@ if (symbol) {
 
 const node =
   this.appendMessageObject(
-    assistantMessage,
-    true,
-    true,
-    true
-  );
+  assistantMessage,
+  true,
+  true,
+  true
+);
 
 console.log(
   "APPENDED NODE:",
