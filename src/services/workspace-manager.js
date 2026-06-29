@@ -135,17 +135,74 @@ export default class WorkspaceManager {
         editorManager.files &&
         editorManager.files.length
       ) {
+        const file =
+          editorManager.files[0];
+
         console.log(
           "FIRST OPEN FILE:",
-          editorManager.files[0]
+          file
         );
 
         console.log(
-          "FIRST OPEN FILE PROPS:",
+          "OWN PROPS:",
           Object.getOwnPropertyNames(
-            editorManager.files[0]
+            file
           )
         );
+
+        const proto =
+          Object.getPrototypeOf(
+            file
+          );
+
+        if (proto) {
+          console.log(
+            "PROTO PROPS:",
+            Object.getOwnPropertyNames(
+              proto
+            )
+          );
+        }
+
+        for (const key in file) {
+          try {
+            console.log(
+              "ENUM KEY:",
+              key,
+              file[key]
+            );
+          } catch {}
+        }
+      }
+
+      console.log(
+        "ACTIVE FILE:",
+        editorManager.activeFile
+      );
+
+      if (
+        editorManager.activeFile
+      ) {
+        console.log(
+          "ACTIVE FILE PROPS:",
+          Object.getOwnPropertyNames(
+            editorManager.activeFile
+          )
+        );
+
+        const proto =
+          Object.getPrototypeOf(
+            editorManager.activeFile
+          );
+
+        if (proto) {
+          console.log(
+            "ACTIVE FILE PROTO PROPS:",
+            Object.getOwnPropertyNames(
+              proto
+            )
+          );
+        }
       }
 
       console.log(
