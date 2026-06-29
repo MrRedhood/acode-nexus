@@ -671,11 +671,17 @@ if (symbol) {
   content
 };
 
-this.appendMessageObject(
-  assistantMessage,
-  true,
-  true,
-  true
+const node =
+  this.appendMessageObject(
+    assistantMessage,
+    true,
+    true,
+    true
+  );
+
+console.log(
+  "APPENDED NODE:",
+  node
 );
 
 SessionService.addExistingMessage(
