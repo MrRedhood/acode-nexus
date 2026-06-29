@@ -647,21 +647,27 @@ if (isSearchQuery) {
         `No results found for ${symbol}`;
     }
 
-    this.appendMessageObject(
-      {
-        id:
-          "msg_" +
-          Date.now(),
-        role:
-          "assistant",
-        content
-      },
-      true,
-      true,
-      true
-    );
+    const assistantMessage = {
+  id:
+    "msg_" +
+    Date.now(),
+  role:
+    "assistant",
+  content
+};
 
-    return;
+this.appendMessageObject(
+  assistantMessage,
+  true,
+  true,
+  true
+);
+
+SessionService.addExistingMessage(
+  assistantMessage
+);
+
+return;
   }
 }
 
