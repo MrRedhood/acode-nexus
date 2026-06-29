@@ -219,6 +219,85 @@ export default class SearchService {
     return matches;
   }
 
+  static async readFile(
+    path,
+    startLine = 1,
+    endLine = null
+  ) {
+    const file =
+      this.openFile(path);
+
+    if (!file) {
+      return null;
+    }
+
+    const url =
+      this.toRawGithubUrl(file);
+
+    if (!url) {
+      return null;
+    }
+
+    try {
+      const response =
+        await fetch(url);
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const content =
+        await response.text();
+
+      const lines =
+        content.split("\n");
+
+      const start =
+        Math.max(
+          1,
+          startLine
+        );
+
+      const end =
+        endLine ||
+        Math.min(
+          start + 199,
+          lines.length
+        );
+
+      const snippet =
+        lines
+          .slice(
+            start - 1,
+            end
+          )
+          .map(
+            (line, index) =>
+              `${start + index}: ${line}`
+          )
+          .join("\n");
+
+      return {
+        file:
+          file.name,
+        path:
+          file.path,
+        startLine:
+          start,
+        endLine:
+          end,
+        content:
+          snippet
+      };
+    } catch (error) {
+      console.error(
+        "readFile failed:",
+        error
+      );
+      return null;
+    }
+  }
+
   static async searchAllFiles(
     query
   ) {
