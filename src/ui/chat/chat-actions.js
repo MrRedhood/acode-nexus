@@ -509,6 +509,70 @@ export default {
       return;
     }
 
+        if (text.startsWith("/read ")) {
+      const args =
+        text.slice(6).trim();
+
+      const parts =
+        args.split(" ");
+
+      const path =
+        parts[0];
+
+      const startLine =
+        parts[1]
+          ? parseInt(
+              parts[1],
+              10
+            )
+          : 1;
+
+      const endLine =
+        parts[2]
+          ? parseInt(
+              parts[2],
+              10
+            )
+          : null;
+
+      const result =
+        await SearchService.readFile(
+          path,
+          startLine,
+          endLine
+        );
+
+      let content;
+
+      if (result) {
+        content =
+          `File: ${result.file}
+
+Lines ${result.startLine}-${result.endLine}
+
+${result.content}`;
+      } else {
+        content =
+          "Unable to read file.";
+      }
+
+      this.appendMessageObject(
+        {
+          id:
+            "msg_" +
+            Date.now(),
+          role:
+            "assistant",
+          content
+        },
+        true,
+        true,
+        true
+      );
+
+      return;
+    }
+
     await this.generateAssistantReply();
   }
 };
