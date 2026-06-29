@@ -145,67 +145,64 @@ export default class WorkspaceManager {
   }
 
   static async debug() {
-    try {
+  try {
+    console.log(
+      "===== WORKSPACE DEBUG START ====="
+    );
+
+    await this.scanWorkspace();
+
+    console.log(
+      "acode.fileBrowser:",
+      acode.fileBrowser
+    );
+
+    if (acode.fileBrowser) {
       console.log(
-        "===== WORKSPACE DEBUG START ====="
+        "fileBrowser props:",
+        Object.getOwnPropertyNames(
+          acode.fileBrowser
+        )
       );
 
-      await this.scanWorkspace();
+      const proto =
+        Object.getPrototypeOf(
+          acode.fileBrowser
+        );
 
-      if (
-        typeof editorManager !==
-        "undefined"
-      ) {
-        try {
-          const content =
-            editorManager.editor.getValue();
-
-          console.log(
-            "EDITOR CONTENT LENGTH:",
-            content.length
-          );
-
-          console.log(
-            "EDITOR CONTENT SAMPLE:"
-          );
-
-          console.log(
-            content.slice(
-              0,
-              500
-            )
-          );
-        } catch (err) {
-          console.error(
-            "getValue failed:",
-            err
-          );
-        }
-
-        try {
-          console.log(
-            "SESSION:",
-            editorManager.editor
-              .session
-          );
-
-          console.log(
-            "SESSION PROPS:",
-            Object.getOwnPropertyNames(
-              editorManager.editor
-                .session
-            )
-          );
-        } catch (err) {
-          console.error(err);
-        }
+      if (proto) {
+        console.log(
+          "fileBrowser proto props:",
+          Object.getOwnPropertyNames(
+            proto
+          )
+        );
       }
-
-      console.log(
-        "===== WORKSPACE DEBUG END ====="
-      );
-    } catch (err) {
-      console.error(err);
     }
+
+    const suspicious =
+      Object.keys(window).filter(
+        key =>
+          key.toLowerCase().includes(
+            "git"
+          ) ||
+          key.toLowerCase().includes(
+            "repo"
+          ) ||
+          key.toLowerCase().includes(
+            "file"
+          )
+      );
+
+    console.log(
+      "window suspicious:",
+      suspicious
+    );
+
+    console.log(
+      "===== WORKSPACE DEBUG END ====="
+    );
+  } catch (err) {
+    console.error(err);
   }
 }
