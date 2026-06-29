@@ -188,7 +188,7 @@ export default class AIService {
           )
         : content;
 
-    const warning =
+        const warning =
       truncated
         ? `
 
@@ -209,78 +209,78 @@ ${finalContent}`,
   }
 
   static async preprocessMessages(
-  messages
-) {
-  const processed = [];
+    messages
+  ) {
+    const processed = [];
 
-  for (const msg of messages) {
-    const cloned = {
-      ...msg
-    };
+    for (const msg of messages) {
+      const cloned = {
+        ...msg
+      };
 
-    const attachments =
-      await this.getMessageAttachments(
-        cloned
-      );
-
-    if (
-      cloned.role === "user"
-    ) {
-      const originalContent =
-        cloned.content;
-
-      const parsed =
-        this.parseSlashCommand(
-          cloned.content
+      const attachments =
+        await this.getMessageAttachments(
+          cloned
         );
 
-      if (parsed) {
-        let content =
-          parsed.content;
+      if (
+        cloned.role === "user"
+      ) {
+        const originalContent =
+          cloned.content;
 
-        if (
-          !content.trim()
-        ) {
-          content =
-            "[No additional content provided]";
-        }
+        const parsed =
+          this.parseSlashCommand(
+            cloned.content
+          );
 
-        if (
-          parsed.command ===
-          "search"
-        ) {
-          const fileResults =
-            SearchService.searchFiles(
-              content
-            );
+        if (parsed) {
+          let content =
+            parsed.content;
 
-          const codeResults =
-            await SearchService.searchCode(
-              content
-            );
+          if (
+            !content.trim()
+          ) {
+            content =
+              "[No additional content provided]";
+          }
 
-          const workspaceText =
-            fileResults.length
-              ? fileResults
-                  .map(
-                    file =>
-                      `- ${file.name} (${file.path})`
-                  )
-                  .join("\n")
-              : "No matching files";
+          if (
+            parsed.command ===
+            "search"
+          ) {
+            const fileResults =
+              SearchService.searchFiles(
+                content
+              );
 
-          const codeText =
-            codeResults.length
-              ? codeResults
-                  .slice(0, 20)
-                  .map(
-                    match =>
-                      `${match.file}:${match.line} ${match.text}`
-                  )
-                  .join("\n")
-              : "No code matches";
+            const codeResults =
+              await SearchService.searchCode(
+                content
+              );
 
-          cloned.content = `
+            const workspaceText =
+              fileResults.length
+                ? fileResults
+                    .map(
+                      file =>
+                        `- ${file.name} (${file.path})`
+                    )
+                    .join("\n")
+                : "No matching files";
+
+            const codeText =
+              codeResults.length
+                ? codeResults
+                    .slice(0, 20)
+                    .map(
+                      match =>
+                        `${match.file}:${match.line} ${match.text}`
+                    )
+                    .join("\n")
+                : "No code matches";
+
+            cloned.content = `
 Search query: ${content}
 
 Workspace matches:
@@ -289,122 +289,122 @@ ${workspaceText}
 Code matches:
 ${codeText}
 `;
+          } else {
+            cloned.content =
+              COMMANDS[
+                parsed.command
+              ].prefix + content;
+          }
         } else {
-          cloned.content =
-            COMMANDS[
-              parsed.command
-            ].prefix + content;
-        }
-      } else {
-        const lower =
-          originalContent.toLowerCase();
+          const lower =
+            originalContent.toLowerCase();
 
-        const searchHints = [
-          "where is ",
-          "find ",
-          "implemented",
-          "defined",
-          "locate"
-        ];
+          const searchHints = [
+            "where is ",
+            "find ",
+            "implemented",
+            "defined",
+            "locate"
+          ];
 
-        const needsSearch =
-          searchHints.some(
-            hint =>
-              lower.includes(
-                hint
-              )
-          );
-
-        if (needsSearch) {
-          const words =
-            originalContent.match(
-              /[A-Za-z_][A-Za-z0-9_]*/g
-            ) || [];
-
-          let symbol =
-            words.find(
-              word =>
-                word.length > 3
+          const needsSearch =
+            searchHints.some(
+              hint =>
+                lower.includes(
+                  hint
+                )
             );
 
-          if (symbol) {
-            const results =
-              await SearchService.searchCode(
-                symbol
+          if (needsSearch) {
+            const words =
+              originalContent.match(
+                /[A-Za-z_][A-Za-z0-9_]*/g
+              ) || [];
+
+            const symbol =
+              words.find(
+                word =>
+                  word.length > 3
               );
 
-            if (
-              results.length
-            ) {
-              const toolContext =
-                results
-                  .slice(0, 10)
-                  .map(
-                    match =>
-                      `${match.file}:${match.line} ${match.text}`
-                  )
-                  .join(
-                    "\n"
-                  );
+            if (symbol) {
+              const results =
+                await SearchService.searchCode(
+                  symbol
+                );
 
-              cloned.content =
-                `${originalContent}
+              if (
+                results.length
+              ) {
+                const toolContext =
+                  results
+                    .slice(0, 10)
+                    .map(
+                      match =>
+                        `${match.file}:${match.line} ${match.text}`
+                    )
+                    .join(
+                      "\n"
+                    );
+
+                cloned.content =
+                  `${originalContent}
 
 Relevant code search results:
 ${toolContext}`;
+              }
             }
           }
         }
-      }
 
-      if (
-        attachments.length > 0
-      ) {
-        let remainingBudget =
-          MAX_TOTAL_ATTACHMENT_CHARS;
+        if (
+          attachments.length > 0
+        ) {
+          let remainingBudget =
+            MAX_TOTAL_ATTACHMENT_CHARS;
 
-        const attachmentTexts =
-          [];
+          const attachmentTexts =
+            [];
 
-        for (const att of attachments) {
-          if (
-            remainingBudget <= 0
-          ) {
+          for (const att of attachments) {
+            if (
+              remainingBudget <= 0
+            ) {
+              attachmentTexts.push(
+                "[ATTACHMENT SKIPPED: Budget exceeded]"
+              );
+              continue;
+            }
+
+            const result =
+              this.attachmentToText(
+                att,
+                remainingBudget
+              );
+
             attachmentTexts.push(
-              "[ATTACHMENT SKIPPED: Budget exceeded]"
-            );
-            continue;
-          }
-
-          const result =
-            this.attachmentToText(
-              att,
-              remainingBudget
+              result.text
             );
 
-          attachmentTexts.push(
-            result.text
-          );
+            remainingBudget -=
+              result.usedChars;
+            }
 
-          remainingBudget -=
-            result.usedChars;
+                    cloned.content +=
+            "\n\nAttached Files:\n\n" +
+            attachmentTexts.join(
+              "\n\n"
+            );
         }
-
-        cloned.content +=
-          "\n\nAttached Files:\n\n" +
-          attachmentTexts.join(
-            "\n\n"
-          );
       }
+
+      processed.push(
+        cloned
+      );
     }
 
-    processed.push(
-      cloned
-    );
+    return processed;
   }
-
-  return processed;
-}
 
   static async getModels(
     provider = null,
