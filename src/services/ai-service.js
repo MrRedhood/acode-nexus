@@ -188,7 +188,7 @@ export default class AIService {
           )
         : content;
 
-        const warning =
+    const warning =
       truncated
         ? `
 
@@ -269,15 +269,20 @@ ${finalContent}`,
                     .join("\n")
                 : "No matching files";
 
-            const codeText =
+                        const codeText =
               codeResults.length
                 ? codeResults
                     .slice(0, 20)
                     .map(
                       match =>
-                        `${match.file}:${match.line} ${match.text}`
+                        `FILE: ${match.file}
+LINE: ${match.line}
+
+${match.snippet || match.text}`
                     )
-                    .join("\n")
+                    .join(
+                      "\n\n--------------------\n\n"
+                    )
                 : "No code matches";
 
             cloned.content = `
@@ -341,10 +346,13 @@ ${codeText}
                     .slice(0, 10)
                     .map(
                       match =>
-                        `${match.file}:${match.line} ${match.text}`
+                        `FILE: ${match.file}
+LINE: ${match.line}
+
+${match.snippet || match.text}`
                     )
                     .join(
-                      "\n"
+                      "\n\n====================\n\n"
                     );
 
                 cloned.content =
@@ -388,7 +396,7 @@ ${toolContext}`;
 
             remainingBudget -=
               result.usedChars;
-            }
+          }
 
                     cloned.content +=
             "\n\nAttached Files:\n\n" +
