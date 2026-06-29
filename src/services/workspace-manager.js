@@ -206,4 +206,74 @@ export default class WorkspaceManager {
       console.error(err);
     }
   }
+
+  static async debugOpenMethods() {
+    try {
+      console.log(
+        "===== OPEN DEBUG START ====="
+      );
+
+      console.log(
+        "acode props:",
+        Object.getOwnPropertyNames(
+          acode
+        )
+      );
+
+      if (
+        typeof editorManager !==
+        "undefined"
+      ) {
+        console.log(
+          "editorManager props:",
+          Object.getOwnPropertyNames(
+            editorManager
+          )
+        );
+
+        if (
+          editorManager.activeFile
+        ) {
+          console.log(
+            "activeFile:",
+            editorManager.activeFile
+          );
+
+          console.log(
+            "activeFile proto props:",
+            Object.getOwnPropertyNames(
+              Object.getPrototypeOf(
+                editorManager.activeFile
+              ) || {}
+            )
+          );
+        }
+      }
+
+      const suspicious =
+        Object.keys(acode).filter(
+          key =>
+            key
+              .toLowerCase()
+              .includes("open") ||
+            key
+              .toLowerCase()
+              .includes("file") ||
+            key
+              .toLowerCase()
+              .includes("editor")
+        );
+
+      console.log(
+        "acode suspicious:",
+        suspicious
+      );
+
+      console.log(
+        "===== OPEN DEBUG END ====="
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
