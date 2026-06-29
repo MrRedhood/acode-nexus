@@ -356,6 +356,11 @@ export default {
     attachmentIds
   );
 
+    console.log(
+  "AFTER USER SAVE:",
+  SessionService.getMessages()
+);
+
     this.appendMessageObject(
       message,
       true,
