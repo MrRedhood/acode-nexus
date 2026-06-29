@@ -530,17 +530,55 @@ ${toolContext}`;
     }
 
     const cleanedMessages =
-      messages
-        .filter(
-          msg =>
-            msg &&
-            msg.role &&
-            typeof msg.content ===
-              "string"
-        )
-        .map(msg => ({
-          ...msg
-        }));
+  messages
+    .filter(
+      msg =>
+        msg &&
+        msg.role &&
+        typeof msg.content ===
+          "string"
+    )
+    .filter((msg, index, arr) => {
+      if (
+        msg.role !== "assistant"
+      ) {
+        return true;
+      }
+
+      const previous =
+        arr[index - 1];
+
+      if (
+        previous &&
+        previous.role === "user"
+      ) {
+        const text =
+          previous.content.toLowerCase();
+
+        const searchHints = [
+          "where is ",
+          "find ",
+          "implemented",
+          "defined",
+          "locate"
+        ];
+
+        const isSearchQuery =
+          searchHints.some(
+            hint =>
+              text.includes(hint)
+          );
+
+        if (isSearchQuery) {
+          return false;
+        }
+      }
+
+      return true;
+    })
+    .map(msg => ({
+      ...msg
+    }));
 
     let processedMessages =
       await this.preprocessMessages(
