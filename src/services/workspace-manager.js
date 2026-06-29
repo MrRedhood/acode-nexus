@@ -126,83 +126,79 @@ export default class WorkspaceManager {
         "===== OPEN FILE DEBUG START ====="
       );
 
-      console.log(
-        "EDITOR FILES:",
-        editorManager.files
-      );
+      const file =
+        editorManager.activeFile;
 
-      if (
-        editorManager.files &&
-        editorManager.files.length
-      ) {
-        const file =
-          editorManager.files[0];
-
+      if (!file) {
         console.log(
-          "FIRST OPEN FILE:",
-          file
+          "No active file"
         );
-
-        console.log(
-          "OWN PROPS:",
-          Object.getOwnPropertyNames(
-            file
-          )
-        );
-
-        const proto =
-          Object.getPrototypeOf(
-            file
-          );
-
-        if (proto) {
-          console.log(
-            "PROTO PROPS:",
-            Object.getOwnPropertyNames(
-              proto
-            )
-          );
-        }
-
-        for (const key in file) {
-          try {
-            console.log(
-              "ENUM KEY:",
-              key,
-              file[key]
-            );
-          } catch {}
-        }
+        return;
       }
 
       console.log(
-        "ACTIVE FILE:",
-        editorManager.activeFile
+        "ACTIVE FILE OBJECT:",
+        file
       );
 
-      if (
-        editorManager.activeFile
-      ) {
+      try {
         console.log(
-          "ACTIVE FILE PROPS:",
-          Object.getOwnPropertyNames(
-            editorManager.activeFile
-          )
+          "filename:",
+          file.filename
         );
+      } catch (e) {
+        console.log(
+          "filename read failed",
+          e
+        );
+      }
 
-        const proto =
-          Object.getPrototypeOf(
-            editorManager.activeFile
-          );
+      try {
+        console.log(
+          "name:",
+          file.name
+        );
+      } catch (e) {
+        console.log(
+          "name read failed",
+          e
+        );
+      }
 
-        if (proto) {
-          console.log(
-            "ACTIVE FILE PROTO PROPS:",
-            Object.getOwnPropertyNames(
-              proto
-            )
-          );
-        }
+      try {
+        console.log(
+          "uri:",
+          file.uri
+        );
+      } catch (e) {
+        console.log(
+          "uri read failed",
+          e
+        );
+      }
+
+      try {
+        console.log(
+          "location:",
+          file.location
+        );
+      } catch (e) {
+        console.log(
+          "location read failed",
+          e
+        );
+      }
+
+      try {
+        console.log(
+          "id:",
+          file.id
+        );
+      } catch (e) {
+        console.log(
+          "id read failed",
+          e
+        );
       }
 
       console.log(
