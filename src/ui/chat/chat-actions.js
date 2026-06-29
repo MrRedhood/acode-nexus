@@ -573,6 +573,98 @@ ${result.content}`;
       return;
     }
 
-    await this.generateAssistantReply();
+    const searchHints = [
+  "where is ",
+  "find ",
+  "implemented",
+  "defined",
+  "locate"
+];
+
+const isSearchQuery =
+  searchHints.some(
+    hint =>
+      text
+        .toLowerCase()
+        .includes(hint)
+  );
+
+if (isSearchQuery) {
+  const words =
+    text.match(
+      /[A-Za-z_][A-Za-z0-9_]*/g
+    ) || [];
+
+  let symbol =
+    words.find(
+      word =>
+        /[a-z][A-Z]/.test(
+          word
+        )
+    );
+
+  if (!symbol) {
+    const ignored = [
+      "where",
+      "find",
+      "implemented",
+      "defined",
+      "locate",
+      "function",
+      "method",
+      "class",
+      "is"
+    ];
+
+    symbol =
+      words.find(
+        word =>
+          word.length > 2 &&
+          !ignored.includes(
+            word.toLowerCase()
+          )
+      );
+  }
+
+  if (symbol) {
+    const results =
+      await SearchService.searchCode(
+        symbol
+      );
+
+    let content =
+      `${symbol} found in:\n\n`;
+
+    if (results.length) {
+      results
+        .slice(0, 10)
+        .forEach(match => {
+          content +=
+            `• ${match.file}:${match.line}\n`;
+        });
+    } else {
+      content =
+        `No results found for ${symbol}`;
+    }
+
+    this.appendMessageObject(
+      {
+        id:
+          "msg_" +
+          Date.now(),
+        role:
+          "assistant",
+        content
+      },
+      true,
+      true,
+      true
+    );
+
+    return;
+  }
+}
+
+await this.generateAssistantReply();
   }
 };
