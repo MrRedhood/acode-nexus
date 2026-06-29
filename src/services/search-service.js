@@ -42,18 +42,36 @@ export default class SearchService {
   }
 
   static toRawGithubUrl(file) {
-    if (
-      !file ||
-      !file.path
-    ) {
+    if (!file) {
       return null;
     }
 
-    const path =
-      file.path;
+    if (file.uri) {
+      const match =
+        file.uri.match(
+          /^gh:\/\/repo\/([^/]+)\/([^@]+)@([^/]+)\/(.+)$/
+        );
+
+      if (match) {
+        const owner =
+          match[1];
+        const repo =
+          match[2];
+        const branch =
+          match[3];
+        const filePath =
+          match[4];
+
+        return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
+      }
+    }
+
+    if (!file.path) {
+      return null;
+    }
 
     const parts =
-      path.split("/");
+      file.path.split("/");
 
     if (
       parts.length < 4
@@ -63,13 +81,10 @@ export default class SearchService {
 
     const owner =
       parts[0];
-
     const repo =
       parts[1];
-
     const branch =
       parts[2];
-
     const filePath =
       parts.slice(3).join("/");
 
@@ -89,7 +104,9 @@ export default class SearchService {
         .getFiles()
         .filter(file => {
           const name =
-            file.name || "";
+            (
+              file.name || ""
+            ).toLowerCase();
 
           return (
             name.endsWith(".js") ||
@@ -144,6 +161,37 @@ export default class SearchService {
                 .toLowerCase()
                 .includes(lower)
             ) {
+              const start =
+                Math.max(
+                  0,
+                  index - 8
+                );
+
+              const end =
+                Math.min(
+                  lines.length,
+                  index + 9
+                );
+
+              const snippet =
+                lines
+                  .slice(
+                    start,
+                    end
+                  )
+                  .map(
+                    (
+                      snippetLine,
+                      snippetIndex
+                    ) =>
+                      `${
+                        start +
+                        snippetIndex +
+                        1
+                      }: ${snippetLine}`
+                  )
+                  .join("\n");
+
               matches.push({
                 type: "code",
                 file:
@@ -153,7 +201,8 @@ export default class SearchService {
                 line:
                   index + 1,
                 text:
-                  line.trim()
+                  line.trim(),
+                snippet
               });
             }
           }
@@ -183,61 +232,13 @@ export default class SearchService {
       return null;
     }
 
-    const lower =
-      path.toLowerCase();
-
-    if (
-      typeof editorManager !==
-      "undefined" &&
-      editorManager.files
-    ) {
-      const openFile =
-        editorManager.files.find(
-          file => {
-            const filename =
-              (
-                file.filename ||
-                file.name ||
-                ""
-              ).toLowerCase();
-
-            const uri =
-              (
-                file.uri || ""
-              ).toLowerCase();
-
-            const location =
-              (
-                file.location ||
-                ""
-              ).toLowerCase();
-
-            return (
-              filename.includes(
-                lower
-              ) ||
-              uri.includes(
-                lower
-              ) ||
-              location.includes(
-                lower
-              )
-            );
-          }
-        );
-
-      if (openFile) {
-        return {
-          type: "editor",
-          file: openFile
-        };
-      }
-    }
-
     const files =
       WorkspaceManager.getFiles();
 
-    const workspaceFile =
+    const lower =
+      path.toLowerCase();
+
+    return (
       files.find(file =>
         (
           file.path || ""
@@ -249,15 +250,7 @@ export default class SearchService {
         )
           .toLowerCase()
           .includes(lower)
-      );
-
-    if (workspaceFile) {
-      return {
-        type: "workspace",
-        file: workspaceFile
-      };
-    }
-
-    return null;
+      ) || null
+    );
   }
 }
