@@ -41,57 +41,133 @@ export default class SearchService {
       }));
   }
 
-  static searchCode(query) {
+  static toRawGithubUrl(file) {
+    if (
+      !file ||
+      !file.path
+    ) {
+      return null;
+    }
+
+    const path =
+      file.path;
+
+    const parts =
+      path.split("/");
+
+    if (
+      parts.length < 4
+    ) {
+      return null;
+    }
+
+    const owner =
+      parts[0];
+
+    const repo =
+      parts[1];
+
+    const branch =
+      parts[2];
+
+    const filePath =
+      parts.slice(3).join("/");
+
+    return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
+  }
+
+  static async searchCode(query) {
     if (!query) {
       return [];
     }
 
-    if (
-      typeof editorManager ===
-      "undefined"
-    ) {
-      return [];
-    }
+    const lower =
+      query.toLowerCase();
 
-    try {
-      const content =
-        editorManager.editor.getValue();
+    const files =
+      WorkspaceManager
+        .getFiles()
+        .filter(file => {
+          const name =
+            file.name || "";
 
-      const lines =
-        content.split("\n");
+          return (
+            name.endsWith(".js") ||
+            name.endsWith(".json") ||
+            name.endsWith(".css") ||
+            name.endsWith(".md")
+          );
+        });
 
-      const lower =
-        query.toLowerCase();
+    const matches = [];
 
-      const matches = [];
+    for (const file of files) {
+      if (
+        matches.length >= 50
+      ) {
+        break;
+      }
 
-      lines.forEach(
-        (line, index) => {
-          if (
-            line
-              .toLowerCase()
-              .includes(lower)
-          ) {
-            matches.push({
-              type: "code",
-              line:
-                index + 1,
-              text:
-                line.trim()
-            });
-          }
+      try {
+        const url =
+          this.toRawGithubUrl(
+            file
+          );
+
+        if (!url) {
+          continue;
         }
-      );
 
-      return matches;
-    } catch (error) {
-      console.error(
-        "searchCode failed:",
-        error
-      );
+        const response =
+          await fetch(url);
 
-      return [];
+        if (!response.ok) {
+          continue;
+        }
+
+        const content =
+          await response.text();
+
+        const lines =
+          content.split("\n");
+
+        lines.forEach(
+          (line, index) => {
+            if (
+              matches.length >= 50
+            ) {
+              return;
+            }
+
+            if (
+              line
+                .toLowerCase()
+                .includes(lower)
+            ) {
+              matches.push({
+                type: "code",
+                file:
+                  file.name,
+                path:
+                  file.path,
+                line:
+                  index + 1,
+                text:
+                  line.trim()
+              });
+            }
+          }
+        );
+      } catch (error) {
+        console.error(
+          "searchCode file failed:",
+          file.path,
+          error
+        );
+      }
     }
+
+    return matches;
   }
 
   static openFile(path) {
