@@ -3,15 +3,25 @@ export default class WorkspaceManager {
 
   static async scanWorkspace() {
     try {
+      console.log(
+        "===== WORKSPACE SCAN START ====="
+      );
+
       this.workspaceFiles = [];
 
       if (
         typeof acode === "undefined"
       ) {
+        console.error(
+          "acode not found"
+        );
         return [];
       }
 
       if (!acode.require) {
+        console.error(
+          "acode.require missing"
+        );
         return [];
       }
 
@@ -22,7 +32,11 @@ export default class WorkspaceManager {
           acode.require(
             "fileList"
           );
-      } catch {
+      } catch (error) {
+        console.error(
+          "fileList load failed:",
+          error
+        );
         return [];
       }
 
@@ -30,6 +44,9 @@ export default class WorkspaceManager {
         typeof fileList !==
         "function"
       ) {
+        console.error(
+          "fileList not function"
+        );
         return [];
       }
 
@@ -41,6 +58,9 @@ export default class WorkspaceManager {
           result
         )
       ) {
+        console.error(
+          "fileList returned non-array"
+        );
         return [];
       }
 
@@ -62,9 +82,17 @@ export default class WorkspaceManager {
           }
         });
 
+      console.log(
+        "Workspace files:",
+        this.workspaceFiles.length
+      );
+
       return this.workspaceFiles;
     } catch (error) {
-      console.error(error);
+      console.error(
+        "scanWorkspace failed:",
+        error
+      );
       return [];
     }
   }
@@ -92,56 +120,85 @@ export default class WorkspaceManager {
     );
   }
 
-  static async debug() {
+  static debugOpenFiles() {
     try {
       console.log(
-        "===== OPEN DEBUG START ====="
+        "===== OPEN FILE DEBUG START ====="
+      );
+
+      console.log(
+        "EDITOR FILES:",
+        editorManager.files
       );
 
       if (
-        typeof editorManager !==
-        "undefined"
+        editorManager.files &&
+        editorManager.files.length
       ) {
         console.log(
-          "editorManager props:",
+          "FIRST OPEN FILE:",
+          editorManager.files[0]
+        );
+
+        console.log(
+          "FIRST OPEN FILE PROPS:",
           Object.getOwnPropertyNames(
-            editorManager
+            editorManager.files[0]
           )
         );
-
-        console.log(
-          "addFile:",
-          editorManager.addFile
-        );
-
-        console.log(
-          "switchFile:",
-          editorManager.switchFile
-        );
-
-        if (
-          editorManager.addFile
-        ) {
-          console.log(
-            "addFile length:",
-            editorManager.addFile
-              .length
-          );
-        }
-
-        if (
-          editorManager.switchFile
-        ) {
-          console.log(
-            "switchFile length:",
-            editorManager.switchFile
-              .length
-          );
-        }
       }
 
       console.log(
-        "===== OPEN DEBUG END ====="
+        "===== OPEN FILE DEBUG END ====="
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  static async debug() {
+    try {
+      console.log(
+        "===== WORKSPACE DEBUG START ====="
+      );
+
+      await this.scanWorkspace();
+
+      console.log(
+        "editorManager props:",
+        Object.getOwnPropertyNames(
+          editorManager
+        )
+      );
+
+      console.log(
+        "acode props:",
+        Object.getOwnPropertyNames(
+          acode
+        )
+      );
+
+      const suspicious =
+        Object.keys(window).filter(
+          key =>
+            key
+              .toLowerCase()
+              .includes("git") ||
+            key
+              .toLowerCase()
+              .includes("repo") ||
+            key
+              .toLowerCase()
+              .includes("file")
+        );
+
+      console.log(
+        "acode suspicious:",
+        suspicious
+      );
+
+      console.log(
+        "===== WORKSPACE DEBUG END ====="
       );
     } catch (err) {
       console.error(err);
