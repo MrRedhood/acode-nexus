@@ -694,11 +694,7 @@ console.log(
   node
 );
 
-SessionService.addExistingMessage(
-  assistantMessage
-);
-
-  console.log(
+console.log(
   "SESSION MESSAGES:",
   SessionService.getMessages()
 );
