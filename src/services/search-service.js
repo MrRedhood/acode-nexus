@@ -1,34 +1,13 @@
 import WorkspaceManager from "./workspace-manager.js";
 
 export default class SearchService {
-  static escapeRegex(text) {
-    return text.replace(
-      /[.*+?^${}()|[\]\\]/g,
-      "\\$&"
-    );
-  }
-
-  static createTokenRegex(query) {
-    const escaped =
-      this.escapeRegex(
-        query.toLowerCase()
-      );
-
-    return new RegExp(
-      `(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`,
-      "i"
-    );
-  }
-
   static searchFiles(query) {
     if (!query) {
       return [];
     }
 
-    const regex =
-      this.createTokenRegex(
-        query
-      );
+    const lower =
+      query.toLowerCase();
 
     const files =
       WorkspaceManager.getFiles();
@@ -46,8 +25,8 @@ export default class SearchService {
           ).toLowerCase();
 
         return (
-          regex.test(name) ||
-          regex.test(path)
+          name.includes(lower) ||
+          path.includes(lower)
         );
       })
       .map(file => ({
@@ -81,17 +60,17 @@ export default class SearchService {
       const lines =
         content.split("\n");
 
-      const regex =
-        this.createTokenRegex(
-          query
-        );
+      const lower =
+        query.toLowerCase();
 
       const matches = [];
 
       lines.forEach(
         (line, index) => {
           if (
-            regex.test(line)
+            line
+              .toLowerCase()
+              .includes(lower)
           ) {
             matches.push({
               type: "code",
@@ -130,6 +109,11 @@ export default class SearchService {
       files.find(file =>
         (
           file.path || ""
+        )
+          .toLowerCase()
+          .includes(lower) ||
+        (
+          file.name || ""
         )
           .toLowerCase()
           .includes(lower)
