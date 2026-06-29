@@ -222,6 +222,11 @@ export default {
         );
       }
 
+      console.log(
+  "BEFORE FINAL AI SAVE:",
+  SessionService.getMessages()
+);
+
       SessionService.addExistingMessage(
         assistantMessage
       );
