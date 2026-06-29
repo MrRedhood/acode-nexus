@@ -566,20 +566,21 @@ ${toolContext}`;
       await this.prepareMessages();
 
     if (
-      provider ===
-      "gemini"
-    ) {
-      console.log(
-  "FINAL MESSAGES:",
-  processedMessages
-      );
-      return await GeminiProvider.streamChat(
-        apiKey,
-        model,
-        processedMessages,
-        onChunk,
-        signal
-      );
+  provider ===
+  "gemini"
+) {
+  console.log(
+    "FINAL MESSAGES:",
+    processedMessages
+  );
+
+  return await GeminiProvider.streamChat(
+    apiKey,
+    model,
+    processedMessages,
+    onChunk,
+    signal
+  );
     }
 
     throw new Error(
