@@ -1,31 +1,68 @@
 import WorkspaceManager from "./workspace-manager.js";
 
 export default class SearchService {
-  static searchWorkspace(query) {
+  static escapeRegex(text) {
+    return text.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&"
+    );
+  }
+
+  static createTokenRegex(query) {
+    const escaped =
+      this.escapeRegex(
+        query.toLowerCase()
+      );
+
+    return new RegExp(
+      `(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`,
+      "i"
+    );
+  }
+
+  static searchFiles(query) {
     if (!query) {
       return [];
     }
 
-    const files =
-      WorkspaceManager.searchFiles(
+    const regex =
+      this.createTokenRegex(
         query
       );
 
-    return files.map(file => ({
-      type: "file",
-      name:
-        file.name ||
-        "unknown",
-      path:
-        file.path || "",
-      url:
-        file.url || ""
-    }));
+    const files =
+      WorkspaceManager.getFiles();
+
+    return files
+      .filter(file => {
+        const name =
+          (
+            file.name || ""
+          ).toLowerCase();
+
+        const path =
+          (
+            file.path || ""
+          ).toLowerCase();
+
+        return (
+          regex.test(name) ||
+          regex.test(path)
+        );
+      })
+      .map(file => ({
+        type: "file",
+        name:
+          file.name ||
+          "unknown",
+        path:
+          file.path || "",
+        url:
+          file.url || ""
+      }));
   }
 
-  static searchCurrentFile(
-    query
-  ) {
+  static searchCode(query) {
     if (!query) {
       return [];
     }
@@ -44,21 +81,20 @@ export default class SearchService {
       const lines =
         content.split("\n");
 
-      const lower =
-        query.toLowerCase();
+      const regex =
+        this.createTokenRegex(
+          query
+        );
 
       const matches = [];
 
       lines.forEach(
         (line, index) => {
           if (
-            line
-              .toLowerCase()
-              .includes(lower)
+            regex.test(line)
           ) {
             matches.push({
-              type:
-                "content",
+              type: "code",
               line:
                 index + 1,
               text:
@@ -71,7 +107,7 @@ export default class SearchService {
       return matches;
     } catch (error) {
       console.error(
-        "searchCurrentFile failed:",
+        "searchCode failed:",
         error
       );
 
@@ -79,16 +115,25 @@ export default class SearchService {
     }
   }
 
-  static search(query) {
-    return {
-      workspace:
-        this.searchWorkspace(
-          query
-        ),
-      currentFile:
-        this.searchCurrentFile(
-          query
+  static openFile(path) {
+    if (!path) {
+      return null;
+    }
+
+    const files =
+      WorkspaceManager.getFiles();
+
+    const lower =
+      path.toLowerCase();
+
+    return (
+      files.find(file =>
+        (
+          file.path || ""
         )
-    };
+          .toLowerCase()
+          .includes(lower)
+      ) || null
+    );
   }
 }
