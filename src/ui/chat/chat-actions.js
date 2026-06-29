@@ -287,7 +287,7 @@ export default {
     const pendingAttachments =
       this.pendingAttachments || [];
 
-    const editingAttachmentIds =
+        const editingAttachmentIds =
       this.editingAttachmentIds || [];
 
     if (
@@ -328,8 +328,10 @@ export default {
 
       this.editingMessageId =
         null;
+
       this.editingAttachmentIds =
         [];
+
       this.pendingAttachments =
         [];
 
@@ -410,8 +412,11 @@ export default {
 
       this.appendMessageObject(
         {
-          id: "msg_" + Date.now(),
-          role: "assistant",
+          id:
+            "msg_" +
+            Date.now(),
+          role:
+            "assistant",
           content
         },
         true,
@@ -422,14 +427,14 @@ export default {
       return;
     }
 
-        if (
+    if (
       text.startsWith("/code ")
     ) {
       const query =
         text.slice(6).trim();
 
       const results =
-        SearchService.searchCode(
+        await SearchService.searchCode(
           query
         );
 
@@ -440,7 +445,7 @@ export default {
         results.forEach(
           match => {
             content +=
-              `• Line ${match.line}: ${match.text}\n`;
+              `• ${match.file}:${match.line} ${match.text}\n`;
           }
         );
       } else {
@@ -450,8 +455,11 @@ export default {
 
       this.appendMessageObject(
         {
-          id: "msg_" + Date.now(),
-          role: "assistant",
+          id:
+            "msg_" +
+            Date.now(),
+          role:
+            "assistant",
           content
         },
         true,
@@ -485,8 +493,11 @@ export default {
 
       this.appendMessageObject(
         {
-          id: "msg_" + Date.now(),
-          role: "assistant",
+          id:
+            "msg_" +
+            Date.now(),
+          role:
+            "assistant",
           content
         },
         true,
@@ -504,7 +515,7 @@ export default {
         text.slice(6).trim();
 
       const results =
-        SearchService.searchAllFiles(
+        await SearchService.searchAllFiles(
           query
         );
 
@@ -525,8 +536,11 @@ export default {
 
       this.appendMessageObject(
         {
-          id: "msg_" + Date.now(),
-          role: "assistant",
+          id:
+            "msg_" +
+            Date.now(),
+          role:
+            "assistant",
           content
         },
         true,
