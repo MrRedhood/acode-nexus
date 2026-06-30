@@ -9,7 +9,7 @@ export default {
     }
 
     return content.replace(
-      /([A-Za-z0-9._-]+\.(js|json|css|md)):(\d+)/g,
+      /([A-Za-z0-9_./-]+\.(js|json|css|md)):(\d+)/g,
       (match, file, ext, line) => {
         return `
           <span
@@ -41,7 +41,7 @@ export default {
       ref.addEventListener(
         "click",
         () => {
-          const filename =
+          const filepath =
             ref.dataset.file;
 
           const line =
@@ -52,7 +52,7 @@ export default {
 
           const file =
             SearchService.openFile(
-              filename
+              filepath
             );
 
           if (!file) {
@@ -63,6 +63,8 @@ export default {
           }
 
           if (
+            typeof editorManager ===
+              "undefined" ||
             !editorManager ||
             !editorManager.switchFile
           ) {
@@ -79,13 +81,14 @@ export default {
           setTimeout(() => {
             if (
               editorManager.editor &&
-              editorManager.editor.gotoLine
+              editorManager.editor
+                .gotoLine
             ) {
               editorManager.editor.gotoLine(
                 line
               );
             }
-          }, 250);
+          }, 500);
         }
       );
     });
@@ -180,7 +183,9 @@ export default {
         ".nexus-copy-toast"
       );
 
-    if (old) old.remove();
+    if (old) {
+      old.remove();
+    }
 
     const toast =
       document.createElement(
@@ -189,6 +194,7 @@ export default {
 
     toast.className =
       "nexus-copy-toast";
+
     toast.textContent = text;
 
     document.body.appendChild(
@@ -201,7 +207,7 @@ export default {
     );
   },
 
-    copyText(content) {
+  copyText(content) {
     if (!content) {
       this.showToast(
         "Nothing to copy"
@@ -221,8 +227,10 @@ export default {
 
         textarea.style.position =
           "fixed";
-        textarea.style.left =
+
+                textarea.style.left =
           "-9999px";
+
         textarea.style.top =
           "0";
 
@@ -301,14 +309,18 @@ export default {
               ".nexus-code-block"
             );
 
-          if (!wrapper) return;
+          if (!wrapper) {
+            return;
+          }
 
           const textarea =
             wrapper.querySelector(
               ".nexus-hidden-code"
             );
 
-          if (!textarea) return;
+          if (!textarea) {
+            return;
+          }
 
           this.copyText(
             textarea.value
@@ -357,7 +369,9 @@ export default {
         "#chat-messages"
       );
 
-    if (!box) return;
+    if (!box) {
+      return;
+    }
 
     if (persist) {
       SessionService.addExistingMessage(
