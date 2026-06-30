@@ -108,6 +108,156 @@ export default class AIService {
     };
   }
 
+  static shouldInjectCodeContext(
+    text
+  ) {
+    if (!text) {
+      return false;
+    }
+
+    const lower =
+      text.toLowerCase();
+
+    const debugWords = [
+      "bug",
+      "error",
+      "issue",
+      "broken",
+      "duplicate",
+      "undefined",
+      "null",
+      "crash",
+      "function",
+      "class",
+      "method",
+      "why"
+    ];
+
+    const hasDebugWord =
+      debugWords.some(word =>
+        lower.includes(word)
+      );
+
+    const hasCodeSymbol =
+      /[A-Z]/.test(text) ||
+      /[a-z]+_[a-z]+/.test(text);
+
+    return (
+      hasDebugWord ||
+      hasCodeSymbol
+    );
+  }
+
+  static extractSymbol(text) {
+    if (!text) {
+      return null;
+    }
+
+    const words =
+      text.match(
+        /[A-Za-z_][A-Za-z0-9_]*/g
+      ) || [];
+
+    let symbol =
+      words.find(word =>
+        /[a-z][A-Z]/.test(word)
+      );
+
+    if (!symbol) {
+      symbol =
+        words.find(word =>
+          /[a-z]+_[a-z]+/.test(
+            word
+          )
+        );
+    }
+
+    return symbol || null;
+  }
+
+  static async buildAutoContext(
+    text
+  ) {
+    if (
+      !this.shouldInjectCodeContext(
+        text
+      )
+    ) {
+      return "";
+    }
+
+    let symbol =
+      this.extractSymbol(
+        text
+      );
+
+    if (!symbol) {
+      const messages =
+        SessionService.getMessages();
+
+      for (
+        let i =
+          messages.length - 1;
+        i >= 0;
+        i--
+      ) {
+        const msg =
+          messages[i];
+
+        if (
+          msg.role !== "user"
+        ) {
+          continue;
+        }
+
+        symbol =
+          this.extractSymbol(
+            msg.content
+          );
+
+        if (symbol) {
+          break;
+        }
+      }
+    }
+
+        if (!symbol) {
+      return "";
+    }
+
+    const results =
+      await SearchService.searchCode(
+        symbol
+      );
+
+    if (!results.length) {
+      return "";
+    }
+
+    const snippets =
+      results
+        .slice(0, 5)
+        .map(
+          match =>
+            `FILE: ${match.file}
+LINE: ${match.line}
+
+${match.snippet ||
+  match.text}`
+        )
+        .join(
+          "\n\n----------------\n\n"
+        );
+
+    return `
+Relevant workspace code for "${symbol}":
+
+${snippets}
+
+Use this code context when answering.
+`;
+  }
+
   static async getMessageAttachments(
     message
   ) {
@@ -209,80 +359,80 @@ ${finalContent}`,
   }
 
   static async preprocessMessages(
-  messages
-) {
-  const processed = [];
+    messages
+  ) {
+    const processed = [];
 
-  for (const msg of messages) {
-    const cloned = {
-      ...msg
-    };
+    for (const msg of messages) {
+      const cloned = {
+        ...msg
+      };
 
-    const attachments =
-      await this.getMessageAttachments(
-        cloned
-      );
-
-    if (
-      cloned.role === "user"
-    ) {
-      const parsed =
-        this.parseSlashCommand(
-          cloned.content
+      const attachments =
+        await this.getMessageAttachments(
+          cloned
         );
 
-      if (parsed) {
-        let content =
-          parsed.content;
+            if (
+        cloned.role === "user"
+      ) {
+        const parsed =
+          this.parseSlashCommand(
+            cloned.content
+          );
 
-        if (
-          !content.trim()
-        ) {
-          content =
-            "[No additional content provided]";
-        }
+        if (parsed) {
+          let content =
+            parsed.content;
 
-        if (
-          parsed.command ===
-          "search"
-        ) {
-          const fileResults =
-            SearchService.searchFiles(
-              content
-            );
+          if (
+            !content.trim()
+          ) {
+            content =
+              "[No additional content provided]";
+          }
 
-          const codeResults =
-            await SearchService.searchCode(
-              content
-            );
+          if (
+            parsed.command ===
+            "search"
+          ) {
+            const fileResults =
+              SearchService.searchFiles(
+                content
+              );
 
-          const workspaceText =
-            fileResults.length
-              ? fileResults
-                  .map(
-                    file =>
-                      `- ${file.name} (${file.path})`
-                  )
-                  .join("\n")
-              : "No matching files";
+            const codeResults =
+              await SearchService.searchCode(
+                content
+              );
 
-          const codeText =
-            codeResults.length
-              ? codeResults
-                  .slice(0, 20)
-                  .map(
-                    match =>
-                      `FILE: ${match.file}
+            const workspaceText =
+              fileResults.length
+                ? fileResults
+                    .map(
+                      file =>
+                        `- ${file.name} (${file.path})`
+                    )
+                    .join("\n")
+                : "No matching files";
+
+            const codeText =
+              codeResults.length
+                ? codeResults
+                    .slice(0, 20)
+                    .map(
+                      match =>
+                        `FILE: ${match.file}
 LINE: ${match.line}
 
 ${match.snippet || match.text}`
-                  )
-                  .join(
-                    "\n\n--------------------\n\n"
-                  )
-              : "No code matches";
+                    )
+                    .join(
+                      "\n\n--------------------\n\n"
+                    )
+                : "No code matches";
 
-          cloned.content = `
+            cloned.content = `
 Search query: ${content}
 
 Workspace matches:
@@ -291,238 +441,248 @@ ${workspaceText}
 Code matches:
 ${codeText}
 `;
+          } else {
+            cloned.content =
+              COMMANDS[
+                parsed.command
+              ].prefix + content;
+          }
         } else {
-          cloned.content =
-            COMMANDS[
-              parsed.command
-            ].prefix + content;
-        }
-      }
-
-      if (
-        attachments.length > 0
-      ) {
-        let remainingBudget =
-          MAX_TOTAL_ATTACHMENT_CHARS;
-
-        const attachmentTexts =
-          [];
-
-        for (const att of attachments) {
-          if (
-            remainingBudget <= 0
-          ) {
-            attachmentTexts.push(
-              "[ATTACHMENT SKIPPED: Budget exceeded]"
+          const autoContext =
+            await this.getAutoCodeContext(
+              cloned.content
             );
-            continue;
+
+          if (autoContext) {
+            cloned.content +=
+              "\n\n" + autoContext;
+          }
+        }
+
+        if (
+          attachments.length > 0
+        ) {
+          let remainingBudget =
+            MAX_TOTAL_ATTACHMENT_CHARS;
+
+          const attachmentTexts =
+            [];
+
+          for (const att of attachments) {
+            if (
+              remainingBudget <= 0
+            ) {
+              attachmentTexts.push(
+                "[ATTACHMENT SKIPPED: Budget exceeded]"
+              );
+              continue;
+            }
+
+            const result =
+              this.attachmentToText(
+                att,
+                remainingBudget
+              );
+
+            attachmentTexts.push(
+              result.text
+            );
+
+            remainingBudget -=
+              result.usedChars;
           }
 
-          const result =
-            this.attachmentToText(
-              att,
-              remainingBudget
+          cloned.content +=
+            "\n\nAttached Files:\n\n" +
+            attachmentTexts.join(
+              "\n\n"
             );
-
-          attachmentTexts.push(
-            result.text
-          );
-
-          remainingBudget -=
-            result.usedChars;
         }
-
-        cloned.content +=
-          "\n\nAttached Files:\n\n" +
-          attachmentTexts.join(
-            "\n\n"
-          );
       }
+
+      processed.push(
+        cloned
+      );
     }
 
-    processed.push(
-      cloned
-    );
+    return processed;
   }
-
-  return processed;
-}
 
   static async getModels(
-  provider = null,
-  apiKey = null
-) {
-  provider ??=
-    StorageService.get(
-      "provider"
-    );
-
-  apiKey ??=
-    StorageService.get(
-      "apiKey"
-    );
-
-  if (
-    !provider ||
-    !apiKey
+    provider = null,
+    apiKey = null
   ) {
+    provider ??=
+      StorageService.get(
+        "provider"
+      );
+
+    apiKey ??=
+      StorageService.get(
+        "apiKey"
+      );
+
+    if (
+      !provider ||
+      !apiKey
+    ) {
+      throw new Error(
+        "Provider or API key missing"
+      );
+    }
+
+    if (
+      provider ===
+      "gemini"
+    ) {
+      return await GeminiProvider.getModels(
+        apiKey
+      );
+    }
+
     throw new Error(
-      "Provider or API key missing"
+      "Unsupported provider"
     );
   }
 
-  if (
-    provider ===
-    "gemini"
-  ) {
-    return await GeminiProvider.getModels(
-      apiKey
-    );
-  }
+  static async prepareMessages() {
+    const provider =
+      StorageService.get(
+        "provider"
+      );
 
-  throw new Error(
-    "Unsupported provider"
-  );
-}
+    const apiKey =
+      StorageService.get(
+        "apiKey"
+      );
 
-static async prepareMessages() {
-  const provider =
-    StorageService.get(
-      "provider"
-    );
+    const model =
+      StorageService.get(
+        "model"
+      );
 
-  const apiKey =
-    StorageService.get(
-      "apiKey"
-    );
+    if (!provider) {
+      throw new Error(
+        "No provider selected"
+      );
+    }
 
-  const model =
-    StorageService.get(
-      "model"
-    );
+    if (!apiKey) {
+      throw new Error(
+        "No API key saved"
+      );
+    }
 
-  if (!provider) {
-    throw new Error(
-      "No provider selected"
-    );
-  }
+    if (!model) {
+      throw new Error(
+        "No model selected"
+      );
+    }
 
-  if (!apiKey) {
-    throw new Error(
-      "No API key saved"
-    );
-  }
+    const messages =
+      SessionService.getMessages();
 
-  if (!model) {
-    throw new Error(
-      "No model selected"
-    );
-  }
+    if (!messages.length) {
+      throw new Error(
+        "No messages found"
+      );
+    }
 
-  const messages =
-    SessionService.getMessages();
+    const cleanedMessages =
+      messages
+        .filter(
+          msg =>
+            msg &&
+            msg.role &&
+            typeof msg.content ===
+              "string"
+        )
+        .map(msg => ({
+          ...msg
+        }));
 
-  if (!messages.length) {
-    throw new Error(
-      "No messages found"
-    );
-  }
+    let processedMessages =
+      await this.preprocessMessages(
+        cleanedMessages
+      );
 
-  const cleanedMessages =
-    messages
-      .filter(
-        msg =>
-          msg &&
-          msg.role &&
-          typeof msg.content ===
-            "string"
-      )
-      .map(msg => ({
-        ...msg
-      }));
+    processedMessages =
+      ContextManager.prepareMessages(
+        processedMessages
+      );
 
-  let processedMessages =
-    await this.preprocessMessages(
-      cleanedMessages
-    );
-
-  processedMessages =
-    ContextManager.prepareMessages(
+    return {
+      provider,
+      apiKey,
+      model,
       processedMessages
-    );
-
-  return {
-    provider,
-    apiKey,
-    model,
-    processedMessages
-  };
-}
-
-static async sendMessage(
-  signal = null
-) {
-  const {
-    provider,
-    apiKey,
-    model,
-    processedMessages
-  } =
-    await this.prepareMessages();
-
-  if (
-    provider ===
-    "gemini"
-  ) {
-    return await GeminiProvider.chat(
-      apiKey,
-      model,
-      processedMessages,
-      signal
-    );
+    };
   }
 
-  throw new Error(
-    "Unsupported provider"
-  );
-}
-
-static async sendMessageStream(
-  onChunk,
-  signal = null
-) {
-  const {
-    provider,
-    apiKey,
-    model,
-    processedMessages
-  } =
-    await this.prepareMessages();
-
-  if (
-    provider ===
-    "gemini"
+  static async sendMessage(
+    signal = null
   ) {
-    console.log(
-      "FINAL MESSAGE CONTENT:",
-      JSON.stringify(
+    const {
+      provider,
+      apiKey,
+      model,
+      processedMessages
+    } =
+      await this.prepareMessages();
+
+    if (
+      provider ===
+      "gemini"
+    ) {
+      return await GeminiProvider.chat(
+        apiKey,
+        model,
         processedMessages,
-        null,
-        2
-      )
-    );
+        signal
+      );
+    }
 
-    return await GeminiProvider.streamChat(
-      apiKey,
-      model,
-      processedMessages,
-      onChunk,
-      signal
+    throw new Error(
+      "Unsupported provider"
     );
   }
 
-  throw new Error(
-    "Unsupported provider"
-  );
-}
+  static async sendMessageStream(
+    onChunk,
+    signal = null
+  ) {
+    const {
+      provider,
+      apiKey,
+      model,
+      processedMessages
+    } =
+      await this.prepareMessages();
+
+    if (
+      provider ===
+      "gemini"
+    ) {
+      console.log(
+        "FINAL MESSAGE CONTENT:",
+        JSON.stringify(
+          processedMessages,
+          null,
+          2
+        )
+      );
+
+      return await GeminiProvider.streamChat(
+        apiKey,
+        model,
+        processedMessages,
+        onChunk,
+        signal
+      );
+    }
+
+    throw new Error(
+      "Unsupported provider"
+    );
+  }
 }
