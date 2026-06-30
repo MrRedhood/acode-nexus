@@ -317,19 +317,56 @@ export default class SearchService {
     const lower =
       path.toLowerCase();
 
-    return (
+    const exactName =
+      files.find(file =>
+        (
+          file.name || ""
+        ).toLowerCase() === lower
+      );
+
+    if (exactName) {
+      return exactName;
+    }
+
+    const exactPath =
       files.find(file =>
         (
           file.path || ""
         )
           .toLowerCase()
-          .includes(lower) ||
+          .endsWith(lower)
+      );
+
+    if (exactPath) {
+      return exactPath;
+    }
+
+    const partialName =
+      files.find(file =>
         (
           file.name || ""
         )
           .toLowerCase()
           .includes(lower)
-      ) || null
-    );
+      );
+
+    if (partialName) {
+      return partialName;
+    }
+
+    const partialPath =
+      files.find(file =>
+        (
+          file.path || ""
+        )
+          .toLowerCase()
+          .includes(lower)
+      );
+
+    if (partialPath) {
+      return partialPath;
+    }
+
+    return null;
   }
 }
