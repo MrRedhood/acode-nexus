@@ -449,9 +449,9 @@ ${codeText}
           }
         } else {
           const autoContext =
-            await this.getAutoCodeContext(
-              cloned.content
-            );
+  await this.buildAutoContext(
+    cloned.content
+  );
 
           if (autoContext) {
             cloned.content +=
