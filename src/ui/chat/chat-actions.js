@@ -98,18 +98,9 @@ export default {
 
       let assistantNode = null;
 
-      console.log(
-        "STREAM START"
-      );
-
       const finalResponse =
         await AIService.sendMessageStream(
           fullText => {
-            console.log(
-              "STREAM CHUNK",
-              fullText.length
-            );
-
             assistantMessage.content =
               fullText;
 
@@ -143,11 +134,11 @@ export default {
 
               assistantNode.innerHTML = `
                 <strong>Nexus</strong><br>
-                ${fullText
-                  .replace(/&/g, "&amp;")
-                  .replace(/</g, "&lt;")
-                  .replace(/>/g, "&gt;")
-                  .replace(/\n/g, "<br>")}
+                ${this.convertFileReferences(
+                  parseMarkdown(
+                    fullText
+                  )
+                )}
               `;
 
               if (actions) {
@@ -155,6 +146,14 @@ export default {
                   actions
                 );
               }
+
+              this.attachCodeCopyListeners(
+                assistantNode
+              );
+
+              this.attachFileReferenceListeners(
+                assistantNode
+              );
 
               const box =
                 this.container.querySelector(
@@ -170,16 +169,12 @@ export default {
           this.activeController.signal
         );
 
-      assistantMessage.content =
+            assistantMessage.content =
         finalResponse ||
         assistantMessage.content ||
         "No response returned.";
 
       if (!assistantNode) {
-        console.log(
-          "FALLBACK APPEND TRIGGERED"
-        );
-
         this.stopThinkingAnimation();
 
         if (
@@ -206,8 +201,10 @@ export default {
 
         assistantNode.innerHTML = `
           <strong>Nexus</strong><br>
-          ${parseMarkdown(
-            assistantMessage.content
+          ${this.convertFileReferences(
+            parseMarkdown(
+              assistantMessage.content
+            )
           )}
         `;
 
@@ -233,17 +230,15 @@ export default {
         this.attachCodeCopyListeners(
           assistantNode
         );
-      }
 
-      console.log(
-        "BEFORE FINAL AI SAVE:",
-        SessionService.getMessages()
-      );
+        this.attachFileReferenceListeners(
+          assistantNode
+        );
+      }
 
       SessionService.addExistingMessage(
         assistantMessage
       );
-
     } catch (error) {
       this.stopThinkingAnimation();
 
@@ -291,11 +286,6 @@ export default {
   },
 
   async sendMessage() {
-    console.log(
-      "SEND MESSAGE CALLED",
-      Date.now()
-    );
-
     if (this.isGenerating) {
       return;
     }
@@ -323,448 +313,3 @@ export default {
     }
 
     this.commandMenu.hide();
-
-    if (this.editingMessageId) {
-      const newAttachmentIds = [];
-
-      for (const att of pendingAttachments) {
-        await AttachmentStorage.saveAttachment(
-          att
-        );
-        newAttachmentIds.push(
-          att.id
-        );
-      }
-
-            SessionService.updateMessageWithAttachments(
-        this.editingMessageId,
-        text || "[Attachment]",
-        [
-          ...editingAttachmentIds,
-          ...newAttachmentIds
-        ]
-      );
-
-      SessionService.removeMessagesAfter(
-        this.editingMessageId
-      );
-
-      this.editingMessageId =
-        null;
-
-      this.editingAttachmentIds =
-        [];
-
-      this.pendingAttachments =
-        [];
-
-      this.renderAttachmentPreview();
-      this.renderMessages();
-
-      input.value = "";
-
-      this.autoResizeTextarea(
-        input
-      );
-
-      this.updateTokenCounter();
-
-      await this.generateAssistantReply();
-      return;
-    }
-
-    const attachmentIds = [];
-
-    for (const att of pendingAttachments) {
-      await AttachmentStorage.saveAttachment(
-        att
-      );
-      attachmentIds.push(att.id);
-    }
-
-    const message =
-      SessionService.addMessage(
-        "user",
-        text || "[Attachment]",
-        attachmentIds
-      );
-
-    console.log(
-      "AFTER USER SAVE:",
-      SessionService.getMessages()
-    );
-
-    this.appendMessageObject(
-      message,
-      false,
-      false,
-      false
-    );
-
-    input.value = "";
-    this.pendingAttachments = [];
-    this.editingAttachmentIds =
-      [];
-
-    this.renderAttachmentPreview();
-    this.autoResizeTextarea(
-      input
-    );
-    this.updateTokenCounter();
-
-    if (text.startsWith("/files ")) {
-      const query =
-        text.slice(7).trim();
-
-      const results =
-        SearchService.searchFiles(
-          query
-        );
-
-      let content =
-        `File results for: ${query}\n\n`;
-
-      if (results.length) {
-        results.forEach(file => {
-          content +=
-            `• ${file.name} (${file.path})\n`;
-        });
-      } else {
-        content +=
-          "No files found.";
-      }
-
-      this.appendMessageObject(
-        {
-          id:
-            "msg_" +
-            Date.now(),
-          role:
-            "assistant",
-          content
-        },
-        true,
-        true,
-        true
-      );
-
-      return;
-    }
-
-    if (text.startsWith("/code ")) {
-      const query =
-        text.slice(6).trim();
-
-      const results =
-        await SearchService.searchCode(
-          query
-        );
-
-      let content =
-        `Code results for: ${query}\n\n`;
-
-      if (results.length) {
-        results.forEach(
-          match => {
-            content +=
-              `• ${match.path}:${match.line} ${match.text}\n`;
-          }
-        );
-      } else {
-        content +=
-          "No code matches found.";
-      }
-
-      this.appendMessageObject(
-        {
-          id:
-            "msg_" +
-            Date.now(),
-          role:
-            "assistant",
-          content
-        },
-        true,
-        true,
-        true
-      );
-
-      return;
-    }
-
-    if (text.startsWith("/open ")) {
-      const path =
-        text.slice(6).trim();
-
-      const result =
-        SearchService.openFile(path);
-
-      let content;
-
-      if (result) {
-        if (
-          result.type === "editor"
-        ) {
-          editorManager.switchFile(
-            result.file.id
-          );
-
-          content =
-            `Opened file:\n\n${result.file.filename}`;
-        } else {
-          content =
-            `File found in workspace:\n\n${result.name}\n${result.path}`;
-        }
-      } else {
-        content =
-          "File not found.";
-      }
-
-      this.appendMessageObject(
-        {
-          id:
-            "msg_" +
-            Date.now(),
-          role:
-            "assistant",
-          content
-        },
-        true,
-        true,
-        true
-      );
-
-      return;
-    }
-
-        if (text.startsWith("/grep ")) {
-      const query =
-        text.slice(6).trim();
-
-      const results =
-        await SearchService.searchAllFiles(
-          query
-        );
-
-      let content =
-        `Global code results for: ${query}\n\n`;
-
-      if (results.length) {
-        results.forEach(
-          match => {
-            content +=
-              `• ${match.path}:${match.line}\n${match.text}\n\n`;
-          }
-        );
-      } else {
-        content +=
-          "No global matches found.";
-      }
-
-      this.appendMessageObject(
-        {
-          id:
-            "msg_" +
-            Date.now(),
-          role:
-            "assistant",
-          content
-        },
-        true,
-        true,
-        true
-      );
-
-      return;
-    }
-
-    if (text.startsWith("/read ")) {
-      const args =
-        text.slice(6).trim();
-
-      const parts =
-        args.split(" ");
-
-      const path =
-        parts[0];
-
-      const startLine =
-        parts[1]
-          ? parseInt(
-              parts[1],
-              10
-            )
-          : 1;
-
-      const endLine =
-        parts[2]
-          ? parseInt(
-              parts[2],
-              10
-            )
-          : null;
-
-      const result =
-        await SearchService.readFile(
-          path,
-          startLine,
-          endLine
-        );
-
-      let content;
-
-      if (result) {
-        content =
-          `File: ${result.file}
-
-Lines ${result.startLine}-${result.endLine}
-
-${result.content}`;
-      } else {
-        content =
-          "Unable to read file.";
-      }
-
-      this.appendMessageObject(
-        {
-          id:
-            "msg_" +
-            Date.now(),
-          role:
-            "assistant",
-          content
-        },
-        true,
-        true,
-        true
-      );
-
-      return;
-    }
-
-    console.log(
-      "SEARCH BLOCK REACHED",
-      text
-    );
-
-    const searchHints = [
-      "where is ",
-      "find ",
-      "implemented",
-      "defined",
-      "locate"
-    ];
-
-    const isSearchQuery =
-      searchHints.some(
-        hint =>
-          text
-            .toLowerCase()
-            .includes(hint)
-      );
-
-    if (isSearchQuery) {
-      const words =
-        text.match(
-          /[A-Za-z_][A-Za-z0-9_]*/g
-        ) || [];
-
-      let symbol =
-        words.find(
-          word =>
-            /[a-z][A-Z]/.test(
-              word
-            )
-        );
-
-      if (!symbol) {
-        const ignored = [
-          "where",
-          "find",
-          "implemented",
-          "defined",
-          "locate",
-          "function",
-          "method",
-          "class",
-          "is"
-        ];
-
-        symbol =
-          words.find(
-            word =>
-              word.length >
-                2 &&
-              !ignored.includes(
-                word.toLowerCase()
-              )
-          );
-      }
-
-      console.log(
-        "EXTRACTED SYMBOL:",
-        symbol
-      );
-
-            if (symbol) {
-        const results =
-          await SearchService.searchCode(
-            symbol
-          );
-
-        console.log(
-          "SEARCH RESULTS:",
-          results
-        );
-
-        let content =
-          `${symbol} found in:\n\n`;
-
-        if (results.length) {
-          results
-            .slice(0, 10)
-            .forEach(
-              match => {
-                content +=
-                  `• ${match.path}:${match.line}\n`;
-              }
-            );
-        } else {
-          content =
-            `No results found for ${symbol}`;
-        }
-
-        const assistantMessage = {
-          id:
-            "msg_" +
-            Date.now(),
-          role:
-            "assistant",
-          content
-        };
-
-        const node =
-          this.appendMessageObject(
-            assistantMessage,
-            false,
-            true,
-            true
-          );
-
-        console.log(
-          "APPENDED NODE:",
-          node
-        );
-
-        console.log(
-          "SESSION MESSAGES:",
-          SessionService.getMessages()
-        );
-
-        return;
-      }
-    }
-
-    await this.generateAssistantReply();
-  }
-};
