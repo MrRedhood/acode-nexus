@@ -1,7 +1,96 @@
 import SessionService from "../../services/session-service.js";
+import SearchService from "../../services/search-service.js";
 import parseMarkdown from "../../utils/markdown.js";
 
 export default {
+  convertFileReferences(content) {
+    if (!content) {
+      return "";
+    }
+
+    return content.replace(
+      /([A-Za-z0-9._-]+\.(js|json|css|md)):(\d+)/g,
+      (match, file, ext, line) => {
+        return `
+          <span
+            class="nexus-file-ref"
+            data-file="${file}"
+            data-line="${line}"
+            style="
+              color:#7ab7ff;
+              text-decoration:underline;
+              cursor:pointer;
+            "
+          >
+            ${match}
+          </span>
+        `;
+      }
+    );
+  },
+
+  attachFileReferenceListeners(
+    msgNode
+  ) {
+    const refs =
+      msgNode.querySelectorAll(
+        ".nexus-file-ref"
+      );
+
+    refs.forEach(ref => {
+      ref.addEventListener(
+        "click",
+        () => {
+          const filename =
+            ref.dataset.file;
+
+          const line =
+            parseInt(
+              ref.dataset.line,
+              10
+            );
+
+          const file =
+            SearchService.openFile(
+              filename
+            );
+
+          if (!file) {
+            this.showToast(
+              "File not found"
+            );
+            return;
+          }
+
+          if (
+            !editorManager ||
+            !editorManager.switchFile
+          ) {
+            this.showToast(
+              "editorManager missing"
+            );
+            return;
+          }
+
+          editorManager.switchFile(
+            file.id
+          );
+
+          setTimeout(() => {
+            if (
+              editorManager.editor &&
+              editorManager.editor.gotoLine
+            ) {
+              editorManager.editor.gotoLine(
+                line
+              );
+            }
+          }, 250);
+        }
+      );
+    });
+  },
+
   renderMessages() {
     const box =
       this.container.querySelector(
@@ -112,7 +201,7 @@ export default {
     );
   },
 
-  copyText(content) {
+    copyText(content) {
     if (!content) {
       this.showToast(
         "Nothing to copy"
@@ -288,16 +377,24 @@ export default {
         ? "nexus-user"
         : "nexus-ai");
 
-    const rendered =
-      message.role ===
-      "user"
-        ? message.content.replace(
-            /\n/g,
-            "<br>"
-          )
-        : parseMarkdown(
+    let rendered;
+
+    if (
+      message.role === "user"
+    ) {
+      rendered =
+        message.content.replace(
+          /\n/g,
+          "<br>"
+        );
+    } else {
+      rendered =
+        this.convertFileReferences(
+          parseMarkdown(
             message.content
-          );
+          )
+        );
+    }
 
     const label =
       message.role ===
@@ -389,6 +486,10 @@ export default {
     }
 
     this.attachCodeCopyListeners(
+      msg
+    );
+
+    this.attachFileReferenceListeners(
       msg
     );
 
