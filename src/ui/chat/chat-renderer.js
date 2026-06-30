@@ -40,7 +40,7 @@ export default {
     refs.forEach(ref => {
       ref.addEventListener(
         "click",
-        () => {
+        async () => {
           const filepath =
             ref.dataset.file;
 
@@ -78,17 +78,44 @@ export default {
             file.id
           );
 
-          setTimeout(() => {
-            if (
-              editorManager.editor &&
-              editorManager.editor
-                .gotoLine
-            ) {
-              editorManager.editor.gotoLine(
-                line
-              );
-            }
-          }, 500);
+          let tries = 0;
+          const maxTries = 40;
+
+          const waitForFile =
+            setInterval(() => {
+              tries++;
+
+              const active =
+                editorManager.activeFile;
+
+              if (
+                active &&
+                active.id === file.id &&
+                editorManager.editor &&
+                editorManager.editor
+                  .gotoLine
+              ) {
+                clearInterval(
+                  waitForFile
+                );
+
+                editorManager.editor.gotoLine(
+                  line
+                );
+              }
+
+              if (
+                tries >= maxTries
+              ) {
+                clearInterval(
+                  waitForFile
+                );
+
+                this.showToast(
+                  "File load timeout"
+                );
+              }
+            }, 100);
         }
       );
     });
@@ -215,7 +242,7 @@ export default {
       return;
     }
 
-    const fallbackCopy = () => {
+        const fallbackCopy = () => {
       try {
         const textarea =
           document.createElement(
@@ -228,7 +255,7 @@ export default {
         textarea.style.position =
           "fixed";
 
-                textarea.style.left =
+        textarea.style.left =
           "-9999px";
 
         textarea.style.top =
