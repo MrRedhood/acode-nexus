@@ -244,7 +244,7 @@ export default {
         assistantMessage
       );
 
-          } catch (error) {
+    } catch (error) {
       this.stopThinkingAnimation();
 
       if (
@@ -336,7 +336,7 @@ export default {
         );
       }
 
-      SessionService.updateMessageWithAttachments(
+            SessionService.updateMessageWithAttachments(
         this.editingMessageId,
         text || "[Attachment]",
         [
@@ -467,7 +467,7 @@ export default {
         results.forEach(
           match => {
             content +=
-              `• ${match.file}:${match.line} ${match.text}\n`;
+              `• ${match.path}:${match.line} ${match.text}\n`;
           }
         );
       } else {
@@ -492,7 +492,7 @@ export default {
       return;
     }
 
-        if (text.startsWith("/open ")) {
+    if (text.startsWith("/open ")) {
       const path =
         text.slice(6).trim();
 
@@ -513,7 +513,7 @@ export default {
             `Opened file:\n\n${result.file.filename}`;
         } else {
           content =
-            `File found in workspace:\n\n${result.file.name}\n${result.file.path}`;
+            `File found in workspace:\n\n${result.name}\n${result.path}`;
         }
       } else {
         content =
@@ -537,7 +537,7 @@ export default {
       return;
     }
 
-    if (text.startsWith("/grep ")) {
+        if (text.startsWith("/grep ")) {
       const query =
         text.slice(6).trim();
 
@@ -553,7 +553,7 @@ export default {
         results.forEach(
           match => {
             content +=
-              `• ${match.file}:${match.line}\n${match.text}\n\n`;
+              `• ${match.path}:${match.line}\n${match.text}\n\n`;
           }
         );
       } else {
@@ -706,7 +706,7 @@ ${result.content}`;
         symbol
       );
 
-      if (symbol) {
+            if (symbol) {
         const results =
           await SearchService.searchCode(
             symbol
@@ -726,7 +726,7 @@ ${result.content}`;
             .forEach(
               match => {
                 content +=
-                  `• ${match.file}:${match.line}\n`;
+                  `• ${match.path}:${match.line}\n`;
               }
             );
         } else {
