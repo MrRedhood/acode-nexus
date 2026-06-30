@@ -98,9 +98,18 @@ export default {
 
       let assistantNode = null;
 
+      console.log(
+        "STREAM START"
+      );
+
       const finalResponse =
         await AIService.sendMessageStream(
           fullText => {
+            console.log(
+              "STREAM CHUNK",
+              fullText.length
+            );
+
             assistantMessage.content =
               fullText;
 
@@ -167,6 +176,10 @@ export default {
         "No response returned.";
 
       if (!assistantNode) {
+        console.log(
+          "FALLBACK APPEND TRIGGERED"
+        );
+
         this.stopThinkingAnimation();
 
         if (
@@ -223,14 +236,15 @@ export default {
       }
 
       console.log(
-  "BEFORE FINAL AI SAVE:",
-  SessionService.getMessages()
-);
+        "BEFORE FINAL AI SAVE:",
+        SessionService.getMessages()
+      );
 
       SessionService.addExistingMessage(
         assistantMessage
       );
-    } catch (error) {
+
+          } catch (error) {
       this.stopThinkingAnimation();
 
       if (
@@ -277,14 +291,14 @@ export default {
   },
 
   async sendMessage() {
-  console.log(
-    "SEND MESSAGE CALLED",
-    Date.now()
-  );
+    console.log(
+      "SEND MESSAGE CALLED",
+      Date.now()
+    );
 
-  if (this.isGenerating) {
-    return;
-  }
+    if (this.isGenerating) {
+      return;
+    }
 
     const input =
       this.container.querySelector(
@@ -314,8 +328,12 @@ export default {
       const newAttachmentIds = [];
 
       for (const att of pendingAttachments) {
-        await AttachmentStorage.saveAttachment(att);
-        newAttachmentIds.push(att.id);
+        await AttachmentStorage.saveAttachment(
+          att
+        );
+        newAttachmentIds.push(
+          att.id
+        );
       }
 
       SessionService.updateMessageWithAttachments(
@@ -331,16 +349,24 @@ export default {
         this.editingMessageId
       );
 
-      this.editingMessageId = null;
-      this.editingAttachmentIds = [];
-      this.pendingAttachments = [];
+      this.editingMessageId =
+        null;
+
+      this.editingAttachmentIds =
+        [];
+
+      this.pendingAttachments =
+        [];
 
       this.renderAttachmentPreview();
       this.renderMessages();
 
       input.value = "";
 
-      this.autoResizeTextarea(input);
+      this.autoResizeTextarea(
+        input
+      );
+
       this.updateTokenCounter();
 
       await this.generateAssistantReply();
@@ -350,41 +376,50 @@ export default {
     const attachmentIds = [];
 
     for (const att of pendingAttachments) {
-      await AttachmentStorage.saveAttachment(att);
+      await AttachmentStorage.saveAttachment(
+        att
+      );
       attachmentIds.push(att.id);
     }
 
     const message =
-  SessionService.addMessage(
-    "user",
-    text || "[Attachment]",
-    attachmentIds
-  );
+      SessionService.addMessage(
+        "user",
+        text || "[Attachment]",
+        attachmentIds
+      );
 
     console.log(
-  "AFTER USER SAVE:",
-  SessionService.getMessages()
-);
+      "AFTER USER SAVE:",
+      SessionService.getMessages()
+    );
 
     this.appendMessageObject(
-  message,
-  false,
-  false,
-  false
-);
+      message,
+      false,
+      false,
+      false
+    );
 
     input.value = "";
     this.pendingAttachments = [];
-    this.editingAttachmentIds = [];
+    this.editingAttachmentIds =
+      [];
 
     this.renderAttachmentPreview();
-    this.autoResizeTextarea(input);
+    this.autoResizeTextarea(
+      input
+    );
     this.updateTokenCounter();
 
     if (text.startsWith("/files ")) {
-      const query = text.slice(7).trim();
+      const query =
+        text.slice(7).trim();
+
       const results =
-        SearchService.searchFiles(query);
+        SearchService.searchFiles(
+          query
+        );
 
       let content =
         `File results for: ${query}\n\n`;
@@ -395,13 +430,17 @@ export default {
             `• ${file.name} (${file.path})\n`;
         });
       } else {
-        content += "No files found.";
+        content +=
+          "No files found.";
       }
 
       this.appendMessageObject(
         {
-          id: "msg_" + Date.now(),
-          role: "assistant",
+          id:
+            "msg_" +
+            Date.now(),
+          role:
+            "assistant",
           content
         },
         true,
@@ -413,7 +452,8 @@ export default {
     }
 
     if (text.startsWith("/code ")) {
-      const query = text.slice(6).trim();
+      const query =
+        text.slice(6).trim();
 
       const results =
         await SearchService.searchCode(
@@ -424,10 +464,12 @@ export default {
         `Code results for: ${query}\n\n`;
 
       if (results.length) {
-        results.forEach(match => {
-          content +=
-            `• ${match.file}:${match.line} ${match.text}\n`;
-        });
+        results.forEach(
+          match => {
+            content +=
+              `• ${match.file}:${match.line} ${match.text}\n`;
+          }
+        );
       } else {
         content +=
           "No code matches found.";
@@ -435,8 +477,11 @@ export default {
 
       this.appendMessageObject(
         {
-          id: "msg_" + Date.now(),
-          role: "assistant",
+          id:
+            "msg_" +
+            Date.now(),
+          role:
+            "assistant",
           content
         },
         true,
@@ -447,7 +492,7 @@ export default {
       return;
     }
 
-    if (text.startsWith("/open ")) {
+        if (text.startsWith("/open ")) {
       const path =
         text.slice(6).trim();
 
@@ -477,8 +522,11 @@ export default {
 
       this.appendMessageObject(
         {
-          id: "msg_" + Date.now(),
-          role: "assistant",
+          id:
+            "msg_" +
+            Date.now(),
+          role:
+            "assistant",
           content
         },
         true,
@@ -490,7 +538,8 @@ export default {
     }
 
     if (text.startsWith("/grep ")) {
-      const query = text.slice(6).trim();
+      const query =
+        text.slice(6).trim();
 
       const results =
         await SearchService.searchAllFiles(
@@ -501,10 +550,12 @@ export default {
         `Global code results for: ${query}\n\n`;
 
       if (results.length) {
-        results.forEach(match => {
-          content +=
-            `• ${match.file}:${match.line}\n${match.text}\n\n`;
-        });
+        results.forEach(
+          match => {
+            content +=
+              `• ${match.file}:${match.line}\n${match.text}\n\n`;
+          }
+        );
       } else {
         content +=
           "No global matches found.";
@@ -512,8 +563,11 @@ export default {
 
       this.appendMessageObject(
         {
-          id: "msg_" + Date.now(),
-          role: "assistant",
+          id:
+            "msg_" +
+            Date.now(),
+          role:
+            "assistant",
           content
         },
         true,
@@ -524,7 +578,7 @@ export default {
       return;
     }
 
-        if (text.startsWith("/read ")) {
+    if (text.startsWith("/read ")) {
       const args =
         text.slice(6).trim();
 
@@ -589,125 +643,128 @@ ${result.content}`;
     }
 
     console.log(
-  "SEARCH BLOCK REACHED",
-  text
-);
-
-    const searchHints = [
-  "where is ",
-  "find ",
-  "implemented",
-  "defined",
-  "locate"
-];
-
-const isSearchQuery =
-  searchHints.some(
-    hint =>
+      "SEARCH BLOCK REACHED",
       text
-        .toLowerCase()
-        .includes(hint)
-  );
-
-if (isSearchQuery) {
-  const words =
-    text.match(
-      /[A-Za-z_][A-Za-z0-9_]*/g
-    ) || [];
-
-  let symbol =
-    words.find(
-      word =>
-        /[a-z][A-Z]/.test(
-          word
-        )
     );
 
-  if (!symbol) {
-    const ignored = [
-      "where",
-      "find",
+    const searchHints = [
+      "where is ",
+      "find ",
       "implemented",
       "defined",
-      "locate",
-      "function",
-      "method",
-      "class",
-      "is"
+      "locate"
     ];
 
-    symbol =
-      words.find(
-        word =>
-          word.length > 2 &&
-          !ignored.includes(
-            word.toLowerCase()
-          )
+    const isSearchQuery =
+      searchHints.some(
+        hint =>
+          text
+            .toLowerCase()
+            .includes(hint)
       );
-  }
 
-  console.log(
-  "EXTRACTED SYMBOL:",
-  symbol
-);
+    if (isSearchQuery) {
+      const words =
+        text.match(
+          /[A-Za-z_][A-Za-z0-9_]*/g
+        ) || [];
 
-if (symbol) {
-    const results =
-      await SearchService.searchCode(
+      let symbol =
+        words.find(
+          word =>
+            /[a-z][A-Z]/.test(
+              word
+            )
+        );
+
+      if (!symbol) {
+        const ignored = [
+          "where",
+          "find",
+          "implemented",
+          "defined",
+          "locate",
+          "function",
+          "method",
+          "class",
+          "is"
+        ];
+
+        symbol =
+          words.find(
+            word =>
+              word.length >
+                2 &&
+              !ignored.includes(
+                word.toLowerCase()
+              )
+          );
+      }
+
+      console.log(
+        "EXTRACTED SYMBOL:",
         symbol
       );
 
-  console.log(
-  "SEARCH RESULTS:",
-  results
-);
+      if (symbol) {
+        const results =
+          await SearchService.searchCode(
+            symbol
+          );
 
-    let content =
-      `${symbol} found in:\n\n`;
+        console.log(
+          "SEARCH RESULTS:",
+          results
+        );
 
-    if (results.length) {
-      results
-        .slice(0, 10)
-        .forEach(match => {
-          content +=
-            `• ${match.file}:${match.line}\n`;
-        });
-    } else {
-      content =
-        `No results found for ${symbol}`;
+        let content =
+          `${symbol} found in:\n\n`;
+
+        if (results.length) {
+          results
+            .slice(0, 10)
+            .forEach(
+              match => {
+                content +=
+                  `• ${match.file}:${match.line}\n`;
+              }
+            );
+        } else {
+          content =
+            `No results found for ${symbol}`;
+        }
+
+        const assistantMessage = {
+          id:
+            "msg_" +
+            Date.now(),
+          role:
+            "assistant",
+          content
+        };
+
+        const node =
+          this.appendMessageObject(
+            assistantMessage,
+            false,
+            true,
+            true
+          );
+
+        console.log(
+          "APPENDED NODE:",
+          node
+        );
+
+        console.log(
+          "SESSION MESSAGES:",
+          SessionService.getMessages()
+        );
+
+        return;
+      }
     }
 
-    const assistantMessage = {
-  id:
-    "msg_" +
-    Date.now(),
-  role:
-    "assistant",
-  content
-};
-
-const node =
-  this.appendMessageObject(
-    assistantMessage,
-    false,
-    true,
-    true
-  );
-
-console.log(
-  "APPENDED NODE:",
-  node
-);
-
-console.log(
-  "SESSION MESSAGES:",
-  SessionService.getMessages()
-);
-
-return;
-  }
-}
-
-await this.generateAssistantReply();
+    await this.generateAssistantReply();
   }
 };
