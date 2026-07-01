@@ -33,34 +33,11 @@ export default {
       <div id="chat-messages" class="nexus-chat"></div>
 
       <div class="nexus-input-area">
-        <div
-          class="nexus-token-bar"
-          style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            gap:8px;
-          "
-        >
-          <span id="token-counter">
-            Used: 0 / 32K
-          </span>
-
-          <select
-            id="workspace-select"
-            style="
-              max-width:170px;
-              font-size:12px;
-              padding:4px 6px;
-              border-radius:6px;
-              background:#1b1b1b;
-              color:white;
-              border:1px solid #444;
-            "
-          >
-            ${workspaceOptions}
-          </select>
-        </div>
+        <div class="nexus-token-bar">
+  <span id="token-counter">
+    Used: 0 / 32K
+  </span>
+</div>
 
         <div
           id="attachment-preview"
