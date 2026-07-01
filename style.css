@@ -811,3 +811,41 @@
   line-height: 1.55;
   color: white;
 }
+
+/* WORKSPACE BAR */
+.nexus-workspace-bar {
+  margin-top: 14px;
+  margin-bottom: 4px;
+  padding: 10px 12px;
+
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(12px);
+
+  flex-shrink: 0;
+}
+
+.nexus-workspace-select {
+  width: 100%;
+  height: 46px;
+
+  padding: 0 14px;
+
+  border: none;
+  border-radius: 14px;
+
+  background: rgba(255,255,255,0.07);
+  color: white;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  outline: none;
+}
+
+.nexus-workspace-select option {
+  background: rgb(24,24,30);
+  color: white;
+}
