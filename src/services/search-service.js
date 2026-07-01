@@ -11,7 +11,7 @@ export default class SearchService {
       query.toLowerCase();
 
     const files =
-      WorkspaceManager.getFiles();
+      WorkspaceScopeService.getScopedFiles();
 
     return files
       .filter(file => {
@@ -101,8 +101,8 @@ export default class SearchService {
       query.toLowerCase();
 
     const files =
-      WorkspaceManager
-        .getFiles()
+      WorkspaceScopeService
+        .getScopedFiles()
         .filter(file => {
           const name =
             (
@@ -313,7 +313,7 @@ export default class SearchService {
     }
 
     const files =
-      WorkspaceManager.getFiles();
+      WorkspaceScopeService.getScopedFiles();
 
     const lower =
       path.toLowerCase();
