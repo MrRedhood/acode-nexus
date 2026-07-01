@@ -48,18 +48,6 @@ export default {
               10
             );
 
-          const file =
-            SearchService.openFile(
-              filepath
-            );
-
-          if (!file) {
-            this.showToast(
-              "File not found"
-            );
-            return;
-          }
-
           if (
             typeof editorManager ===
               "undefined" ||
@@ -74,14 +62,16 @@ export default {
 
           const openedFile =
             editorManager.files.find(
-              f =>
-                f.filename ===
-                file.name
+              file =>
+                file.filename ===
+                  filepath ||
+                file.name ===
+                  filepath
             );
 
           if (!openedFile) {
             this.showToast(
-              "File tab not open"
+              "Open file in editor first"
             );
             return;
           }
@@ -90,51 +80,17 @@ export default {
             openedFile.id
           );
 
-          let attempts = 0;
-          const maxAttempts = 40;
-
-          const waitForFile =
-            setInterval(() => {
-              attempts++;
-
-              const active =
-                editorManager.activeFile;
-
-              if (
-                active &&
-                active.filename ===
-                  openedFile.filename
-              ) {
-                clearInterval(
-                  waitForFile
-                );
-
-                setTimeout(() => {
-                  if (
-                    editorManager.editor &&
-                    editorManager.editor
-                      .gotoLine
-                  ) {
-                    editorManager.editor.gotoLine(
-                      line
-                    );
-                  }
-                }, 100);
-              }
-
-              if (
-                attempts >=
-                maxAttempts
-              ) {
-                clearInterval(
-                  waitForFile
-                );
-
-                this.showToast(
-                  "File switch timeout"
-                );
-              }
-            }, 100);
+          setTimeout(() => {
+            if (
+              editorManager.editor &&
+              editorManager.editor
+                .gotoLine
+            ) {
+              editorManager.editor.gotoLine(
+                line
+              );
+            }
+          }, 250);
         }
       );
     });
@@ -310,7 +266,7 @@ export default {
       }
     };
 
-    if (
+        if (
       navigator.clipboard &&
       navigator.clipboard.writeText
     ) {
@@ -329,7 +285,7 @@ export default {
     }
   },
 
-    attachCodeCopyListeners(
+  attachCodeCopyListeners(
     msgNode
   ) {
     const buttons =
