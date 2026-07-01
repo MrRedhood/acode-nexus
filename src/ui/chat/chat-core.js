@@ -86,33 +86,6 @@ export default {
         "#attach-btn"
       );
 
-    const workspaceSelect =
-      this.container.querySelector(
-        "#workspace-select"
-      );
-
-    if (workspaceSelect) {
-      workspaceSelect.addEventListener(
-        "change",
-        e => {
-          const root =
-            e.target.value;
-
-          WorkspaceScopeService.setSelectedRoot(
-            root
-          );
-
-          if (
-            typeof this.showToast ===
-            "function"
-          ) {
-            this.showToast(
-              "Workspace changed"
-            );
-          }
-        }
-      );
-    }
 
     sendBtn.addEventListener(
       "click",
