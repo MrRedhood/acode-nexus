@@ -289,7 +289,16 @@ export default class Nexus {
 
       await this.injectStyles();
       await this.migrateAttachments();
-      WorkspaceManager.debug();
+
+      console.log(
+        "Scanning workspace..."
+      );
+
+      await WorkspaceManager.scanWorkspace();
+
+      console.log(
+        "Workspace scan finished"
+      );
 
       window.NexusBridge = {
         getCurrentFile:
