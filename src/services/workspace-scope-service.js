@@ -28,6 +28,39 @@ export default class WorkspaceScopeService {
     return parts[0];
   }
 
+  static getDisplayName(root) {
+    if (!root) {
+      return "Unknown";
+    }
+
+    if (root === "Acode") {
+      return "Acode";
+    }
+
+    const parts =
+      root.split("/");
+
+    if (
+      parts.length >= 2
+    ) {
+      return parts[1];
+    }
+
+    return root;
+  }
+
+  static getWorkspaceType(root) {
+    if (!root) {
+      return "unknown";
+    }
+
+    if (root === "Acode") {
+      return "local";
+    }
+
+    return "github";
+  }
+
   static getRoots() {
     const files =
       WorkspaceManager.getFiles();
@@ -49,11 +82,36 @@ export default class WorkspaceScopeService {
     return roots;
   }
 
+  static getWorkspaceObjects() {
+    return this.getRoots().map(
+      root => ({
+        id: root,
+        name:
+          this.getDisplayName(
+            root
+          ),
+        type:
+          this.getWorkspaceType(
+            root
+          )
+      })
+    );
+  }
+
   static setSelectedRoot(
     root
   ) {
     this.selectedRoot =
       root;
+
+    try {
+      localStorage.setItem(
+        "nexus_workspace_root",
+        root
+      );
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   static getSelectedRoot() {
@@ -61,6 +119,21 @@ export default class WorkspaceScopeService {
       this.selectedRoot
     ) {
       return this.selectedRoot;
+    }
+
+    try {
+      const saved =
+        localStorage.getItem(
+          "nexus_workspace_root"
+        );
+
+      if (saved) {
+        this.selectedRoot =
+          saved;
+        return saved;
+      }
+    } catch (error) {
+      console.error(error);
     }
 
     const roots =
@@ -72,6 +145,27 @@ export default class WorkspaceScopeService {
     }
 
     return this.selectedRoot;
+  }
+
+  static getSelectedWorkspace() {
+    const root =
+      this.getSelectedRoot();
+
+    if (!root) {
+      return null;
+    }
+
+    return {
+      id: root,
+      name:
+        this.getDisplayName(
+          root
+        ),
+      type:
+        this.getWorkspaceType(
+          root
+        )
+    };
   }
 
   static getScopedFiles() {
