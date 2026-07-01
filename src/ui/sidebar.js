@@ -62,7 +62,6 @@ export default class Sidebar {
 
     this.fab.className =
       "nexus-fab";
-
     this.fab.textContent =
       "N";
 
@@ -87,25 +86,25 @@ export default class Sidebar {
     this.panel.className =
       "nexus-panel";
 
-    const roots =
-      WorkspaceScopeService.getRoots();
+    const workspaces =
+      WorkspaceScopeService.getWorkspaceObjects();
 
     const selectedRoot =
       WorkspaceScopeService.getSelectedRoot();
 
     const workspaceOptions =
-      roots
+      workspaces
         .map(
-          root => `
+          workspace => `
       <option
-        value="${root}"
+        value="${workspace.id}"
         ${
-          root === selectedRoot
+          workspace.id === selectedRoot
             ? "selected"
             : ""
         }
       >
-        ${root}
+        ${workspace.name}
       </option>
     `
         )
@@ -125,7 +124,10 @@ export default class Sidebar {
       </div>
 
       <div class="nexus-workspace-bar">
-        <select id="workspace-select" class="nexus-workspace-select">
+        <select
+          id="workspace-select"
+          class="nexus-workspace-select"
+        >
           ${workspaceOptions}
         </select>
       </div>
@@ -229,6 +231,11 @@ export default class Sidebar {
       e => {
         WorkspaceScopeService.setSelectedRoot(
           e.target.value
+        );
+
+        console.log(
+          "Workspace switched:",
+          WorkspaceScopeService.getSelectedWorkspace()
         );
       }
     );
