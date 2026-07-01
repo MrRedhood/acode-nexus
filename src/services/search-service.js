@@ -1,7 +1,9 @@
-import WorkspaceManager from "./workspace-manager.js";
 import WorkspaceScopeService from "./workspace-scope-service.js";
 
 export default class SearchService {
+  static fileCache =
+    new Map();
+
   static searchFiles(query) {
     if (!query) {
       return [];
@@ -11,25 +13,19 @@ export default class SearchService {
       query.toLowerCase();
 
     const files =
-      WorkspaceScopeService.getScopedFiles();
+      WorkspaceScopeService.getScopedFiles() || [];
 
     return files
-      .filter(file => {
-        const name =
-          (
-            file.name || ""
-          ).toLowerCase();
-
-        const path =
-          (
-            file.path || ""
-          ).toLowerCase();
-
-        return (
-          name.includes(lower) ||
-          path.includes(lower)
-        );
-      })
+      .filter(
+        file =>
+          file &&
+          (((file.name || "")
+            .toLowerCase()
+            .includes(lower)) ||
+            ((file.path || "")
+              .toLowerCase()
+              .includes(lower)))
+      )
       .map(file => ({
         type: "file",
         name:
@@ -47,9 +43,9 @@ export default class SearchService {
       return null;
     }
 
-    if (file.uri) {
+    if (file.url) {
       const match =
-        file.uri.match(
+        file.url.match(
           /^gh:\/\/repo\/([^/]+)\/([^@]+)@([^/]+)\/(.+)$/
         );
 
@@ -74,25 +70,103 @@ export default class SearchService {
     const parts =
       file.path.split("/");
 
-    if (
-      parts.length < 4
-    ) {
+    if (parts.length < 4) {
       return null;
     }
 
     const owner =
       parts[0];
+
     const repo =
       parts[1];
+
     const branch =
       parts[2];
+
     const filePath =
-      parts.slice(3).join("/");
+      parts
+        .slice(3)
+        .join("/");
 
     return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
   }
 
-  static async searchCode(query) {
+  static async fetchFileContent(
+    file
+  ) {
+    if (!file) {
+      return null;
+    }
+
+    const cacheKey =
+      file.path ||
+      file.name;
+
+    if (
+      this.fileCache.has(
+        cacheKey
+      )
+    ) {
+      return this.fileCache.get(
+        cacheKey
+      );
+    }
+
+    const url =
+      this.toRawGithubUrl(
+        file
+      );
+
+    if (!url) {
+      return null;
+    }
+
+    try {
+      const response =
+        await fetch(url);
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const content =
+        await response.text();
+
+      this.fileCache.set(
+        cacheKey,
+        content
+      );
+
+      return content;
+    } catch (error) {
+      console.error(
+        "fetchFileContent failed:",
+        file.path,
+        error
+      );
+
+      return null;
+    }
+  }
+
+  static async readFullFile(
+    path
+  ) {
+    const file =
+      this.openFile(path);
+
+    if (!file) {
+      return null;
+    }
+
+    return await this.fetchFileContent(
+      file
+    );
+  }
+
+  static async searchCode(
+    query
+  ) {
     if (!query) {
       return [];
     }
@@ -127,24 +201,14 @@ export default class SearchService {
       }
 
       try {
-        const url =
-          this.toRawGithubUrl(
+        const content =
+          await this.fetchFileContent(
             file
           );
 
-        if (!url) {
+        if (!content) {
           continue;
         }
-
-        const response =
-          await fetch(url);
-
-        if (!response.ok) {
-          continue;
-        }
-
-        const content =
-          await response.text();
 
         const lines =
           content.split("\n");
@@ -210,7 +274,7 @@ export default class SearchService {
         );
       } catch (error) {
         console.error(
-          "searchCode file failed:",
+          "searchCode failed:",
           file.path,
           error
         );
@@ -232,23 +296,15 @@ export default class SearchService {
       return null;
     }
 
-    const url =
-      this.toRawGithubUrl(file);
-
-    if (!url) {
-      return null;
-    }
-
     try {
-      const response =
-        await fetch(url);
+      const content =
+        await this.fetchFileContent(
+          file
+        );
 
-      if (!response.ok) {
+      if (!content) {
         return null;
       }
-
-      const content =
-        await response.text();
 
       const lines =
         content.split("\n");
@@ -261,10 +317,7 @@ export default class SearchService {
 
       const end =
         endLine ||
-        Math.min(
-          start + 199,
-          lines.length
-        );
+        lines.length;
 
       const snippet =
         lines
@@ -295,6 +348,7 @@ export default class SearchService {
         "readFile failed:",
         error
       );
+
       return null;
     }
   }
@@ -318,56 +372,22 @@ export default class SearchService {
     const lower =
       path.toLowerCase();
 
-    const exactName =
-      files.find(file =>
-        (
-          file.name || ""
-        ).toLowerCase() === lower
-      );
-
-    if (exactName) {
-      return exactName;
-    }
-
-    const exactPath =
-      files.find(file =>
-        (
-          file.path || ""
-        )
-          .toLowerCase()
-          .endsWith(lower)
-      );
-
-    if (exactPath) {
-      return exactPath;
-    }
-
-    const partialName =
-      files.find(file =>
-        (
-          file.name || ""
-        )
-          .toLowerCase()
-          .includes(lower)
-      );
-
-    if (partialName) {
-      return partialName;
-    }
-
-    const partialPath =
-      files.find(file =>
-        (
-          file.path || ""
-        )
-          .toLowerCase()
-          .includes(lower)
-      );
-
-    if (partialPath) {
-      return partialPath;
-    }
-
-    return null;
+    return (
+      files.find(
+        file =>
+          ((file.name || "")
+            .toLowerCase() ===
+            lower) ||
+          ((file.path || "")
+            .toLowerCase()
+            .endsWith(lower)) ||
+          ((file.name || "")
+            .toLowerCase()
+            .includes(lower)) ||
+          ((file.path || "")
+            .toLowerCase()
+            .includes(lower))
+      ) || null
+    );
   }
 }
