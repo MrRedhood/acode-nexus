@@ -1,19 +1,71 @@
+import WorkspaceManager from "./workspace-manager.js";
+
 export default class WorkspaceScopeService {
-  static selectedWorkspace = null;
+  static selectedRoot = null;
 
-  static setSelectedWorkspace(workspace) {
-    this.selectedWorkspace = workspace;
+  static getRoots() {
+    const files =
+      WorkspaceManager.getFiles();
+
+    const roots = [
+      ...new Set(
+        files
+          .filter(
+            file => file.path
+          )
+          .map(file =>
+            file.path.split(
+              "/"
+            )[0]
+          )
+      )
+    ];
+
+    return roots;
   }
 
-  static getSelectedWorkspace() {
-    return this.selectedWorkspace;
+  static setSelectedRoot(
+    root
+  ) {
+    this.selectedRoot =
+      root;
   }
 
-  static clearSelectedWorkspace() {
-    this.selectedWorkspace = null;
+  static getSelectedRoot() {
+    if (
+      this.selectedRoot
+    ) {
+      return this.selectedRoot;
+    }
+
+    const roots =
+      this.getRoots();
+
+    if (roots.length) {
+      this.selectedRoot =
+        roots[0];
+    }
+
+    return this.selectedRoot;
   }
 
-  static hasWorkspace() {
-    return !!this.selectedWorkspace;
+  static getScopedFiles() {
+    const files =
+      WorkspaceManager.getFiles();
+
+    const root =
+      this.getSelectedRoot();
+
+    if (!root) {
+      return files;
+    }
+
+    return files.filter(
+      file =>
+        file.path &&
+        file.path.startsWith(
+          root + "/"
+        )
+    );
   }
 }
