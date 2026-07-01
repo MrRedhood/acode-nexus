@@ -1,6 +1,9 @@
 import Nexus from "./core/nexus.js";
 import IndexingService from "./services/indexing-service.js";
 
+window.IndexingService =
+  IndexingService;
+
 const PLUGIN_ID = "com.mrredhood.acode.nexus";
 let nexus = null;
 
