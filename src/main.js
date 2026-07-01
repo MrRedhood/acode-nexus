@@ -38,7 +38,7 @@ console.log(
   typeof acode.require
 );
 
-function init(
+async function init(
   baseUrl,
   page,
   options
@@ -85,39 +85,32 @@ function init(
         options
       );
 
-    nexus.init();
+    await nexus.init();
 
-    IndexingService
-      .buildIndex()
-      .then(index => {
-        if (!index) {
-          console.error(
-            "[INDEX FAILED]"
-          );
-          return;
-        }
+    const index =
+      await IndexingService.buildIndex();
 
-        try {
-          const summary =
-            WorkspaceSummaryService.buildSummary();
+    if (!index) {
+      console.error(
+        "[INDEX FAILED]"
+      );
+      return;
+    }
 
-          console.log(
-            "[SUMMARY BUILT]",
-            summary
-          );
-        } catch (error) {
-          console.error(
-            "[SUMMARY BUILD FAILED]",
-            error
-          );
-        }
-      })
-      .catch(error => {
-        console.error(
-          "[INDEX BUILD FAILED]",
-          error
-        );
-      });
+    try {
+      const summary =
+        WorkspaceSummaryService.buildSummary();
+
+      console.log(
+        "[SUMMARY BUILT]",
+        summary
+      );
+    } catch (error) {
+      console.error(
+        "[SUMMARY BUILD FAILED]",
+        error
+      );
+    }
 
     console.log(
       "NEXUS INIT DONE"
