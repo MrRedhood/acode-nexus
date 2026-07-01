@@ -29,7 +29,9 @@ export default {
     );
   },
 
-  attachFileReferenceListeners(msgNode) {
+  attachFileReferenceListeners(
+    msgNode
+  ) {
     const refs =
       msgNode.querySelectorAll(
         ".nexus-file-ref"
@@ -48,6 +50,18 @@ export default {
               10
             );
 
+          const file =
+            SearchService.openFile(
+              filepath
+            );
+
+          if (!file) {
+            this.showToast(
+              "File not found"
+            );
+            return;
+          }
+
           if (
             typeof editorManager ===
               "undefined" ||
@@ -62,11 +76,16 @@ export default {
 
           const openedFile =
             editorManager.files.find(
-              file =>
-                file.filename ===
-                  filepath ||
-                file.name ===
-                  filepath
+              f =>
+                f.filename ===
+                  file.name ||
+                filepath.endsWith(
+                  f.filename
+                ) ||
+                (file.path &&
+                  file.path.endsWith(
+                    f.filename
+                  ))
             );
 
           if (!openedFile) {
@@ -80,17 +99,51 @@ export default {
             openedFile.id
           );
 
-          setTimeout(() => {
-            if (
-              editorManager.editor &&
-              editorManager.editor
-                .gotoLine
-            ) {
-              editorManager.editor.gotoLine(
-                line
-              );
-            }
-          }, 250);
+          let attempts = 0;
+          const maxAttempts = 40;
+
+          const waitForFile =
+            setInterval(() => {
+              attempts++;
+
+              const active =
+                editorManager.activeFile;
+
+              if (
+                active &&
+                active.filename ===
+                  openedFile.filename
+              ) {
+                clearInterval(
+                  waitForFile
+                );
+
+                setTimeout(() => {
+                  if (
+                    editorManager.editor &&
+                    editorManager.editor
+                      .gotoLine
+                  ) {
+                    editorManager.editor.gotoLine(
+                      line
+                    );
+                  }
+                }, 100);
+              }
+
+              if (
+                attempts >=
+                maxAttempts
+              ) {
+                clearInterval(
+                  waitForFile
+                );
+
+                this.showToast(
+                  "File switch timeout"
+                );
+              }
+            }, 100);
         }
       );
     });
@@ -144,7 +197,9 @@ export default {
     this.updateTokenCounter();
   },
 
-  startThinkingAnimation(node) {
+  startThinkingAnimation(
+    node
+  ) {
     let dots = 1;
 
     this.stopThinkingAnimation();
@@ -176,7 +231,7 @@ export default {
     }
   },
 
-  showToast(text) {
+    showToast(text) {
     const old =
       document.querySelector(
         ".nexus-copy-toast"
@@ -266,7 +321,7 @@ export default {
       }
     };
 
-        if (
+    if (
       navigator.clipboard &&
       navigator.clipboard.writeText
     ) {
@@ -405,7 +460,7 @@ export default {
         );
     }
 
-    const label =
+        const label =
       message.role ===
       "user"
         ? "You"
