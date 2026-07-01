@@ -3,6 +3,31 @@ import WorkspaceManager from "./workspace-manager.js";
 export default class WorkspaceScopeService {
   static selectedRoot = null;
 
+  static extractRoot(path) {
+    if (!path) {
+      return null;
+    }
+
+    const parts =
+      path.split("/");
+
+    if (
+      parts[0] === "Acode"
+    ) {
+      return "Acode";
+    }
+
+    if (
+      parts.length >= 3
+    ) {
+      return parts
+        .slice(0, 3)
+        .join("/");
+    }
+
+    return parts[0];
+  }
+
   static getRoots() {
     const files =
       WorkspaceManager.getFiles();
@@ -13,20 +38,11 @@ export default class WorkspaceScopeService {
           .filter(
             file => file.path
           )
-          .map(file => {
-            const parts =
-              file.path.split("/");
-
-            if (
-              parts.length >= 3
-            ) {
-              return parts
-                .slice(0, 3)
-                .join("/");
-            }
-
-            return parts[0];
-          })
+          .map(file =>
+            this.extractRoot(
+              file.path
+            )
+          )
       )
     ];
 
@@ -70,11 +86,23 @@ export default class WorkspaceScopeService {
     }
 
     return files.filter(
-      file =>
-        file.path &&
-        file.path.startsWith(
+      file => {
+        if (!file.path) {
+          return false;
+        }
+
+        if (
+          root === "Acode"
+        ) {
+          return file.path.startsWith(
+            "Acode/"
+          );
+        }
+
+        return file.path.startsWith(
           root + "/"
-        )
+        );
+      }
     );
   }
 }
