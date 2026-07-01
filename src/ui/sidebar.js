@@ -1,7 +1,11 @@
 import ChatView from "./chat-view.js";
 import SessionsView from "./sessions-view.js";
 import SettingsView from "./settings-view.js";
+
 import WorkspaceScopeService from "../services/workspace-scope-service.js";
+import IndexingService from "../services/indexing-service.js";
+import WorkspaceSummaryService from "../services/workspace-summary-service.js";
+import SessionService from "../services/session-service.js";
 
 export default class Sidebar {
   constructor(page) {
@@ -228,15 +232,65 @@ export default class Sidebar {
 
     workspaceSelect.addEventListener(
       "change",
-      e => {
-        WorkspaceScopeService.setSelectedRoot(
-          e.target.value
-        );
+      async e => {
+        try {
+          const root =
+            e.target.value;
 
-        console.log(
-          "Workspace switched:",
-          WorkspaceScopeService.getSelectedWorkspace()
-        );
+          WorkspaceScopeService.setSelectedRoot(
+            root
+          );
+
+          console.log(
+            "[WORKSPACE SWITCH START]"
+          );
+
+          console.log(
+            "Selected workspace:",
+            WorkspaceScopeService.getSelectedWorkspace()
+          );
+
+          const index =
+            await IndexingService.buildIndex();
+
+          if (!index) {
+            console.error(
+              "[REINDEX FAILED]"
+            );
+            return;
+          }
+
+          const summary =
+            WorkspaceSummaryService.buildSummary();
+
+          console.log(
+            "[WORKSPACE SUMMARY UPDATED]",
+            summary
+          );
+
+          SessionService.createSession();
+
+          this.sessionsView.render();
+          this.chatView.render();
+
+          if (
+            typeof this.chatView.showToast ===
+            "function"
+          ) {
+            this.chatView.showToast(
+              "Workspace ready"
+            );
+          }
+
+          console.log(
+            "[WORKSPACE SWITCH DONE]"
+          );
+        } catch (error) {
+          console.error(
+            "[WORKSPACE SWITCH FAILED]",
+            error
+          );
+        }
       }
     );
   }
