@@ -1,17 +1,65 @@
 import SessionService from "../../services/session-service.js";
 import StorageService from "../../services/storage-service.js";
 import AttachmentStorage from "../../services/attachment-storage.js";
+import WorkspaceScopeService from "../../services/workspace-scope-service.js";
 
 export default {
   render() {
+    const roots =
+      WorkspaceScopeService.getRoots();
+
+    const selectedRoot =
+      WorkspaceScopeService.getSelectedRoot();
+
+    const workspaceOptions =
+      roots
+        .map(
+          root => `
+            <option
+              value="${root}"
+              ${
+                root === selectedRoot
+                  ? "selected"
+                  : ""
+              }
+            >
+              ${root}
+            </option>
+          `
+        )
+        .join("");
+
     this.container.innerHTML = `
       <div id="chat-messages" class="nexus-chat"></div>
 
       <div class="nexus-input-area">
-        <div class="nexus-token-bar">
+        <div
+          class="nexus-token-bar"
+          style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:8px;
+          "
+        >
           <span id="token-counter">
             Used: 0 / 32K
           </span>
+
+          <select
+            id="workspace-select"
+            style="
+              max-width:170px;
+              font-size:12px;
+              padding:4px 6px;
+              border-radius:6px;
+              background:#1b1b1b;
+              color:white;
+              border:1px solid #444;
+            "
+          >
+            ${workspaceOptions}
+          </select>
         </div>
 
         <div
@@ -60,6 +108,34 @@ export default {
       this.container.querySelector(
         "#attach-btn"
       );
+
+    const workspaceSelect =
+      this.container.querySelector(
+        "#workspace-select"
+      );
+
+    if (workspaceSelect) {
+      workspaceSelect.addEventListener(
+        "change",
+        e => {
+          const root =
+            e.target.value;
+
+          WorkspaceScopeService.setSelectedRoot(
+            root
+          );
+
+          if (
+            typeof this.showToast ===
+            "function"
+          ) {
+            this.showToast(
+              "Workspace changed"
+            );
+          }
+        }
+      );
+    }
 
     sendBtn.addEventListener(
       "click",
@@ -188,7 +264,7 @@ export default {
     return String(value);
   },
 
-  async calculateAttachmentChars(
+    async calculateAttachmentChars(
     attachmentIds = []
   ) {
     let total = 0;
