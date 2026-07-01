@@ -1,7 +1,6 @@
 import SessionService from "../../services/session-service.js";
 import StorageService from "../../services/storage-service.js";
 import AttachmentStorage from "../../services/attachment-storage.js";
-import WorkspaceScopeService from "../../services/workspace-scope-service.js";
 
 export default {
   render() {
