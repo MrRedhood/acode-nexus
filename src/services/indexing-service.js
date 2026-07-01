@@ -2,9 +2,11 @@ import WorkspaceScopeService from "./workspace-scope-service.js";
 import SearchService from "./search-service.js";
 
 export default class IndexingService {
-  static currentIndex = null;
+  static currentIndex =
+    null;
 
-  static buildVersion = 0;
+  static buildVersion =
+    0;
 
   static async buildIndex() {
     const version =
@@ -67,9 +69,7 @@ export default class IndexingService {
                 file
               );
 
-            if (
-              content
-            ) {
+            if (content) {
               fileData.imports =
                 this.extractImports(
                   content
@@ -144,29 +144,20 @@ export default class IndexingService {
   }
 
   static getIndex() {
-    return (
-      this.currentIndex
-    );
+    return this.currentIndex;
   }
 
   static async readFileContent(
     file
   ) {
     try {
-      const result =
-        await SearchService.readFile(
+      const content =
+        await SearchService.readFullFile(
           file.path
         );
 
-      if (
-        !result
-      ) {
-        return null;
-      }
-
       return (
-        result.content ||
-        null
+        content || null
       );
     } catch (error) {
       console.error(
