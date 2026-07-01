@@ -1,6 +1,7 @@
 import ChatView from "./chat-view.js";
 import SessionsView from "./sessions-view.js";
 import SettingsView from "./settings-view.js";
+import WorkspaceScopeService from "../services/workspace-scope-service.js";
 
 export default class Sidebar {
   constructor(page) {
@@ -23,9 +24,12 @@ export default class Sidebar {
       this.createPanel();
 
       console.log("SIDEBAR STEP 3");
-      window.addEventListener("resize", () => {
-        this.updatePanelHeight();
-      });
+      window.addEventListener(
+        "resize",
+        () => {
+          this.updatePanelHeight();
+        }
+      );
 
       console.log("SIDEBAR STEP 4");
       this.updatePanelHeight();
@@ -35,20 +39,6 @@ export default class Sidebar {
       console.error(
         "Sidebar init error:",
         err
-      );
-
-      console.error(
-        "Message:",
-        err
-          ? err.message
-          : undefined
-      );
-
-      console.error(
-        "Stack:",
-        err
-          ? err.stack
-          : undefined
       );
 
       alert(
@@ -65,8 +55,6 @@ export default class Sidebar {
   }
 
   createFab() {
-    console.log("createFab");
-
     this.fab =
       document.createElement(
         "button"
@@ -74,6 +62,7 @@ export default class Sidebar {
 
     this.fab.className =
       "nexus-fab";
+
     this.fab.textContent =
       "N";
 
@@ -90,10 +79,6 @@ export default class Sidebar {
   }
 
   createPanel() {
-    console.log(
-      "createPanel start"
-    );
-
     this.panel =
       document.createElement(
         "div"
@@ -101,6 +86,30 @@ export default class Sidebar {
 
     this.panel.className =
       "nexus-panel";
+
+    const roots =
+      WorkspaceScopeService.getRoots();
+
+    const selectedRoot =
+      WorkspaceScopeService.getSelectedRoot();
+
+    const workspaceOptions =
+      roots
+        .map(
+          root => `
+      <option
+        value="${root}"
+        ${
+          root === selectedRoot
+            ? "selected"
+            : ""
+        }
+      >
+        ${root}
+      </option>
+    `
+        )
+        .join("");
 
     this.panel.innerHTML = `
       <div class="nexus-header">
@@ -115,15 +124,17 @@ export default class Sidebar {
         </div>
       </div>
 
+      <div class="nexus-workspace-bar">
+        <select id="workspace-select" class="nexus-workspace-select">
+          ${workspaceOptions}
+        </select>
+      </div>
+
       <div id="chat-root" class="nexus-chat-full"></div>
     `;
 
     document.body.appendChild(
       this.panel
-    );
-
-    console.log(
-      "panel appended"
     );
 
     this.drawer =
@@ -136,14 +147,6 @@ export default class Sidebar {
 
     document.body.appendChild(
       this.drawer
-    );
-
-    console.log(
-      "drawer appended"
-    );
-
-    console.log(
-      "creating settings"
     );
 
     this.settingsView =
@@ -162,18 +165,10 @@ export default class Sidebar {
       );
     }
 
-    console.log(
-      "creating chat view"
-    );
-
     this.chatView =
       new ChatView(
         chatRoot
       );
-
-    console.log(
-      "creating sessions view"
-    );
 
     this.sessionsView =
       new SessionsView(
@@ -185,16 +180,7 @@ export default class Sidebar {
         }
       );
 
-    console.log(
-      "render sessions"
-    );
-
     this.sessionsView.render();
-
-    console.log(
-      "render chat"
-    );
-
     this.chatView.render();
 
     const drawerBtn =
@@ -212,23 +198,10 @@ export default class Sidebar {
         "#nexus-close"
       );
 
-    if (!drawerBtn) {
-      throw new Error(
-        "drawer-btn missing"
+    const workspaceSelect =
+      this.panel.querySelector(
+        "#workspace-select"
       );
-    }
-
-    if (!settingsBtn) {
-      throw new Error(
-        "settings-btn missing"
-      );
-    }
-
-    if (!closeBtn) {
-      throw new Error(
-        "close-btn missing"
-      );
-    }
 
     drawerBtn.addEventListener(
       "click",
@@ -251,8 +224,13 @@ export default class Sidebar {
       }
     );
 
-    console.log(
-      "createPanel done"
+    workspaceSelect.addEventListener(
+      "change",
+      e => {
+        WorkspaceScopeService.setSelectedRoot(
+          e.target.value
+        );
+      }
     );
   }
 
