@@ -13,11 +13,20 @@ export default class WorkspaceScopeService {
           .filter(
             file => file.path
           )
-          .map(file =>
-            file.path.split(
-              "/"
-            )[0]
-          )
+          .map(file => {
+            const parts =
+              file.path.split("/");
+
+            if (
+              parts.length >= 3
+            ) {
+              return parts
+                .slice(0, 3)
+                .join("/");
+            }
+
+            return parts[0];
+          })
       )
     ];
 
