@@ -1,4 +1,5 @@
 import WorkspaceManager from "./workspace-manager.js";
+import WorkspaceScopeService from "./workspace-scope-service.js";
 
 export default class SearchService {
   static searchFiles(query) {
