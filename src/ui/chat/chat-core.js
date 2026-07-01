@@ -4,39 +4,15 @@ import AttachmentStorage from "../../services/attachment-storage.js";
 
 export default {
   render() {
-    const roots =
-      WorkspaceScopeService.getRoots();
-
-    const selectedRoot =
-      WorkspaceScopeService.getSelectedRoot();
-
-    const workspaceOptions =
-      roots
-        .map(
-          root => `
-            <option
-              value="${root}"
-              ${
-                root === selectedRoot
-                  ? "selected"
-                  : ""
-              }
-            >
-              ${root}
-            </option>
-          `
-        )
-        .join("");
-
     this.container.innerHTML = `
       <div id="chat-messages" class="nexus-chat"></div>
 
       <div class="nexus-input-area">
         <div class="nexus-token-bar">
-  <span id="token-counter">
-    Used: 0 / 32K
-  </span>
-</div>
+          <span id="token-counter">
+            Used: 0 / 32K
+          </span>
+        </div>
 
         <div
           id="attachment-preview"
@@ -84,7 +60,6 @@ export default {
       this.container.querySelector(
         "#attach-btn"
       );
-
 
     sendBtn.addEventListener(
       "click",
@@ -213,7 +188,7 @@ export default {
     return String(value);
   },
 
-    async calculateAttachmentChars(
+  async calculateAttachmentChars(
     attachmentIds = []
   ) {
     let total = 0;
