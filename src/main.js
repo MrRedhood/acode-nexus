@@ -1,5 +1,6 @@
 import Nexus from "./core/nexus.js";
 import IndexingService from "./services/indexing-service.js";
+import WorkspaceSummaryService from "./services/workspace-summary-service.js";
 
 window.IndexingService =
   IndexingService;
