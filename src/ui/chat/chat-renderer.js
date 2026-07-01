@@ -29,9 +29,7 @@ export default {
     );
   },
 
-  attachFileReferenceListeners(
-    msgNode
-  ) {
+  attachFileReferenceListeners(msgNode) {
     const refs =
       msgNode.querySelectorAll(
         ".nexus-file-ref"
@@ -40,7 +38,7 @@ export default {
     refs.forEach(ref => {
       ref.addEventListener(
         "click",
-        async () => {
+        () => {
           const filepath =
             ref.dataset.file;
 
@@ -74,45 +72,66 @@ export default {
             return;
           }
 
+          const openedFile =
+            editorManager.files.find(
+              f =>
+                f.filename ===
+                file.name
+            );
+
+          if (!openedFile) {
+            this.showToast(
+              "File tab not open"
+            );
+            return;
+          }
+
           editorManager.switchFile(
-            file.id
+            openedFile.id
           );
 
-          let tries = 0;
-          const maxTries = 40;
+          let attempts = 0;
+          const maxAttempts = 40;
 
           const waitForFile =
             setInterval(() => {
-              tries++;
+              attempts++;
 
               const active =
                 editorManager.activeFile;
 
               if (
                 active &&
-                active.id === file.id &&
-                editorManager.editor &&
-                editorManager.editor
-                  .gotoLine
+                active.filename ===
+                  openedFile.filename
               ) {
                 clearInterval(
                   waitForFile
                 );
 
-                editorManager.editor.gotoLine(
-                  line
-                );
+                setTimeout(() => {
+                  if (
+                    editorManager.editor &&
+                    editorManager.editor
+                      .gotoLine
+                  ) {
+                    editorManager.editor.gotoLine(
+                      line
+                    );
+                  }
+                }, 100);
               }
 
               if (
-                tries >= maxTries
+                attempts >=
+                maxAttempts
               ) {
                 clearInterval(
                   waitForFile
                 );
 
                 this.showToast(
-                  "File load timeout"
+                  "File switch timeout"
                 );
               }
             }, 100);
@@ -169,9 +188,7 @@ export default {
     this.updateTokenCounter();
   },
 
-  startThinkingAnimation(
-    node
-  ) {
+  startThinkingAnimation(node) {
     let dots = 1;
 
     this.stopThinkingAnimation();
@@ -198,7 +215,6 @@ export default {
       clearInterval(
         this.thinkingInterval
       );
-
       this.thinkingInterval =
         null;
     }
@@ -221,7 +237,6 @@ export default {
 
     toast.className =
       "nexus-copy-toast";
-
     toast.textContent = text;
 
     document.body.appendChild(
@@ -242,7 +257,7 @@ export default {
       return;
     }
 
-        const fallbackCopy = () => {
+    const fallbackCopy = () => {
       try {
         const textarea =
           document.createElement(
@@ -251,13 +266,10 @@ export default {
 
         textarea.value =
           content;
-
         textarea.style.position =
           "fixed";
-
         textarea.style.left =
           "-9999px";
-
         textarea.style.top =
           "0";
 
@@ -317,7 +329,7 @@ export default {
     }
   },
 
-  attachCodeCopyListeners(
+    attachCodeCopyListeners(
     msgNode
   ) {
     const buttons =
