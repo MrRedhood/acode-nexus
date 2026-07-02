@@ -57,7 +57,12 @@ export default class CommandService {
       name: "focus",
       description:
         "Focus open file and jump line"
-    }
+    },
+    {
+      name: "cleanup",
+      description: 
+    "Cleanup stale workspace cache"
+    },
   ];
 
   static getCommands() {
