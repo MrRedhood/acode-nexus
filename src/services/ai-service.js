@@ -4,6 +4,7 @@ import SessionService from "./session-service.js";
 import AttachmentStorage from "./attachment-storage.js";
 import ContextManager from "./context-manager.js";
 import SearchService from "./search-service.js";
+import WorkspaceSummaryService from "./workspace-summary-service.js";
 
 const MAX_ATTACHMENT_CHARS =
   120000;
@@ -77,6 +78,48 @@ Content:
 };
 
 export default class AIService {
+  static buildWorkspaceContext() {
+    const summary =
+      WorkspaceSummaryService.getSummary();
+
+    if (!summary) {
+      return "";
+    }
+
+    return `
+ACTIVE WORKSPACE SUMMARY
+
+Workspace:
+${summary.workspace}
+
+Total files:
+${summary.totalFiles}
+
+Architecture:
+- Core: ${summary.architecture.hasCore}
+- Services: ${summary.architecture.hasServices}
+- UI: ${summary.architecture.hasUI}
+- Agents: ${summary.architecture.hasAgents}
+
+Important modules:
+${summary.keyModules
+  .map(
+    module =>
+      `- ${module.name} (${module.path})`
+  )
+  .join("\n")}
+
+Total symbols:
+- Functions: ${summary.totals.functions}
+- Classes: ${summary.totals.classes}
+- Imports: ${summary.totals.imports}
+
+IMPORTANT:
+When user asks about this workspace,
+assume they mean this project.
+`;
+  }
+
   static parseSlashCommand(text) {
     if (!text.startsWith("/")) {
       return null;
@@ -221,7 +264,7 @@ export default class AIService {
       }
     }
 
-        if (!symbol) {
+    if (!symbol) {
       return "";
     }
 
@@ -358,7 +401,7 @@ ${finalContent}`,
     };
   }
 
-  static async preprocessMessages(
+    static async preprocessMessages(
     messages
   ) {
     const processed = [];
@@ -373,7 +416,7 @@ ${finalContent}`,
           cloned
         );
 
-            if (
+      if (
         cloned.role === "user"
       ) {
         const parsed =
@@ -449,13 +492,14 @@ ${codeText}
           }
         } else {
           const autoContext =
-  await this.buildAutoContext(
-    cloned.content
-  );
+            await this.buildAutoContext(
+              cloned.content
+            );
 
           if (autoContext) {
             cloned.content +=
-              "\n\n" + autoContext;
+              "\n\n" +
+              autoContext;
           }
         }
 
@@ -605,6 +649,17 @@ ${codeText}
       await this.preprocessMessages(
         cleanedMessages
       );
+
+    const workspaceContext =
+      this.buildWorkspaceContext();
+
+    if (workspaceContext) {
+      processedMessages.unshift({
+        role: "system",
+        content:
+          workspaceContext
+      });
+    }
 
     processedMessages =
       ContextManager.prepareMessages(
