@@ -1,3 +1,6 @@
+import SearchService from "./search-service.js";
+import ActionService from "./action-service.js";
+
 export default class CommandService {
   static commands = [
     {
@@ -38,7 +41,7 @@ export default class CommandService {
     {
       name: "open",
       description:
-        "Open file"
+        "Locate file"
     },
     {
       name: "grep",
@@ -69,5 +72,233 @@ export default class CommandService {
       cmd =>
         cmd.name.includes(lower)
     );
+  }
+
+  static async execute(text) {
+    if (
+      !text ||
+      !text.startsWith("/")
+    ) {
+      return {
+        handled: false
+      };
+    }
+
+    if (text.startsWith("/files ")) {
+      const query =
+        text.slice(7).trim();
+
+      const results =
+        SearchService.searchFiles(
+          query
+        );
+
+      let content =
+        `File results for: ${query}\n\n`;
+
+      if (results.length) {
+        results.forEach(file => {
+          content +=
+            `• ${file.name} (${file.path})\n`;
+        });
+      } else {
+        content +=
+          "No files found.";
+      }
+
+      return {
+        handled: true,
+        content
+      };
+    }
+
+    if (text.startsWith("/code ")) {
+      const query =
+        text.slice(6).trim();
+
+      const results =
+        await SearchService.searchCode(
+          query
+        );
+
+      let content =
+        `Code results for: ${query}\n\n`;
+
+      if (results.length) {
+        results.forEach(
+          match => {
+            content +=
+              `• ${match.path}:${match.line} ${match.text}\n`;
+          }
+        );
+      } else {
+        content +=
+          "No code matches found.";
+      }
+
+      return {
+        handled: true,
+        content
+      };
+    }
+
+    if (text.startsWith("/grep ")) {
+      const query =
+        text.slice(6).trim();
+
+      const results =
+        await SearchService.searchAllFiles(
+          query
+        );
+
+      let content =
+        `Global code results for: ${query}\n\n`;
+
+      if (results.length) {
+        results.forEach(
+          match => {
+            content +=
+              `• ${match.path}:${match.line}\n${match.text}\n\n`;
+          }
+        );
+      } else {
+        content +=
+          "No global matches found.";
+      }
+
+      return {
+        handled: true,
+        content
+      };
+    }
+
+    if (text.startsWith("/read ")) {
+      const args =
+        text.slice(6).trim();
+
+      const parts =
+        args.split(" ");
+
+      const path =
+        parts[0];
+
+      const startLine =
+        parts[1]
+          ? parseInt(
+              parts[1],
+              10
+            )
+          : 1;
+
+      const endLine =
+        parts[2]
+          ? parseInt(
+              parts[2],
+              10
+            )
+          : null;
+
+      const result =
+        await SearchService.readFile(
+          path,
+          startLine,
+          endLine
+        );
+
+      if (!result) {
+        return {
+          handled: true,
+          content:
+            "Unable to read file."
+        };
+      }
+
+      return {
+        handled: true,
+        content:
+`File: ${result.file}
+
+Lines ${result.startLine}-${result.endLine}
+
+${result.content}`
+      };
+    }
+
+    if (text.startsWith("/open ")) {
+      const path =
+        text.slice(6).trim();
+
+      const result =
+        SearchService.openFile(path);
+
+      if (!result) {
+        return {
+          handled: true,
+          content:
+            "File not found."
+        };
+      }
+
+      const open =
+        ActionService.findOpenEditorFile(
+          result.name
+        );
+
+      return {
+        handled: true,
+        content:
+`Found file:
+
+${result.path}
+
+Open in editor:
+${open ? "Yes" : "No"}`
+      };
+    }
+
+    if (text.startsWith("/focus ")) {
+      const args =
+        text.slice(7).trim();
+
+      const parts =
+        args.split(" ");
+
+      const file =
+        parts[0];
+
+      const line =
+        parts[1]
+          ? parseInt(
+              parts[1],
+              10
+            )
+          : null;
+
+      const result =
+        await ActionService.executeAction(
+          {
+            type:
+              "focus_file",
+            file,
+            line
+          }
+        );
+
+      return {
+        handled: true,
+        content:
+          result.success
+            ? `Focused ${file}${
+                line
+                  ? ` at line ${line}`
+                  : ""
+              }`
+            : `Focus failed: ${result.error}`
+      };
+    }
+
+    return {
+      handled: false
+    };
   }
 }
