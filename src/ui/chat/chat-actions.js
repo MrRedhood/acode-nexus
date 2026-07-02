@@ -176,6 +176,23 @@ export default {
         assistantMessage.content ||
         "No response returned.";
 
+      const parsedActions =
+  ActionService.parseActions(
+    assistantMessage.content
+  );
+
+for (const action of parsedActions) {
+  const result =
+    await ActionService.executeAction(
+      action
+    );
+
+  console.log(
+    "AI Action Result:",
+    result
+  );
+}
+
       if (!assistantNode) {
         this.stopThinkingAnimation();
 
