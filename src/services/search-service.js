@@ -52,10 +52,13 @@ export default class SearchService {
       if (match) {
         const owner =
           match[1];
+
         const repo =
           match[2];
+
         const branch =
           match[3];
+
         const filePath =
           match[4];
 
@@ -91,6 +94,69 @@ export default class SearchService {
     return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
   }
 
+  static getActiveLocalFileContent(
+    file
+  ) {
+    try {
+      if (!file) {
+        return null;
+      }
+
+      if (
+        file.url &&
+        file.url.startsWith("gh://")
+      ) {
+        return null;
+      }
+
+      if (
+        typeof editorManager ===
+        "undefined"
+      ) {
+        return null;
+      }
+
+      const activeFile =
+        editorManager.activeFile;
+
+      if (!activeFile) {
+        return null;
+      }
+
+      const sameFile =
+        activeFile.uri ===
+          file.url ||
+        activeFile.filename ===
+          file.name ||
+        activeFile.name ===
+          file.name;
+
+      if (!sameFile) {
+        return null;
+      }
+
+      const session =
+        editorManager.editor
+          ?.session;
+
+      if (
+        !session ||
+        typeof session.getValue !==
+          "function"
+      ) {
+        return null;
+      }
+
+      return session.getValue();
+    } catch (error) {
+      console.error(
+        "getActiveLocalFileContent failed:",
+        error
+      );
+      return null;
+    }
+  }
+
   static async fetchFileContent(
     file
   ) {
@@ -110,6 +176,20 @@ export default class SearchService {
       return this.fileCache.get(
         cacheKey
       );
+    }
+
+    const localContent =
+      this.getActiveLocalFileContent(
+        file
+      );
+
+    if (localContent !== null) {
+      this.fileCache.set(
+        cacheKey,
+        localContent
+      );
+
+      return localContent;
     }
 
     const url =
@@ -175,21 +255,24 @@ export default class SearchService {
       query.toLowerCase();
 
     const files =
-      WorkspaceScopeService
-        .getScopedFiles()
-        .filter(file => {
-          const name =
-            (
-              file.name || ""
-            ).toLowerCase();
+      (
+        WorkspaceScopeService.getScopedFiles() ||
+        []
+      ).filter(file => {
+        const name =
+          (
+            file.name || ""
+          ).toLowerCase();
 
-          return (
-            name.endsWith(".js") ||
-            name.endsWith(".json") ||
-            name.endsWith(".css") ||
-            name.endsWith(".md")
-          );
-        });
+        return (
+          name.endsWith(".js") ||
+          name.endsWith(".ts") ||
+          name.endsWith(".json") ||
+          name.endsWith(".css") ||
+          name.endsWith(".md") ||
+          name.endsWith(".py")
+        );
+      });
 
     const matches = [];
 
@@ -367,7 +450,7 @@ export default class SearchService {
     }
 
     const files =
-      WorkspaceScopeService.getScopedFiles();
+      WorkspaceScopeService.getScopedFiles() || [];
 
     const lower =
       path.toLowerCase();
