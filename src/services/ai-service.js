@@ -151,6 +151,90 @@ assume they mean this project.
     };
   }
 
+  static parseFileMentions(
+    text
+  ) {
+    if (!text) {
+      return {
+        files: [],
+        cleanedText: ""
+      };
+    }
+
+    const matches =
+      text.match(
+        /@([A-Za-z0-9._\-\/]+)/g
+      ) || [];
+
+    const files =
+      matches.map(
+        item => item.slice(1)
+      );
+
+    const cleanedText =
+      text
+        .replace(
+          /@([A-Za-z0-9._\-\/]+)/g,
+          ""
+        )
+        .trim();
+
+    return {
+      files,
+      cleanedText
+    };
+  }
+
+  static async buildMentionContext(
+    text
+  ) {
+    const parsed =
+      this.parseFileMentions(
+        text
+      );
+
+    if (!parsed.files.length) {
+      return {
+        content: text,
+        context: ""
+      };
+    }
+
+    const chunks = [];
+
+    for (const fileName of parsed.files) {
+      const content =
+        await SearchService.readFullFile(
+          fileName
+        );
+
+      if (!content) {
+        chunks.push(
+          `FILE: ${fileName}
+
+[Unable to read file]`
+        );
+        continue;
+      }
+
+      chunks.push(
+        `FILE: ${fileName}
+
+${content}`
+      );
+    }
+
+    return {
+      content:
+        parsed.cleanedText ||
+        "Explain this file.",
+      context:
+        chunks.join(
+          "\n\n----------------\n\n"
+        )
+    };
+  }
+
   static shouldInjectCodeContext(
     text
   ) {
@@ -401,7 +485,7 @@ ${finalContent}`,
     };
   }
 
-    static async preprocessMessages(
+  static async preprocessMessages(
     messages
   ) {
     const processed = [];
@@ -419,9 +503,26 @@ ${finalContent}`,
       if (
         cloned.role === "user"
       ) {
-        const parsed =
-          this.parseSlashCommand(
+        const mentionResult =
+          await this.buildMentionContext(
             cloned.content
+          );
+
+        if (
+          mentionResult.context
+        ) {
+          cloned.content =
+            `Referenced files:
+
+${mentionResult.context}
+
+User request:
+${mentionResult.content}`;
+        }
+
+                const parsed =
+          this.parseSlashCommand(
+            mentionResult.content
           );
 
         if (parsed) {
@@ -490,7 +591,9 @@ ${codeText}
                 parsed.command
               ].prefix + content;
           }
-        } else {
+        } else if (
+          !mentionResult.context
+        ) {
           const autoContext =
             await this.buildAutoContext(
               cloned.content
