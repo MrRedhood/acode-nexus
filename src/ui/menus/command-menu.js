@@ -1,50 +1,9 @@
+import CommandService from "../services/command-service.js";
+
 export default class CommandMenu {
   constructor(chatView) {
     this.chatView = chatView;
     this.menu = null;
-
-    this.commands = [
-      {
-        name: "explain",
-        description:
-          "Explain code or concepts"
-      },
-      {
-        name: "fix",
-        description:
-          "Debug and fix issues"
-      },
-      {
-        name: "refactor",
-        description:
-          "Improve structure"
-      },
-      {
-        name: "optimize",
-        description:
-          "Improve performance"
-      },
-      {
-        name: "summarize",
-        description:
-          "Summarize content"
-      },
-      {
-        name: "files",
-        description:
-          "Search workspace files"
-      },
-      {
-        name: "code",
-        description:
-          "Search code in current file"
-      },
-      {
-        name: "open",
-        description:
-          "Open/find file by path"
-      }
-    ];
   }
 
   update(text) {
@@ -58,8 +17,8 @@ export default class CommandMenu {
       text.slice(1).toLowerCase();
 
     const filtered =
-      this.commands.filter(cmd =>
-        cmd.name.includes(query)
+      CommandService.search(
+        query
       );
 
     if (!filtered.length) {
