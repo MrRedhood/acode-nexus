@@ -1,5 +1,29 @@
 export default class WorkspaceManager {
-  static workspaceFiles = [];
+  static workspaceBuckets = {};
+
+  static extractRoot(path) {
+    if (!path) {
+      return null;
+    }
+
+    const parts = path.split("/");
+
+    if (parts[0] === "Acode") {
+      return "Acode";
+    }
+
+    if (parts.length >= 3) {
+      return parts.slice(0, 3).join("/");
+    }
+
+    return parts[0];
+  }
+
+  static flattenBuckets() {
+    return Object.values(
+      this.workspaceBuckets
+    ).flat();
+  }
 
   static async scanWorkspace() {
     try {
@@ -7,22 +31,21 @@ export default class WorkspaceManager {
         "===== WORKSPACE SCAN START ====="
       );
 
-      this.workspaceFiles = [];
-
       if (
-        typeof acode === "undefined"
+        typeof acode ===
+        "undefined"
       ) {
         console.error(
           "acode not found"
         );
-        return [];
+        return this.flattenBuckets();
       }
 
       if (!acode.require) {
         console.error(
           "acode.require missing"
         );
-        return [];
+        return this.flattenBuckets();
       }
 
       let fileList;
@@ -37,7 +60,7 @@ export default class WorkspaceManager {
           "fileList load failed:",
           error
         );
-        return [];
+        return this.flattenBuckets();
       }
 
       if (
@@ -47,7 +70,7 @@ export default class WorkspaceManager {
         console.error(
           "fileList not function"
         );
-        return [];
+        return this.flattenBuckets();
       }
 
       const result =
@@ -61,10 +84,10 @@ export default class WorkspaceManager {
         console.error(
           "fileList returned non-array"
         );
-        return [];
+        return this.flattenBuckets();
       }
 
-      this.workspaceFiles =
+      const scannedFiles =
         result.map(file => {
           try {
             return {
@@ -82,23 +105,54 @@ export default class WorkspaceManager {
           }
         });
 
+      const roots = [
+        ...new Set(
+          scannedFiles
+            .map(file =>
+              this.extractRoot(
+                file.path
+              )
+            )
+            .filter(Boolean)
+        )
+      ];
+
+      roots.forEach(root => {
+        this.workspaceBuckets[
+          root
+        ] = scannedFiles.filter(
+          file =>
+            this.extractRoot(
+              file.path
+            ) === root
+        );
+      });
+
       console.log(
-        "Workspace files:",
-        this.workspaceFiles.length
+        "Workspace buckets:",
+        Object.keys(
+          this.workspaceBuckets
+        )
       );
 
-      return this.workspaceFiles;
+      console.log(
+        "Total files:",
+        this.flattenBuckets()
+          .length
+      );
+
+      return this.flattenBuckets();
     } catch (error) {
       console.error(
         "scanWorkspace failed:",
         error
       );
-      return [];
+      return this.flattenBuckets();
     }
   }
 
   static getFiles() {
-    return this.workspaceFiles;
+    return this.flattenBuckets();
   }
 
   static searchFiles(query) {
@@ -109,7 +163,7 @@ export default class WorkspaceManager {
     const lower =
       query.toLowerCase();
 
-    return this.workspaceFiles.filter(
+    return this.getFiles().filter(
       file =>
         (file.name || "")
           .toLowerCase()
@@ -141,65 +195,26 @@ export default class WorkspaceManager {
         file
       );
 
-      try {
-        console.log(
-          "filename:",
-          file.filename
-        );
-      } catch (e) {
-        console.log(
-          "filename read failed",
-          e
-        );
-      }
-
-      try {
-        console.log(
-          "name:",
-          file.name
-        );
-      } catch (e) {
-        console.log(
-          "name read failed",
-          e
-        );
-      }
-
-      try {
-        console.log(
-          "uri:",
-          file.uri
-        );
-      } catch (e) {
-        console.log(
-          "uri read failed",
-          e
-        );
-      }
-
-      try {
-        console.log(
-          "location:",
-          file.location
-        );
-      } catch (e) {
-        console.log(
-          "location read failed",
-          e
-        );
-      }
-
-      try {
-        console.log(
-          "id:",
-          file.id
-        );
-      } catch (e) {
-        console.log(
-          "id read failed",
-          e
-        );
-      }
+      [
+        "filename",
+        "name",
+        "uri",
+        "location",
+        "id"
+      ].forEach(prop => {
+        try {
+          console.log(
+            prop + ":",
+            file[prop]
+          );
+        } catch (e) {
+          console.log(
+            prop +
+              " read failed",
+            e
+          );
+        }
+      });
 
       console.log(
         "===== OPEN FILE DEBUG END ====="
@@ -218,36 +233,8 @@ export default class WorkspaceManager {
       await this.scanWorkspace();
 
       console.log(
-        "editorManager props:",
-        Object.getOwnPropertyNames(
-          editorManager
-        )
-      );
-
-      console.log(
-        "acode props:",
-        Object.getOwnPropertyNames(
-          acode
-        )
-      );
-
-      const suspicious =
-        Object.keys(window).filter(
-          key =>
-            key
-              .toLowerCase()
-              .includes("git") ||
-            key
-              .toLowerCase()
-              .includes("repo") ||
-            key
-              .toLowerCase()
-              .includes("file")
-        );
-
-      console.log(
-        "acode suspicious:",
-        suspicious
+        "Buckets:",
+        this.workspaceBuckets
       );
 
       console.log(
