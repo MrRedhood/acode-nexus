@@ -14,6 +14,7 @@ export default class SearchService {
       ".ts",
       ".tsx",
       ".jsx",
+
       ".html",
       ".htm",
       ".css",
@@ -87,25 +88,81 @@ export default class SearchService {
       return false;
     }
 
+    if (file.isDirectory) {
+      return false;
+    }
+
+    if (
+      file.size &&
+      file.size >
+        this.MAX_FILE_SIZE
+    ) {
+      return false;
+    }
+
+    const mime =
+      (
+        file.mime || ""
+      ).toLowerCase();
+
+    if (
+      mime.startsWith(
+        "image/"
+      ) ||
+      mime.startsWith(
+        "video/"
+      ) ||
+      mime.startsWith(
+        "audio/"
+      ) ||
+      mime.startsWith(
+        "font/"
+      )
+    ) {
+      return false;
+    }
+
+    if (
+      mime.includes(
+        "zip"
+      ) ||
+      mime.includes(
+        "octet-stream"
+      ) ||
+      mime.includes(
+        "pdf"
+      )
+    ) {
+      return false;
+    }
+
+    if (
+      mime.startsWith(
+        "text/"
+      )
+    ) {
+      return true;
+    }
+
     const name =
       (
         file.name || ""
       ).toLowerCase();
 
-    if (!name) {
-      return false;
-    }
-
     if (
       name ===
-      "dockerfile"
+        "dockerfile" ||
+      name ===
+        "makefile"
     ) {
       return true;
     }
 
     if (
       name.includes(".min.") ||
-      name.includes(".bundle.") ||
+      name.includes(
+        ".bundle."
+      ) ||
       name.includes(
         "package-lock"
       ) ||
@@ -115,14 +172,6 @@ export default class SearchService {
       name.includes(
         "yarn.lock"
       )
-    ) {
-      return false;
-    }
-
-    if (
-      file.size &&
-      file.size >
-        this.MAX_FILE_SIZE
     ) {
       return false;
     }
@@ -168,8 +217,7 @@ export default class SearchService {
           file.name ||
           "unknown",
         path:
-          file.path ||
-          "",
+          file.path || "",
         url:
           file.url || ""
       }));
@@ -323,18 +371,15 @@ export default class SearchService {
       const content =
         await fs(
           file.url
-        ).readFile(
-          "utf-8"
-        );
+        ).readFile("utf-8");
 
-      return (
-        content || null
-      );
+      return content || null;
     } catch (error) {
       console.error(
         "readLocalFile failed:",
         error
       );
+
       return null;
     }
   }
@@ -424,6 +469,7 @@ export default class SearchService {
         file.path,
         error
       );
+
       return null;
     }
   }
@@ -528,19 +574,12 @@ export default class SearchService {
                       snippetLine,
                       snippetIndex
                     ) =>
-                      `${
-                        start +
-                        snippetIndex +
-                        1
-                      }: ${snippetLine}`
+                      `${start + snippetIndex + 1}: ${snippetLine}`
                   )
-                  .join(
-                    "\n"
-                  );
+                  .join("\n");
 
               matches.push({
-                type:
-                  "code",
+                type: "code",
                 file:
                   file.name,
                 path:
@@ -612,10 +651,7 @@ export default class SearchService {
               line,
               index
             ) =>
-              `${
-                start +
-                index
-              }: ${line}`
+              `${start + index}: ${line}`
           )
           .join("\n");
 
@@ -666,19 +702,13 @@ export default class SearchService {
             lower) ||
           ((file.path || "")
             .toLowerCase()
-            .endsWith(
-              lower
-            )) ||
+            .endsWith(lower)) ||
           ((file.name || "")
             .toLowerCase()
-            .includes(
-              lower
-            )) ||
+            .includes(lower)) ||
           ((file.path || "")
             .toLowerCase()
-            .includes(
-              lower
-            ))
+            .includes(lower))
       ) || null
     );
   }
