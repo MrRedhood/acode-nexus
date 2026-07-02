@@ -1,5 +1,6 @@
 import SearchService from "./search-service.js";
 import ActionService from "./action-service.js";
+import WorkspaceManager from "./workspace-manager.js";
 
 export default class CommandService {
   static commands = [
@@ -60,9 +61,9 @@ export default class CommandService {
     },
     {
       name: "cleanup",
-      description: 
-    "Cleanup stale workspace cache"
-    },
+      description:
+        "Cleanup stale workspace cache"
+    }
   ];
 
   static getCommands() {
@@ -86,6 +87,24 @@ export default class CommandService {
     ) {
       return {
         handled: false
+      };
+    }
+
+    if (text === "/cleanup") {
+      WorkspaceManager.cleanupEmptyBuckets();
+
+      await WorkspaceManager.scanWorkspace();
+
+      if (
+        SearchService.rebuildIndex
+      ) {
+        await SearchService.rebuildIndex();
+      }
+
+      return {
+        handled: true,
+        content:
+          "Workspace cache cleaned and reindexed."
       };
     }
 
