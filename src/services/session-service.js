@@ -1,4 +1,5 @@
 import AttachmentStorage from "./attachment-storage.js";
+import WorkspaceScopeService from "./workspace-scope-service.js";
 
 const STORAGE_KEY =
   "acode_nexus_sessions";
@@ -36,6 +37,8 @@ export default class SessionService {
           .toString(36)
           .slice(2),
       title,
+      workspaceId:
+        this.getCurrentWorkspaceId(),
       messages: []
     };
   }
@@ -52,6 +55,8 @@ export default class SessionService {
           {
             id: "session_1",
             title: "New Chat",
+            workspaceId:
+              "default",
             messages: []
           }
         ]
@@ -60,6 +65,13 @@ export default class SessionService {
 
     data.sessions.forEach(
       session => {
+        if (
+          !session.workspaceId
+        ) {
+          session.workspaceId =
+            "default";
+        }
+
         if (
           !Array.isArray(
             session.messages
@@ -140,6 +152,8 @@ export default class SessionService {
               id: "session_1",
               title:
                 "New Chat",
+              workspaceId:
+                "default",
               messages: []
             }
           ]
@@ -176,6 +190,8 @@ export default class SessionService {
           {
             id: "session_1",
             title: "New Chat",
+            workspaceId:
+              "default",
             messages: []
           }
         ]
@@ -188,6 +204,53 @@ export default class SessionService {
       STORAGE_KEY,
       JSON.stringify(data)
     );
+  }
+
+  static getCurrentWorkspaceId() {
+    return (
+      WorkspaceScopeService.getSelectedRoot() ||
+      "default"
+    );
+  }
+
+  static getSessions() {
+    return this.load().sessions;
+  }
+
+  static getSessionsByWorkspace(
+    workspaceId = null
+  ) {
+    const target =
+      workspaceId ||
+      this.getCurrentWorkspaceId();
+
+    return this.getSessions().filter(
+      session =>
+        (
+          session.workspaceId ||
+          "default"
+        ) === target
+    );
+  }
+
+  static ensureWorkspaceSession() {
+    const workspaceId =
+      this.getCurrentWorkspaceId();
+
+    const sessions =
+      this.getSessionsByWorkspace(
+        workspaceId
+      );
+
+    if (sessions.length > 0) {
+      this.setActiveSession(
+        sessions[0].id
+      );
+
+      return sessions[0];
+    }
+
+    return this.createSession();
   }
 
   static collectUsedAttachmentIds() {
@@ -224,10 +287,6 @@ export default class SessionService {
           error
         );
       });
-  }
-
-  static getSessions() {
-    return this.load().sessions;
   }
 
   static getCurrentSession() {
@@ -330,12 +389,12 @@ export default class SessionService {
         Math.random()
           .toString(36)
           .slice(2),
-
       title:
         (original.title ||
           "New Chat") +
         " (Copy)",
-
+      workspaceId:
+        original.workspaceId,
       messages:
         original.messages.map(
           msg => ({
