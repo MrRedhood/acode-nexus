@@ -8,21 +8,14 @@ export default class WorkspaceScopeService {
       return null;
     }
 
-    const parts =
-      path.split("/");
+    const parts = path.split("/");
 
-    if (
-      parts[0] === "Acode"
-    ) {
+    if (parts[0] === "Acode") {
       return "Acode";
     }
 
-    if (
-      parts.length >= 3
-    ) {
-      return parts
-        .slice(0, 3)
-        .join("/");
+    if (parts.length >= 3) {
+      return parts.slice(0, 3).join("/");
     }
 
     return parts[0];
@@ -37,12 +30,9 @@ export default class WorkspaceScopeService {
       return "Acode";
     }
 
-    const parts =
-      root.split("/");
+    const parts = root.split("/");
 
-    if (
-      parts.length >= 2
-    ) {
+    if (parts.length >= 2) {
       return parts[1];
     }
 
@@ -63,19 +53,22 @@ export default class WorkspaceScopeService {
 
   static getRoots() {
     const files =
-      WorkspaceManager.getFiles();
+      WorkspaceManager.getFiles() || [];
 
     const roots = [
       ...new Set(
         files
           .filter(
-            file => file.path
+            file =>
+              file &&
+              file.path
           )
           .map(file =>
             this.extractRoot(
               file.path
             )
           )
+          .filter(Boolean)
       )
     ];
 
@@ -98,11 +91,8 @@ export default class WorkspaceScopeService {
     );
   }
 
-  static setSelectedRoot(
-    root
-  ) {
-    this.selectedRoot =
-      root;
+  static setSelectedRoot(root) {
+    this.selectedRoot = root;
 
     try {
       localStorage.setItem(
@@ -115,8 +105,20 @@ export default class WorkspaceScopeService {
   }
 
   static getSelectedRoot() {
+    const roots =
+      this.getRoots();
+
+    if (!roots.length) {
+      this.selectedRoot =
+        null;
+      return null;
+    }
+
     if (
-      this.selectedRoot
+      this.selectedRoot &&
+      roots.includes(
+        this.selectedRoot
+      )
     ) {
       return this.selectedRoot;
     }
@@ -127,7 +129,10 @@ export default class WorkspaceScopeService {
           "nexus_workspace_root"
         );
 
-      if (saved) {
+      if (
+        saved &&
+        roots.includes(saved)
+      ) {
         this.selectedRoot =
           saved;
         return saved;
@@ -136,12 +141,16 @@ export default class WorkspaceScopeService {
       console.error(error);
     }
 
-    const roots =
-      this.getRoots();
+    this.selectedRoot =
+      roots[0];
 
-    if (roots.length) {
-      this.selectedRoot =
-        roots[0];
+    try {
+      localStorage.setItem(
+        "nexus_workspace_root",
+        this.selectedRoot
+      );
+    } catch (error) {
+      console.error(error);
     }
 
     return this.selectedRoot;
@@ -170,7 +179,7 @@ export default class WorkspaceScopeService {
 
   static getScopedFiles() {
     const files =
-      WorkspaceManager.getFiles();
+      WorkspaceManager.getFiles() || [];
 
     const root =
       this.getSelectedRoot();
@@ -181,13 +190,14 @@ export default class WorkspaceScopeService {
 
     return files.filter(
       file => {
-        if (!file.path) {
+        if (
+          !file ||
+          !file.path
+        ) {
           return false;
         }
 
-        if (
-          root === "Acode"
-        ) {
+        if (root === "Acode") {
           return file.path.startsWith(
             "Acode/"
           );
