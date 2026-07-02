@@ -52,13 +52,10 @@ export default class SearchService {
       if (match) {
         const owner =
           match[1];
-
         const repo =
           match[2];
-
         const branch =
           match[3];
-
         const filePath =
           match[4];
 
@@ -94,25 +91,11 @@ export default class SearchService {
     return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
   }
 
-  static getActiveLocalFileContent(
+  static readFromOpenEditor(
     file
   ) {
     try {
       if (!file) {
-        return null;
-      }
-
-      if (
-        file.url &&
-        file.url.startsWith("gh://")
-      ) {
-        return null;
-      }
-
-      if (
-        typeof editorManager ===
-        "undefined"
-      ) {
         return null;
       }
 
@@ -123,34 +106,48 @@ export default class SearchService {
         return null;
       }
 
+      const activePath =
+        activeFile.uri ||
+        activeFile.filename ||
+        activeFile.name ||
+        "";
+
+      const targetPath =
+        file.path ||
+        file.url ||
+        file.name ||
+        "";
+
+      const activeLower =
+        String(activePath).toLowerCase();
+
+      const targetLower =
+        String(targetPath).toLowerCase();
+
       const sameFile =
-        activeFile.uri ===
-          file.url ||
-        activeFile.filename ===
-          file.name ||
-        activeFile.name ===
-          file.name;
+        activeLower.includes(
+          targetLower
+        ) ||
+        targetLower.includes(
+          activeLower
+        ) ||
+        activeLower.endsWith(
+          file.name.toLowerCase()
+        );
 
       if (!sameFile) {
         return null;
       }
 
-      const session =
+      const content =
         editorManager.editor
-          ?.session;
+          ?.session
+          ?.getValue?.();
 
-      if (
-        !session ||
-        typeof session.getValue !==
-          "function"
-      ) {
-        return null;
-      }
-
-      return session.getValue();
+      return content || null;
     } catch (error) {
       console.error(
-        "getActiveLocalFileContent failed:",
+        "readFromOpenEditor failed:",
         error
       );
       return null;
@@ -178,18 +175,27 @@ export default class SearchService {
       );
     }
 
-    const localContent =
-      this.getActiveLocalFileContent(
-        file
-      );
+    if (
+      file.url &&
+      file.url.startsWith(
+        "content://"
+      )
+    ) {
+      const localContent =
+        this.readFromOpenEditor(
+          file
+        );
 
-    if (localContent !== null) {
-      this.fileCache.set(
-        cacheKey,
-        localContent
-      );
+      if (localContent) {
+        this.fileCache.set(
+          cacheKey,
+          localContent
+        );
 
-      return localContent;
+        return localContent;
+      }
+
+      return null;
     }
 
     const url =
@@ -244,7 +250,7 @@ export default class SearchService {
     );
   }
 
-  static async searchCode(
+    static async searchCode(
     query
   ) {
     if (!query) {
@@ -255,24 +261,22 @@ export default class SearchService {
       query.toLowerCase();
 
     const files =
-      (
-        WorkspaceScopeService.getScopedFiles() ||
-        []
-      ).filter(file => {
-        const name =
-          (
-            file.name || ""
-          ).toLowerCase();
+      WorkspaceScopeService
+        .getScopedFiles()
+        .filter(file => {
+          const name =
+            (
+              file.name || ""
+            ).toLowerCase();
 
-        return (
-          name.endsWith(".js") ||
-          name.endsWith(".ts") ||
-          name.endsWith(".json") ||
-          name.endsWith(".css") ||
-          name.endsWith(".md") ||
-          name.endsWith(".py")
-        );
-      });
+          return (
+            name.endsWith(".js") ||
+            name.endsWith(".json") ||
+            name.endsWith(".css") ||
+            name.endsWith(".md") ||
+            name.endsWith(".py")
+          );
+        });
 
     const matches = [];
 
@@ -450,7 +454,7 @@ export default class SearchService {
     }
 
     const files =
-      WorkspaceScopeService.getScopedFiles() || [];
+      WorkspaceScopeService.getScopedFiles();
 
     const lower =
       path.toLowerCase();
