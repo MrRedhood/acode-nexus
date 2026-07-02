@@ -3,14 +3,153 @@ import WorkspaceScopeService from "./workspace-scope-service.js";
 export default class SearchService {
   static fileCache = new Map();
 
+  static MAX_FILE_SIZE =
+    4 * 1024 * 1024;
+
+  static searchableExtensions =
+    new Set([
+      ".js",
+      ".mjs",
+      ".cjs",
+      ".ts",
+      ".tsx",
+      ".jsx",
+      ".html",
+      ".htm",
+      ".css",
+      ".scss",
+      ".sass",
+      ".less",
+
+      ".json",
+      ".jsonc",
+      ".yaml",
+      ".yml",
+      ".toml",
+      ".ini",
+      ".env",
+      ".xml",
+
+      ".kt",
+      ".kts",
+      ".java",
+      ".dart",
+      ".gradle",
+      ".properties",
+
+      ".py",
+      ".pyw",
+
+      ".c",
+      ".h",
+      ".cpp",
+      ".cc",
+      ".cxx",
+      ".hpp",
+
+      ".rs",
+      ".go",
+      ".zig",
+
+      ".php",
+      ".rb",
+      ".cs",
+      ".swift",
+
+      ".sh",
+      ".bash",
+      ".zsh",
+      ".ps1",
+      ".bat",
+
+      ".sql",
+
+      ".md",
+      ".txt",
+      ".rst",
+
+      ".lua",
+      ".r",
+      ".scala",
+      ".pl",
+      ".pm",
+
+      ".vue",
+      ".svelte",
+
+      ".prompt"
+    ]);
+
+  static isSearchableFile(
+    file
+  ) {
+    if (!file) {
+      return false;
+    }
+
+    const name =
+      (
+        file.name || ""
+      ).toLowerCase();
+
+    if (!name) {
+      return false;
+    }
+
+    if (
+      name ===
+      "dockerfile"
+    ) {
+      return true;
+    }
+
+    if (
+      name.includes(".min.") ||
+      name.includes(".bundle.") ||
+      name.includes(
+        "package-lock"
+      ) ||
+      name.includes(
+        "pnpm-lock"
+      ) ||
+      name.includes(
+        "yarn.lock"
+      )
+    ) {
+      return false;
+    }
+
+    if (
+      file.size &&
+      file.size >
+        this.MAX_FILE_SIZE
+    ) {
+      return false;
+    }
+
+    for (const ext of this
+      .searchableExtensions) {
+      if (
+        name.endsWith(ext)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   static searchFiles(query) {
     if (!query) {
       return [];
     }
 
-    const lower = query.toLowerCase();
+    const lower =
+      query.toLowerCase();
+
     const files =
-      WorkspaceScopeService.getScopedFiles() || [];
+      WorkspaceScopeService.getScopedFiles() ||
+      [];
 
     return files
       .filter(
@@ -25,13 +164,20 @@ export default class SearchService {
       )
       .map(file => ({
         type: "file",
-        name: file.name || "unknown",
-        path: file.path || "",
-        url: file.url || ""
+        name:
+          file.name ||
+          "unknown",
+        path:
+          file.path ||
+          "",
+        url:
+          file.url || ""
       }));
   }
 
-  static toRawGithubUrl(file) {
+  static toRawGithubUrl(
+    file
+  ) {
     if (!file) {
       return null;
     }
@@ -43,10 +189,14 @@ export default class SearchService {
         );
 
       if (match) {
-        const owner = match[1];
-        const repo = match[2];
-        const branch = match[3];
-        const filePath = match[4];
+        const owner =
+          match[1];
+        const repo =
+          match[2];
+        const branch =
+          match[3];
+        const filePath =
+          match[4];
 
         return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
       }
@@ -56,22 +206,30 @@ export default class SearchService {
       return null;
     }
 
-    const parts = file.path.split("/");
+    const parts =
+      file.path.split("/");
 
     if (parts.length < 4) {
       return null;
     }
 
-    const owner = parts[0];
-    const repo = parts[1];
-    const branch = parts[2];
+    const owner =
+      parts[0];
+    const repo =
+      parts[1];
+    const branch =
+      parts[2];
     const filePath =
-      parts.slice(3).join("/");
+      parts
+        .slice(3)
+        .join("/");
 
     return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
   }
 
-  static readFromOpenEditor(file) {
+  static readFromOpenEditor(
+    file
+  ) {
     try {
       if (!file) {
         return null;
@@ -97,17 +255,23 @@ export default class SearchService {
         "";
 
       const activeLower =
-        String(activePath).toLowerCase();
+        String(
+          activePath
+        ).toLowerCase();
 
       const targetLower =
-        String(targetPath).toLowerCase();
+        String(
+          targetPath
+        ).toLowerCase();
 
       const fileNameLower =
-        (file.name || "")
-          .toLowerCase();
+        (
+          file.name || ""
+        ).toLowerCase();
 
       const sameFile =
-        activeLower === targetLower ||
+        activeLower ===
+          targetLower ||
         activeLower.includes(
           targetLower
         ) ||
@@ -149,7 +313,9 @@ export default class SearchService {
     }
   }
 
-  static async readLocalFile(file) {
+  static async readLocalFile(
+    file
+  ) {
     try {
       const fs =
         acode.require("fs");
@@ -157,28 +323,33 @@ export default class SearchService {
       const content =
         await fs(
           file.url
-        ).readFile("utf-8");
+        ).readFile(
+          "utf-8"
+        );
 
-      return content || null;
+      return (
+        content || null
+      );
     } catch (error) {
       console.error(
         "readLocalFile failed:",
         error
       );
-
       return null;
     }
   }
 
-  static async fetchFileContent(file) {
+  static async fetchFileContent(
+    file
+  ) {
     if (!file) {
       return null;
     }
 
     const cacheKey =
-      file.path || file.name;
+      file.path ||
+      file.name;
 
-    // PRIORITY 1: open editor buffer
     const editorContent =
       this.readFromOpenEditor(
         file
@@ -188,7 +359,6 @@ export default class SearchService {
       return editorContent;
     }
 
-    // PRIORITY 2: cache (only after editor check)
     if (
       this.fileCache.has(
         cacheKey
@@ -199,7 +369,6 @@ export default class SearchService {
       );
     }
 
-    // PRIORITY 3: local SAF
     if (
       file.url &&
       file.url.startsWith(
@@ -223,7 +392,6 @@ export default class SearchService {
       return null;
     }
 
-    // PRIORITY 4: GitHub
     const url =
       this.toRawGithubUrl(
         file
@@ -256,12 +424,13 @@ export default class SearchService {
         file.path,
         error
       );
-
       return null;
     }
   }
 
-  static async readFullFile(path) {
+  static async readFullFile(
+    path
+  ) {
     const file =
       this.openFile(path);
 
@@ -274,7 +443,9 @@ export default class SearchService {
     );
   }
 
-  static async searchCode(query) {
+  static async searchCode(
+    query
+  ) {
     if (!query) {
       return [];
     }
@@ -285,26 +456,19 @@ export default class SearchService {
     const files =
       WorkspaceScopeService
         .getScopedFiles()
-        .filter(file => {
-          const name =
-            (
-              file.name || ""
-            ).toLowerCase();
+        .filter(file =>
+          this.isSearchableFile(
+            file
+          )
+        );
 
-          return (
-            name.endsWith(".js") ||
-            name.endsWith(".json") ||
-            name.endsWith(".css") ||
-            name.endsWith(".md") ||
-            name.endsWith(".py")
-          );
-        });
-
-    const matches = [];
+    const matches =
+      [];
 
     for (const file of files) {
       if (
-        matches.length >= 50
+        matches.length >=
+        50
       ) {
         break;
       }
@@ -323,9 +487,13 @@ export default class SearchService {
           content.split("\n");
 
         lines.forEach(
-          (line, index) => {
+          (
+            line,
+            index
+          ) => {
             if (
-              matches.length >= 50
+              matches.length >=
+              50
             ) {
               return;
             }
@@ -333,7 +501,9 @@ export default class SearchService {
             if (
               line
                 .toLowerCase()
-                .includes(lower)
+                .includes(
+                  lower
+                )
             ) {
               const start =
                 Math.max(
@@ -364,10 +534,13 @@ export default class SearchService {
                         1
                       }: ${snippetLine}`
                   )
-                  .join("\n");
+                  .join(
+                    "\n"
+                  );
 
               matches.push({
-                type: "code",
+                type:
+                  "code",
                 file:
                   file.name,
                 path:
@@ -435,24 +608,33 @@ export default class SearchService {
             end
           )
           .map(
-            (line, index) =>
-              `${start + index}: ${line}`
+            (
+              line,
+              index
+            ) =>
+              `${
+                start +
+                index
+              }: ${line}`
           )
           .join("\n");
 
       return {
-        file: file.name,
-        path: file.path,
-        startLine: start,
+        file:
+          file.name,
+        path:
+          file.path,
+        startLine:
+          start,
         endLine: end,
-        content: snippet
+        content:
+          snippet
       };
     } catch (error) {
       console.error(
         "readFile failed:",
         error
       );
-
       return null;
     }
   }
@@ -484,13 +666,19 @@ export default class SearchService {
             lower) ||
           ((file.path || "")
             .toLowerCase()
-            .endsWith(lower)) ||
+            .endsWith(
+              lower
+            )) ||
           ((file.name || "")
             .toLowerCase()
-            .includes(lower)) ||
+            .includes(
+              lower
+            )) ||
           ((file.path || "")
             .toLowerCase()
-            .includes(lower))
+            .includes(
+              lower
+            ))
       ) || null
     );
   }
