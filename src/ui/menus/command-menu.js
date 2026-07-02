@@ -1,4 +1,4 @@
-import CommandService from "../services/command-service.js";
+import CommandService from "../../services/command-service.js";
 
 export default class CommandMenu {
   constructor(chatView) {
