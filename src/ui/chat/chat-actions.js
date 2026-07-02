@@ -2,6 +2,8 @@ import AIService from "../../services/ai-service.js";
 import SessionService from "../../services/session-service.js";
 import AttachmentStorage from "../../services/attachment-storage.js";
 import SearchService from "../../services/search-service.js";
+import CommandService from "../../services/command-service.js";
+import ActionService from "../../services/action-service.js";
 import parseMarkdown from "../../utils/markdown.js";
 
 export default {
