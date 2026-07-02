@@ -332,3 +332,207 @@ export default {
     }
 
     this.commandMenu.hide();
+
+        if (this.editingMessageId) {
+      const newAttachmentIds = [];
+
+      for (const att of pendingAttachments) {
+        await AttachmentStorage.saveAttachment(
+          att
+        );
+        newAttachmentIds.push(
+          att.id
+        );
+      }
+
+      SessionService.updateMessageWithAttachments(
+        this.editingMessageId,
+        text || "[Attachment]",
+        [
+          ...editingAttachmentIds,
+          ...newAttachmentIds
+        ]
+      );
+
+      SessionService.removeMessagesAfter(
+        this.editingMessageId
+      );
+
+      this.editingMessageId =
+        null;
+
+      this.editingAttachmentIds =
+        [];
+
+      this.pendingAttachments =
+        [];
+
+      this.renderAttachmentPreview();
+      this.renderMessages();
+
+      input.value = "";
+
+      this.autoResizeTextarea(
+        input
+      );
+
+      this.updateTokenCounter();
+
+      await this.generateAssistantReply();
+      return;
+    }
+
+    const attachmentIds = [];
+
+    for (const att of pendingAttachments) {
+      await AttachmentStorage.saveAttachment(
+        att
+      );
+      attachmentIds.push(att.id);
+    }
+
+    const message =
+      SessionService.addMessage(
+        "user",
+        text || "[Attachment]",
+        attachmentIds
+      );
+
+    this.appendMessageObject(
+      message,
+      false,
+      false,
+      false
+    );
+
+    input.value = "";
+    this.pendingAttachments = [];
+    this.editingAttachmentIds =
+      [];
+
+    this.renderAttachmentPreview();
+    this.autoResizeTextarea(
+      input
+    );
+    this.updateTokenCounter();
+
+    const commandResult =
+      await CommandService.execute(
+        text
+      );
+
+    if (commandResult.handled) {
+      this.appendMessageObject(
+        {
+          id:
+            "msg_" +
+            Date.now(),
+          role: "assistant",
+          content:
+            commandResult.content
+        },
+        true,
+        true,
+        true
+      );
+
+      return;
+    }
+
+    const searchHints = [
+      "where is ",
+      "find ",
+      "implemented",
+      "defined",
+      "locate"
+    ];
+
+    const isSearchQuery =
+      searchHints.some(
+        hint =>
+          text
+            .toLowerCase()
+            .includes(hint)
+      );
+
+    if (isSearchQuery) {
+      const words =
+        text.match(
+          /[A-Za-z_][A-Za-z0-9_]*/g
+        ) || [];
+
+      let symbol =
+        words.find(
+          word =>
+            /[a-z][A-Z]/.test(
+              word
+            )
+        );
+
+      if (!symbol) {
+        const ignored = [
+          "where",
+          "find",
+          "implemented",
+          "defined",
+          "locate",
+          "function",
+          "method",
+          "class",
+          "is"
+        ];
+
+        symbol =
+          words.find(
+            word =>
+              word.length > 2 &&
+              !ignored.includes(
+                word.toLowerCase()
+              )
+          );
+      }
+
+      if (symbol) {
+        const results =
+          await SearchService.searchCode(
+            symbol
+          );
+
+        let content =
+          `${symbol} found in:\n\n`;
+
+        if (results.length) {
+          results
+            .slice(0, 10)
+            .forEach(
+              match => {
+                content +=
+                  `• ${match.path}:${match.line}\n`;
+              }
+            );
+        } else {
+          content =
+            `No results found for ${symbol}`;
+        }
+
+        this.appendMessageObject(
+          {
+            id:
+              "msg_" +
+              Date.now(),
+            role:
+              "assistant",
+            content
+          },
+          true,
+          true,
+          true
+        );
+
+        return;
+      }
+    }
+
+    await this.generateAssistantReply();
+  }
+};
