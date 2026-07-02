@@ -22,76 +22,53 @@ export default class WorkspaceManager {
   static flattenBuckets() {
     return Object.values(
       this.workspaceBuckets
-    ).flatMap(
-      bucket => bucket.files || []
-    );
+    ).flat();
   }
 
-  static cleanupInvalidBuckets() {
+  static cleanupEmptyBuckets() {
     Object.keys(
       this.workspaceBuckets
     ).forEach(root => {
-      const bucket =
-        this.workspaceBuckets[
-          root
-        ];
+      const files =
+        this.workspaceBuckets[root];
 
       if (
-        !bucket ||
-        !Array.isArray(
-          bucket.files
-        )
+        !Array.isArray(files) ||
+        files.length === 0
       ) {
-        delete this
-          .workspaceBuckets[
-          root
-        ];
-        return;
-      }
-
-      bucket.files =
-        bucket.files.filter(
-          file =>
-            file &&
-            file.path
-        );
-
-      if (
-        bucket.files.length === 0
-      ) {
-        console.log(
-          "Removing empty workspace:",
-          root
-        );
-
-        delete this
-          .workspaceBuckets[
+        delete this.workspaceBuckets[
           root
         ];
       }
     });
   }
 
-  static removeWorkspace(root) {
+  static cleanupStaleBuckets(
+    scannedRoots = []
+  ) {
+    Object.keys(
+      this.workspaceBuckets
+    ).forEach(root => {
+      if (
+        !scannedRoots.includes(root)
+      ) {
+        delete this.workspaceBuckets[
+          root
+        ];
+      }
+    });
+  }
+
+  static clearWorkspace(root) {
     if (!root) {
       return;
     }
 
-    if (
-      this.workspaceBuckets[
-        root
-      ]
-    ) {
-      delete this
-        .workspaceBuckets[
-        root
-      ];
+    delete this.workspaceBuckets[root];
+  }
 
-      console.log(
-        "Workspace removed:",
-        root
-      );
-    }
+  static clearAll() {
+    this.workspaceBuckets = {};
   }
 
   static async scanWorkspace() {
@@ -146,9 +123,7 @@ export default class WorkspaceManager {
         fileList();
 
       if (
-        !Array.isArray(
-          result
-        )
+        !Array.isArray(result)
       ) {
         console.error(
           "fileList returned non-array"
@@ -165,8 +140,7 @@ export default class WorkspaceManager {
             };
           } catch {
             return {
-              name:
-                "unknown",
+              name: "unknown",
               path: "",
               url: "",
               raw: file
@@ -186,27 +160,22 @@ export default class WorkspaceManager {
         )
       ];
 
-      const now =
-        Date.now();
-
       roots.forEach(root => {
-        const files =
-          scannedFiles.filter(
-            file =>
-              this.extractRoot(
-                file.path
-              ) === root
-          );
-
         this.workspaceBuckets[
           root
-        ] = {
-          files,
-          lastSeen: now
-        };
+        ] = scannedFiles.filter(
+          file =>
+            this.extractRoot(
+              file.path
+            ) === root
+        );
       });
 
-      this.cleanupInvalidBuckets();
+      this.cleanupStaleBuckets(
+        roots
+      );
+
+      this.cleanupEmptyBuckets();
 
       console.log(
         "Workspace buckets:",
