@@ -10,7 +10,9 @@ export default class SessionsView {
   }
 
   render() {
-    const sessions = SessionService.getSessions();
+    const sessions =
+      SessionService.getSessionsByWorkspace();
+
     const activeId =
       SessionService.getActiveSessionId();
 
@@ -299,14 +301,8 @@ export default class SessionsView {
           )}"
           placeholder="Session name"
         />
-
-        <button id="rename-save">
-          Save
-        </button>
-
-        <button id="rename-cancel">
-          Cancel
-        </button>
+        <button id="rename-save">Save</button>
+        <button id="rename-cancel">Cancel</button>
       </div>
     `;
 
@@ -319,17 +315,11 @@ export default class SessionsView {
         "#rename-input"
       );
 
-    if (input) {
-      input.focus();
-    }
-
-    const saveBtn =
-      overlay.querySelector(
+    overlay
+      .querySelector(
         "#rename-save"
-      );
-
-    if (saveBtn) {
-      saveBtn.addEventListener(
+      )
+      .addEventListener(
         "click",
         () => {
           const newTitle =
@@ -355,21 +345,15 @@ export default class SessionsView {
           }
         }
       );
-    }
 
-    const cancelBtn =
-      overlay.querySelector(
+    overlay
+      .querySelector(
         "#rename-cancel"
-      );
-
-    if (cancelBtn) {
-      cancelBtn.addEventListener(
+      )
+      .addEventListener(
         "click",
-        () => {
-          overlay.remove();
-        }
+        () => overlay.remove()
       );
-    }
   }
 
   openDeleteModal(sessionId) {
@@ -381,15 +365,13 @@ export default class SessionsView {
 
     overlay.innerHTML = `
       <div class="nexus-action-sheet">
-        <div style="color:white; padding:8px 4px 14px;">
+        <div style="color:white;padding:8px 4px 14px;">
           Delete this session?<br><br>
           This cannot be undone.
         </div>
-
         <button id="delete-confirm" data-action="delete">
           Delete
         </button>
-
         <button id="delete-cancel">
           Cancel
         </button>
@@ -400,13 +382,11 @@ export default class SessionsView {
       overlay
     );
 
-    const confirmBtn =
-      overlay.querySelector(
+    overlay
+      .querySelector(
         "#delete-confirm"
-      );
-
-    if (confirmBtn) {
-      confirmBtn.addEventListener(
+      )
+      .addEventListener(
         "click",
         () => {
           SessionService.deleteSession(
@@ -421,21 +401,15 @@ export default class SessionsView {
           }
         }
       );
-    }
 
-    const cancelBtn =
-      overlay.querySelector(
+    overlay
+      .querySelector(
         "#delete-cancel"
-      );
-
-    if (cancelBtn) {
-      cancelBtn.addEventListener(
+      )
+      .addEventListener(
         "click",
-        () => {
-          overlay.remove();
-        }
+        () => overlay.remove()
       );
-    }
   }
 
   exportSession(sessionId) {
