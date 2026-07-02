@@ -1,17 +1,14 @@
 import WorkspaceScopeService from "./workspace-scope-service.js";
 
 export default class SearchService {
-  static fileCache =
-    new Map();
+  static fileCache = new Map();
 
   static searchFiles(query) {
     if (!query) {
       return [];
     }
 
-    const lower =
-      query.toLowerCase();
-
+    const lower = query.toLowerCase();
     const files =
       WorkspaceScopeService.getScopedFiles() || [];
 
@@ -28,13 +25,9 @@ export default class SearchService {
       )
       .map(file => ({
         type: "file",
-        name:
-          file.name ||
-          "unknown",
-        path:
-          file.path || "",
-        url:
-          file.url || ""
+        name: file.name || "unknown",
+        path: file.path || "",
+        url: file.url || ""
       }));
   }
 
@@ -50,17 +43,10 @@ export default class SearchService {
         );
 
       if (match) {
-        const owner =
-          match[1];
-
-        const repo =
-          match[2];
-
-        const branch =
-          match[3];
-
-        const filePath =
-          match[4];
+        const owner = match[1];
+        const repo = match[2];
+        const branch = match[3];
+        const filePath = match[4];
 
         return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
       }
@@ -70,40 +56,29 @@ export default class SearchService {
       return null;
     }
 
-    const parts =
-      file.path.split("/");
+    const parts = file.path.split("/");
 
     if (parts.length < 4) {
       return null;
     }
 
-    const owner =
-      parts[0];
-
-    const repo =
-      parts[1];
-
-    const branch =
-      parts[2];
-
+    const owner = parts[0];
+    const repo = parts[1];
+    const branch = parts[2];
     const filePath =
-      parts
-        .slice(3)
-        .join("/");
+      parts.slice(3).join("/");
 
     return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
   }
 
-  static readFromOpenEditor(
-    file
-  ) {
+  static readFromOpenEditor(file) {
     try {
       if (!file) {
         return null;
       }
 
       const activeFile =
-        editorManager.activeFile;
+        editorManager?.activeFile;
 
       if (!activeFile) {
         return null;
@@ -116,8 +91,8 @@ export default class SearchService {
         "";
 
       const targetPath =
-        file.path ||
         file.url ||
+        file.path ||
         file.name ||
         "";
 
@@ -127,7 +102,12 @@ export default class SearchService {
       const targetLower =
         String(targetPath).toLowerCase();
 
+      const fileNameLower =
+        (file.name || "")
+          .toLowerCase();
+
       const sameFile =
+        activeLower === targetLower ||
         activeLower.includes(
           targetLower
         ) ||
@@ -135,7 +115,7 @@ export default class SearchService {
           activeLower
         ) ||
         activeLower.endsWith(
-          file.name.toLowerCase()
+          fileNameLower
         );
 
       if (!sameFile) {
@@ -143,11 +123,23 @@ export default class SearchService {
       }
 
       const content =
-        editorManager.editor
+        editorManager?.editor
           ?.session
           ?.getValue?.();
 
-      return content || null;
+      if (
+        typeof content ===
+          "string" &&
+        content.length > 0
+      ) {
+        console.log(
+          "Using open editor buffer:",
+          file.name
+        );
+        return content;
+      }
+
+      return null;
     } catch (error) {
       console.error(
         "readFromOpenEditor failed:",
@@ -157,9 +149,7 @@ export default class SearchService {
     }
   }
 
-  static async readLocalFile(
-    file
-  ) {
+  static async readLocalFile(file) {
     try {
       const fs =
         acode.require("fs");
@@ -180,17 +170,25 @@ export default class SearchService {
     }
   }
 
-  static async fetchFileContent(
-    file
-  ) {
+  static async fetchFileContent(file) {
     if (!file) {
       return null;
     }
 
     const cacheKey =
-      file.path ||
-      file.name;
+      file.path || file.name;
 
+    // PRIORITY 1: open editor buffer
+    const editorContent =
+      this.readFromOpenEditor(
+        file
+      );
+
+    if (editorContent) {
+      return editorContent;
+    }
+
+    // PRIORITY 2: cache (only after editor check)
     if (
       this.fileCache.has(
         cacheKey
@@ -201,6 +199,7 @@ export default class SearchService {
       );
     }
 
+    // PRIORITY 3: local SAF
     if (
       file.url &&
       file.url.startsWith(
@@ -224,6 +223,7 @@ export default class SearchService {
       return null;
     }
 
+    // PRIORITY 4: GitHub
     const url =
       this.toRawGithubUrl(
         file
@@ -261,9 +261,7 @@ export default class SearchService {
     }
   }
 
-    static async readFullFile(
-    path
-  ) {
+  static async readFullFile(path) {
     const file =
       this.openFile(path);
 
@@ -276,9 +274,7 @@ export default class SearchService {
     );
   }
 
-  static async searchCode(
-    query
-  ) {
+  static async searchCode(query) {
     if (!query) {
       return [];
     }
@@ -445,16 +441,11 @@ export default class SearchService {
           .join("\n");
 
       return {
-        file:
-          file.name,
-        path:
-          file.path,
-        startLine:
-          start,
-        endLine:
-          end,
-        content:
-          snippet
+        file: file.name,
+        path: file.path,
+        startLine: start,
+        endLine: end,
+        content: snippet
       };
     } catch (error) {
       console.error(
