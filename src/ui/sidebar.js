@@ -250,6 +250,20 @@ export default class Sidebar {
             WorkspaceScopeService.getSelectedWorkspace()
           );
 
+          SessionService.ensureWorkspaceSession();
+
+          this.sessionsView.render();
+          this.chatView.render();
+
+          if (
+            typeof this.chatView.showToast ===
+            "function"
+          ) {
+            this.chatView.showToast(
+              "Switching workspace..."
+            );
+          }
+
           const index =
             await IndexingService.buildIndex();
 
@@ -267,11 +281,6 @@ export default class Sidebar {
             "[WORKSPACE SUMMARY UPDATED]",
             summary
           );
-
-          SessionService.createSession();
-
-          this.sessionsView.render();
-          this.chatView.render();
 
           if (
             typeof this.chatView.showToast ===
