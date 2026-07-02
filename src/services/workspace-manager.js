@@ -22,7 +22,76 @@ export default class WorkspaceManager {
   static flattenBuckets() {
     return Object.values(
       this.workspaceBuckets
-    ).flat();
+    ).flatMap(
+      bucket => bucket.files || []
+    );
+  }
+
+  static cleanupInvalidBuckets() {
+    Object.keys(
+      this.workspaceBuckets
+    ).forEach(root => {
+      const bucket =
+        this.workspaceBuckets[
+          root
+        ];
+
+      if (
+        !bucket ||
+        !Array.isArray(
+          bucket.files
+        )
+      ) {
+        delete this
+          .workspaceBuckets[
+          root
+        ];
+        return;
+      }
+
+      bucket.files =
+        bucket.files.filter(
+          file =>
+            file &&
+            file.path
+        );
+
+      if (
+        bucket.files.length === 0
+      ) {
+        console.log(
+          "Removing empty workspace:",
+          root
+        );
+
+        delete this
+          .workspaceBuckets[
+          root
+        ];
+      }
+    });
+  }
+
+  static removeWorkspace(root) {
+    if (!root) {
+      return;
+    }
+
+    if (
+      this.workspaceBuckets[
+        root
+      ]
+    ) {
+      delete this
+        .workspaceBuckets[
+        root
+      ];
+
+      console.log(
+        "Workspace removed:",
+        root
+      );
+    }
   }
 
   static async scanWorkspace() {
@@ -117,16 +186,27 @@ export default class WorkspaceManager {
         )
       ];
 
+      const now =
+        Date.now();
+
       roots.forEach(root => {
+        const files =
+          scannedFiles.filter(
+            file =>
+              this.extractRoot(
+                file.path
+              ) === root
+          );
+
         this.workspaceBuckets[
           root
-        ] = scannedFiles.filter(
-          file =>
-            this.extractRoot(
-              file.path
-            ) === root
-        );
+        ] = {
+          files,
+          lastSeen: now
+        };
       });
+
+      this.cleanupInvalidBuckets();
 
       console.log(
         "Workspace buckets:",
