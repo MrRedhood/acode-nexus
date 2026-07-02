@@ -52,10 +52,13 @@ export default class SearchService {
       if (match) {
         const owner =
           match[1];
+
         const repo =
           match[2];
+
         const branch =
           match[3];
+
         const filePath =
           match[4];
 
@@ -154,6 +157,29 @@ export default class SearchService {
     }
   }
 
+  static async readLocalFile(
+    file
+  ) {
+    try {
+      const fs =
+        acode.require("fs");
+
+      const content =
+        await fs(
+          file.url
+        ).readFile("utf-8");
+
+      return content || null;
+    } catch (error) {
+      console.error(
+        "readLocalFile failed:",
+        error
+      );
+
+      return null;
+    }
+  }
+
   static async fetchFileContent(
     file
   ) {
@@ -182,7 +208,7 @@ export default class SearchService {
       )
     ) {
       const localContent =
-        this.readFromOpenEditor(
+        await this.readLocalFile(
           file
         );
 
@@ -235,7 +261,7 @@ export default class SearchService {
     }
   }
 
-  static async readFullFile(
+    static async readFullFile(
     path
   ) {
     const file =
@@ -250,7 +276,7 @@ export default class SearchService {
     );
   }
 
-    static async searchCode(
+  static async searchCode(
     query
   ) {
     if (!query) {
