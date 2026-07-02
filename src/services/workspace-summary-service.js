@@ -1,8 +1,7 @@
 import IndexingService from "./indexing-service.js";
 
 export default class WorkspaceSummaryService {
-  static currentSummary =
-    null;
+  static currentSummary = null;
 
   static buildSummary() {
     const index =
@@ -82,6 +81,65 @@ export default class WorkspaceSummaryService {
 
   static getSummary() {
     return this.currentSummary;
+  }
+
+  static buildPromptSummary() {
+    const summary =
+      this.getSummary() ||
+      this.buildSummary();
+
+    if (!summary) {
+      return "";
+    }
+
+    const keyModules =
+      summary.keyModules
+        .slice(0, 8)
+        .map(
+          file =>
+            `- ${file.name} (${file.path})`
+        )
+        .join("\n");
+
+    const directories =
+      summary.directories
+        .slice(0, 12)
+        .join(", ");
+
+    const architecture =
+      Object.entries(
+        summary.architecture
+      )
+        .filter(
+          ([, value]) => value
+        )
+        .map(([key]) => key)
+        .join(", ");
+
+    return `
+ACTIVE WORKSPACE:
+${summary.workspace}
+
+WORKSPACE OVERVIEW:
+- Total files: ${summary.totalFiles}
+- Total functions: ${summary.totals.functions}
+- Total classes: ${summary.totals.classes}
+- Total imports: ${summary.totals.imports}
+
+ARCHITECTURE:
+${architecture || "Unknown"}
+
+DIRECTORIES:
+${directories || "None"}
+
+KEY MODULES:
+${keyModules || "None"}
+
+Important:
+You are inside this workspace.
+Use workspace knowledge when answering coding questions.
+Do not hallucinate files that do not exist.
+`;
   }
 
   static extractDirectories(
@@ -213,10 +271,7 @@ export default class WorkspaceSummaryService {
               ?.length || 0
           );
 
-        return (
-          scoreB -
-          scoreA
-        );
+        return scoreB - scoreA;
       })
       .slice(0, 10)
       .map(file => ({
