@@ -3,7 +3,8 @@ import SearchService from "./search-service.js";
 export default class ActionService {
   static SUPPORTED_ACTIONS = [
     "focus_file",
-    "open_file"
+    "open_file",
+    "replace_file"
   ];
 
   static parseActions(text) {
@@ -65,10 +66,23 @@ export default class ActionService {
     }
 
     if (
-      action.type === "focus_file" ||
-      action.type === "open_file"
+      action.type ===
+        "focus_file" ||
+      action.type ===
+        "open_file"
     ) {
       return !!action.file;
+    }
+
+    if (
+      action.type ===
+      "replace_file"
+    ) {
+      return (
+        !!action.file &&
+        typeof action.content ===
+          "string"
+      );
     }
 
     return true;
@@ -185,7 +199,8 @@ export default class ActionService {
 
         return {
           success: true,
-          reused: true
+          reused: true,
+          file: alreadyOpen
         };
       }
 
@@ -219,13 +234,76 @@ export default class ActionService {
         editorManager.files[0]
           .constructor;
 
-      new EditorFile(
-        file.name,
-        {
-          uri: file.path,
-          text: content,
-          editable: true
+      const openedFile =
+        new EditorFile(
+          file.name,
+          {
+            uri: file.path,
+            text: content,
+            editable: true
+          }
+        );
+
+      return {
+        success: true,
+        file: openedFile
+      };
+    } catch (error) {
+      console.error(
+        "openFile failed:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message
+      };
+    }
+  }
+
+  static async replaceFile(
+    action
+  ) {
+    try {
+      let file =
+        this.findOpenEditorFile(
+          action.file
+        );
+
+      if (!file) {
+        const openResult =
+          await this.openFile(
+            {
+              file:
+                action.file
+            }
+          );
+
+        if (
+          !openResult.success
+        ) {
+          return openResult;
         }
+
+        file =
+          openResult.file;
+      }
+
+      if (!file) {
+        return {
+          success: false,
+          error:
+            "Unable to open file"
+        };
+      }
+
+      file.session.setValue(
+        action.content
+      );
+
+      editorManager.switchFile(
+        file.id
       );
 
       return {
@@ -233,7 +311,7 @@ export default class ActionService {
       };
     } catch (error) {
       console.error(
-        "openFile failed:",
+        "replaceFile failed:",
         error
       );
 
@@ -265,13 +343,15 @@ export default class ActionService {
     ) {
       case "focus_file":
         return await this.focusFile(
-          action
-        );
+          action);
 
       case "open_file":
         return await this.openFile(
-          action
-        );
+          action);
+
+      case "replace_file":
+        return await this.replaceFile(
+          action);
 
       default:
         return {
