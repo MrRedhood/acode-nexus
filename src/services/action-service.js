@@ -8,6 +8,9 @@ export default class ActionService {
   ];
 
   static parseActions(text) {
+    console.log("RAW AI TEXT:");
+    console.log(text);
+
     if (!text) {
       return [];
     }
@@ -16,6 +19,11 @@ export default class ActionService {
       text.match(
         /```nexus-action\s*([\s\S]*?)```/g
       ) || [];
+
+    console.log(
+      "ACTION BLOCK MATCHES:",
+      matches
+    );
 
     const actions = [];
 
@@ -33,6 +41,11 @@ export default class ActionService {
             )
             .trim();
 
+        console.log(
+          "ACTION JSON:",
+          json
+        );
+
         const action =
           JSON.parse(json);
 
@@ -44,6 +57,11 @@ export default class ActionService {
         );
       }
     });
+
+    console.log(
+      "PARSED ACTIONS:",
+      actions
+    );
 
     return actions;
   }
@@ -266,19 +284,32 @@ export default class ActionService {
     action
   ) {
     try {
+      console.log(
+        "REPLACE START",
+        action
+      );
+
       let file =
         this.findOpenEditorFile(
           action.file
         );
 
+      console.log(
+        "FOUND OPEN FILE:",
+        file
+      );
+
       if (!file) {
         const openResult =
-          await this.openFile(
-            {
-              file:
-                action.file
-            }
-          );
+          await this.openFile({
+            file:
+              action.file
+          });
+
+        console.log(
+          "OPEN RESULT:",
+          openResult
+        );
 
         if (
           !openResult.success
@@ -290,6 +321,11 @@ export default class ActionService {
           openResult.file;
       }
 
+      console.log(
+        "TARGET FILE:",
+        file
+      );
+
       if (!file) {
         return {
           success: false,
@@ -298,12 +334,25 @@ export default class ActionService {
         };
       }
 
+      console.log(
+        "SESSION EXISTS:",
+        !!file.session
+      );
+
       file.session.setValue(
         action.content
       );
 
+      console.log(
+        "SETVALUE DONE"
+      );
+
       editorManager.switchFile(
         file.id
+      );
+
+      console.log(
+        "SWITCH DONE"
       );
 
       return {
@@ -326,6 +375,11 @@ export default class ActionService {
   static async executeAction(
     action
   ) {
+    console.log(
+      "EXECUTE ACTION:",
+      action
+    );
+
     if (
       !this.validateAction(
         action
@@ -343,15 +397,18 @@ export default class ActionService {
     ) {
       case "focus_file":
         return await this.focusFile(
-          action);
+          action
+        );
 
       case "open_file":
         return await this.openFile(
-          action);
+          action
+        );
 
       case "replace_file":
         return await this.replaceFile(
-          action);
+          action
+        );
 
       default:
         return {
