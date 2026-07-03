@@ -1,6 +1,9 @@
+import SearchService from "./search-service.js";
+
 export default class ActionService {
   static SUPPORTED_ACTIONS = [
-    "focus_file"
+    "focus_file",
+    "open_file"
   ];
 
   static parseActions(text) {
@@ -44,16 +47,12 @@ export default class ActionService {
     return actions;
   }
 
-  static validateAction(
-    action
-  ) {
+  static validateAction(action) {
     if (!action) {
       return false;
     }
 
-    if (
-      !action.type
-    ) {
+    if (!action.type) {
       return false;
     }
 
@@ -66,8 +65,8 @@ export default class ActionService {
     }
 
     if (
-      action.type ===
-      "focus_file"
+      action.type === "focus_file" ||
+      action.type === "open_file"
     ) {
       return !!action.file;
     }
@@ -99,11 +98,15 @@ export default class ActionService {
               ""
             ).toLowerCase();
 
+          const uri =
+            (
+              file.uri || ""
+            ).toLowerCase();
+
           return (
             name === lower ||
-            name.includes(
-              lower
-            )
+            name.includes(lower) ||
+            uri.includes(lower)
           );
         }
       ) || null
@@ -166,6 +169,82 @@ export default class ActionService {
     }
   }
 
+  static async openFile(
+    action
+  ) {
+    try {
+      const alreadyOpen =
+        this.findOpenEditorFile(
+          action.file
+        );
+
+      if (alreadyOpen) {
+        editorManager.switchFile(
+          alreadyOpen.id
+        );
+
+        return {
+          success: true,
+          reused: true
+        };
+      }
+
+      const file =
+        SearchService.openFile(
+          action.file
+        );
+
+      if (!file) {
+        return {
+          success: false,
+          error:
+            "File not found"
+        };
+      }
+
+      const content =
+        await SearchService.readFullFile(
+          action.file
+        );
+
+      if (!content) {
+        return {
+          success: false,
+          error:
+            "Could not read file"
+        };
+      }
+
+      const EditorFile =
+        editorManager.files[0]
+          .constructor;
+
+      new EditorFile(
+        file.name,
+        {
+          uri: file.path,
+          text: content,
+          editable: true
+        }
+      );
+
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error(
+        "openFile failed:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message
+      };
+    }
+  }
+
   static async executeAction(
     action
   ) {
@@ -186,6 +265,11 @@ export default class ActionService {
     ) {
       case "focus_file":
         return await this.focusFile(
+          action
+        );
+
+      case "open_file":
+        return await this.openFile(
           action
         );
 
