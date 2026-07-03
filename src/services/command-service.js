@@ -63,6 +63,11 @@ export default class CommandService {
       name: "cleanup",
       description:
         "Cleanup stale workspace cache"
+    },
+    {
+      name: "js",
+      description:
+        "Execute JavaScript"
     }
   ];
 
@@ -106,6 +111,80 @@ export default class CommandService {
         content:
           "Workspace cache cleaned and reindexed."
       };
+    }
+
+    if (text.startsWith("/js ")) {
+      const code =
+        text.slice(4).trim();
+
+      if (!code) {
+        return {
+          handled: true,
+          content:
+            "Usage: /js <javascript>"
+        };
+      }
+
+      try {
+        let result =
+          eval(code);
+
+        if (
+          result &&
+          typeof result.then ===
+            "function"
+        ) {
+          result =
+            await result;
+        }
+
+        let output;
+
+        if (
+          typeof result ===
+          "undefined"
+        ) {
+          output =
+            "undefined";
+        } else if (
+          typeof result ===
+          "string"
+        ) {
+          output = result;
+        } else {
+          try {
+            output =
+              JSON.stringify(
+                result,
+                null,
+                2
+              );
+          } catch {
+            output =
+              String(result);
+          }
+        }
+
+        return {
+          handled: true,
+          content:
+`JS Result:
+
+${output}`
+        };
+      } catch (error) {
+        return {
+          handled: true,
+          content:
+`JS Error:
+
+${
+  error?.stack ||
+  error?.message ||
+  String(error)
+}`
+        };
+      }
     }
 
     if (text.startsWith("/files ")) {
