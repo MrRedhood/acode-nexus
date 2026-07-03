@@ -4,7 +4,8 @@ export default class ActionService {
   static SUPPORTED_ACTIONS = [
     "focus_file",
     "open_file",
-    "replace_file"
+    "replace_file",
+    "patch_file"
   ];
 
   static parseActions(text) {
@@ -103,6 +104,19 @@ export default class ActionService {
       );
     }
 
+    if (
+      action.type ===
+      "patch_file"
+    ) {
+      return (
+        !!action.file &&
+        typeof action.search ===
+          "string" &&
+        typeof action.replace ===
+          "string"
+      );
+    }
+
     return true;
   }
 
@@ -177,9 +191,7 @@ export default class ActionService {
               action.line
             );
           } catch (error) {
-            console.error(
-              error
-            );
+            console.error(error);
           }
         }, 150);
       }
@@ -284,20 +296,10 @@ export default class ActionService {
     action
   ) {
     try {
-      console.log(
-        "REPLACE START",
-        action
-      );
-
       let file =
         this.findOpenEditorFile(
           action.file
         );
-
-      console.log(
-        "FOUND OPEN FILE:",
-        file
-      );
 
       if (!file) {
         const openResult =
@@ -305,11 +307,6 @@ export default class ActionService {
             file:
               action.file
           });
-
-        console.log(
-          "OPEN RESULT:",
-          openResult
-        );
 
         if (
           !openResult.success
@@ -321,10 +318,64 @@ export default class ActionService {
           openResult.file;
       }
 
-      console.log(
-        "TARGET FILE:",
-        file
+      if (!file) {
+        return {
+          success: false,
+          error:
+            "Unable to open file"
+        };
+      }
+
+      file.session.setValue(
+        action.content
       );
+
+      editorManager.switchFile(
+        file.id
+      );
+
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error(
+        "replaceFile failed:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message
+      };
+    }
+  }
+
+  static async patchFile(
+    action
+  ) {
+    try {
+      let file =
+        this.findOpenEditorFile(
+          action.file
+        );
+
+      if (!file) {
+        const openResult =
+          await this.openFile({
+            file:
+              action.file
+          });
+
+        if (
+          !openResult.success
+        ) {
+          return openResult;
+        }
+
+        file =
+          openResult.file;
+      }
 
       if (!file) {
         return {
@@ -334,25 +385,33 @@ export default class ActionService {
         };
       }
 
-      console.log(
-        "SESSION EXISTS:",
-        !!file.session
-      );
+      const currentContent =
+        file.session.getValue();
+
+      if (
+        !currentContent.includes(
+          action.search
+        )
+      ) {
+        return {
+          success: false,
+          error:
+            "Search text not found"
+        };
+      }
+
+      const patchedContent =
+        currentContent.replace(
+          action.search,
+          action.replace
+        );
 
       file.session.setValue(
-        action.content
-      );
-
-      console.log(
-        "SETVALUE DONE"
+        patchedContent
       );
 
       editorManager.switchFile(
         file.id
-      );
-
-      console.log(
-        "SWITCH DONE"
       );
 
       return {
@@ -360,7 +419,7 @@ export default class ActionService {
       };
     } catch (error) {
       console.error(
-        "replaceFile failed:",
+        "patchFile failed:",
         error
       );
 
@@ -407,6 +466,11 @@ export default class ActionService {
 
       case "replace_file":
         return await this.replaceFile(
+          action
+        );
+
+      case "patch_file":
+        return await this.patchFile(
           action
         );
 
