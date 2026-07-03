@@ -413,7 +413,6 @@ ${snippets}
 Use this code context when answering.
 `;
   }
-}
 
   static async getMessageAttachments(
     message
