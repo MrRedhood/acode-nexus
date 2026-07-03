@@ -400,19 +400,28 @@ export default class ActionService {
         };
       }
 
-      const patchedContent =
-        currentContent.replace(
-          action.search,
-          action.replace
-        );
+      const occurrences =
+  currentContent.split(
+    action.search
+  ).length - 1;
 
-      file.session.setValue(
-        patchedContent
-      );
+if (occurrences > 1) {
+  return {
+    success: false,
+    error:
+      "Search text appears multiple times"
+  };
+}
 
-      editorManager.switchFile(
-        file.id
-      );
+const patchedContent =
+  currentContent.replace(
+    action.search,
+    action.replace
+  );
+
+file.session.setValue(
+  patchedContent
+);
 
       return {
         success: true
