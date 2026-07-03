@@ -224,11 +224,47 @@ export default class GeminiProvider {
     return parts;
   }
 
+  static buildSystemInstruction(
+    messages
+  ) {
+    const systemMessages =
+      messages.filter(
+        msg =>
+          msg.role ===
+          "system"
+      );
+
+    if (
+      !systemMessages.length
+    ) {
+      return null;
+    }
+
+    return {
+      parts: [
+        {
+          text:
+            systemMessages
+              .map(
+                msg =>
+                  msg.content
+              )
+              .join("\n\n")
+        }
+      ]
+    };
+  }
+
   static buildContents(
     messages
   ) {
-    return messages.map(
-      msg => ({
+    return messages
+      .filter(
+        msg =>
+          msg.role !==
+          "system"
+      )
+      .map(msg => ({
         role:
           msg.role ===
           "assistant"
@@ -238,8 +274,7 @@ export default class GeminiProvider {
           this.buildParts(
             msg
           )
-      })
-    );
+      }));
   }
 
   static extractChunkText(
@@ -251,7 +286,8 @@ export default class GeminiProvider {
       payload &&
       payload.candidates &&
       payload.candidates[0] &&
-      payload.candidates[0].content
+      payload.candidates[0]
+        .content
     ) {
       parts =
         payload.candidates[0]
@@ -284,6 +320,22 @@ export default class GeminiProvider {
         messages
       );
 
+    const systemInstruction =
+      this.buildSystemInstruction(
+        messages
+      );
+
+    const body = {
+      contents
+    };
+
+    if (
+      systemInstruction
+    ) {
+      body.system_instruction =
+        systemInstruction;
+    }
+
     const response =
       await this.fetchWithTimeout(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -294,9 +346,10 @@ export default class GeminiProvider {
             "Content-Type":
               "application/json"
           },
-          body: JSON.stringify({
-            contents
-          })
+          body:
+            JSON.stringify(
+              body
+            )
         },
         60000
       );
@@ -332,6 +385,22 @@ export default class GeminiProvider {
         messages
       );
 
+    const systemInstruction =
+      this.buildSystemInstruction(
+        messages
+      );
+
+    const body = {
+      contents
+    };
+
+    if (
+      systemInstruction
+    ) {
+      body.system_instruction =
+        systemInstruction;
+    }
+
     const response =
       await this.fetchWithTimeout(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`,
@@ -342,9 +411,10 @@ export default class GeminiProvider {
             "Content-Type":
               "application/json"
           },
-          body: JSON.stringify({
-            contents
-          })
+          body:
+            JSON.stringify(
+              body
+            )
         },
         60000
       );
@@ -376,19 +446,13 @@ export default class GeminiProvider {
       const result =
         await reader.read();
 
-      const done =
-        result.done;
-
-      const value =
-        result.value;
-
-      if (done) {
+      if (result.done) {
         break;
       }
 
       buffer +=
         decoder.decode(
-          value,
+          result.value,
           {
             stream: true
           }
