@@ -1,6 +1,7 @@
 import SearchService from "./search-service.js";
 import ActionService from "./action-service.js";
 import WorkspaceManager from "./workspace-manager.js";
+import DebugService from "./debug-service.js";
 
 export default class CommandService {
   static commands = [
@@ -68,6 +69,21 @@ export default class CommandService {
       name: "js",
       description:
         "Execute JavaScript"
+    },
+    {
+      name: "probe",
+      description:
+        "Probe object keys"
+    },
+    {
+      name: "tap",
+      description:
+        "Hook method calls"
+    },
+    {
+      name: "untap",
+      description:
+        "Remove hooks"
     }
   ];
 
@@ -148,7 +164,7 @@ export default class CommandService {
             "undefined";
         } else if (
           typeof result ===
-          "string"
+            "string"
         ) {
           output = result;
         } else {
@@ -185,6 +201,70 @@ ${
 }`
         };
       }
+    }
+
+    if (text.startsWith("/probe ")) {
+      const args =
+        text.slice(7).trim();
+
+      const parts =
+        args.split(" ");
+
+      const objectPath =
+        parts[0];
+
+      const keyword =
+        parts
+          .slice(1)
+          .join(" ");
+
+      return {
+        handled: true,
+        content:
+          DebugService.probe(
+            objectPath,
+            keyword
+          )
+      };
+    }
+
+    if (text.startsWith("/tap ")) {
+      const args =
+        text.slice(5).trim();
+
+      const parts =
+        args.split(" ");
+
+      const objectPath =
+        parts[0];
+
+      const methodName =
+        parts[1];
+
+      const result =
+        DebugService.tap(
+          objectPath,
+          methodName
+        );
+
+      return {
+        handled: true,
+        content:
+          result.success
+            ? `Hooked ${objectPath}.${methodName}`
+            : `Tap failed: ${result.error}`
+      };
+    }
+
+    if (text === "/untap") {
+      const count =
+        DebugService.untap();
+
+      return {
+        handled: true,
+        content:
+          `Removed ${count} hooks`
+      };
     }
 
     if (text.startsWith("/files ")) {
