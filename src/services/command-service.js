@@ -43,7 +43,7 @@ export default class CommandService {
     {
       name: "open",
       description:
-        "Locate file"
+        "Open file in editor"
     },
     {
       name: "grep",
@@ -412,30 +412,20 @@ ${result.content}`
         text.slice(6).trim();
 
       const result =
-        SearchService.openFile(path);
-
-      if (!result) {
-        return {
-          handled: true,
-          content:
-            "File not found."
-        };
-      }
-
-      const open =
-        ActionService.findOpenEditorFile(
-          result.name
+        await ActionService.executeAction(
+          {
+            type:
+              "open_file",
+            file: path
+          }
         );
 
       return {
         handled: true,
         content:
-`Found file:
-
-${result.path}
-
-Open in editor:
-${open ? "Yes" : "No"}`
+          result.success
+            ? `Opened ${path}`
+            : `Open failed: ${result.error}`
       };
     }
 
