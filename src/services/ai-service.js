@@ -111,7 +111,17 @@ Focus file:
 }
 \`\`\`
 
-Replace file:
+Patch file (preferred for edits):
+\`\`\`nexus-action
+{
+  "type": "patch_file",
+  "file": "search-service.js",
+  "search": "OLD_CODE",
+  "replace": "NEW_CODE"
+}
+\`\`\`
+
+Replace file (only for full rewrites):
 \`\`\`nexus-action
 {
   "type": "replace_file",
@@ -121,10 +131,13 @@ Replace file:
 \`\`\`
 
 Rules:
-1. Never say action succeeded
-2. Never say action executed
-3. Never narrate results
-4. Output only action block
+1. Prefer patch_file for partial edits
+2. Use replace_file only for full file rewrites
+3. patch_file search must exactly match existing code
+4. Never say action succeeded
+5. Never say action executed
+6. Never narrate results
+7. Output only action block
 `;
 
     if (!summary) {
