@@ -82,11 +82,58 @@ export default class AIService {
     const summary =
       WorkspaceSummaryService.getSummary();
 
+    const actionProtocol = `
+NEXUS ACTION PROTOCOL
+
+You are running inside Acode Nexus.
+
+IMPORTANT:
+When user wants editor actions
+(open file, focus file, modify file),
+respond ONLY with nexus action blocks.
+
+Supported actions:
+
+Open file:
+\`\`\`nexus-action
+{
+  "type": "open_file",
+  "file": "search-service.js"
+}
+\`\`\`
+
+Focus file:
+\`\`\`nexus-action
+{
+  "type": "focus_file",
+  "file": "search-service.js",
+  "line": 120
+}
+\`\`\`
+
+Replace file:
+\`\`\`nexus-action
+{
+  "type": "replace_file",
+  "file": "search-service.js",
+  "content": "FULL FILE CONTENT"
+}
+\`\`\`
+
+Rules:
+1. Never say action succeeded
+2. Never say action executed
+3. Never narrate results
+4. Output only action block
+`;
+
     if (!summary) {
-      return "";
+      return actionProtocol;
     }
 
     return `
+${actionProtocol}
+
 ACTIVE WORKSPACE SUMMARY
 
 Workspace:
@@ -105,7 +152,7 @@ Important modules:
 ${summary.keyModules
   .map(
     module =>
-      `- ${module.name} (${module.path})`
+      \`- \${module.name} (\${module.path})\`
   )
   .join("\n")}
 
@@ -151,9 +198,7 @@ assume they mean this project.
     };
   }
 
-  static parseFileMentions(
-    text
-  ) {
+  static parseFileMentions(text) {
     if (!text) {
       return {
         files: [],
@@ -163,7 +208,7 @@ assume they mean this project.
 
     const matches =
       text.match(
-        /@([A-Za-z0-9._\-\/]+)/g
+        /@([A-Za-z0-9._\\-\\/]+)/g
       ) || [];
 
     const files =
@@ -174,7 +219,7 @@ assume they mean this project.
     const cleanedText =
       text
         .replace(
-          /@([A-Za-z0-9._\-\/]+)/g,
+          /@([A-Za-z0-9._\\-\\/]+)/g,
           ""
         )
         .trim();
@@ -185,13 +230,9 @@ assume they mean this project.
     };
   }
 
-  static async buildMentionContext(
-    text
-  ) {
+  static async buildMentionContext(text) {
     const parsed =
-      this.parseFileMentions(
-        text
-      );
+      this.parseFileMentions(text);
 
     if (!parsed.files.length) {
       return {
@@ -210,7 +251,7 @@ assume they mean this project.
 
       if (!content) {
         chunks.push(
-          `FILE: ${fileName}
+`FILE: ${fileName}
 
 [Unable to read file]`
         );
@@ -218,7 +259,7 @@ assume they mean this project.
       }
 
       chunks.push(
-        `FILE: ${fileName}
+`FILE: ${fileName}
 
 ${content}`
       );
@@ -235,9 +276,7 @@ ${content}`
     };
   }
 
-  static shouldInjectCodeContext(
-    text
-  ) {
+  static shouldInjectCodeContext(text) {
     if (!text) {
       return false;
     }
@@ -293,38 +332,29 @@ ${content}`
     if (!symbol) {
       symbol =
         words.find(word =>
-          /[a-z]+_[a-z]+/.test(
-            word
-          )
+          /[a-z]+_[a-z]+/.test(word)
         );
     }
 
     return symbol || null;
   }
 
-  static async buildAutoContext(
-    text
-  ) {
+  static async buildAutoContext(text) {
     if (
-      !this.shouldInjectCodeContext(
-        text
-      )
+      !this.shouldInjectCodeContext(text)
     ) {
       return "";
     }
 
     let symbol =
-      this.extractSymbol(
-        text
-      );
+      this.extractSymbol(text);
 
     if (!symbol) {
       const messages =
         SessionService.getMessages();
 
       for (
-        let i =
-          messages.length - 1;
+        let i = messages.length - 1;
         i >= 0;
         i--
       ) {
@@ -366,11 +396,10 @@ ${content}`
         .slice(0, 5)
         .map(
           match =>
-            `FILE: ${match.file}
+`FILE: ${match.file}
 LINE: ${match.line}
 
-${match.snippet ||
-  match.text}`
+${match.snippet || match.text}`
         )
         .join(
           "\n\n----------------\n\n"
@@ -384,6 +413,7 @@ ${snippets}
 Use this code context when answering.
 `;
   }
+}
 
   static async getMessageAttachments(
     message
@@ -520,7 +550,7 @@ User request:
 ${mentionResult.content}`;
         }
 
-                const parsed =
+        const parsed =
           this.parseSlashCommand(
             mentionResult.content
           );
@@ -655,7 +685,7 @@ ${codeText}
     return processed;
   }
 
-  static async getModels(
+    static async getModels(
     provider = null,
     apiKey = null
   ) {
