@@ -152,7 +152,7 @@ Important modules:
 ${summary.keyModules
   .map(
     module =>
-      \`- \${module.name} (\${module.path})\`
+      `- ${module.name} (${module.path})`
   )
   .join("\n")}
 
