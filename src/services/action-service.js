@@ -461,6 +461,20 @@ export default class ActionService {
       const currentContent =
         file.session.getValue();
 
+      console.log(
+  "PATCH TARGET START:",
+  JSON.stringify(
+    currentContent.slice(0, 200)
+  )
+);
+
+console.log(
+  "SEARCH TEXT:",
+  JSON.stringify(
+    action.search
+  )
+);
+
       if (
         !currentContent.includes(
           action.search
