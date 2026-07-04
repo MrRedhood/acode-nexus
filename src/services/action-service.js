@@ -1,11 +1,8 @@
 import SearchService from "./search-service.js";
 
 export default class ActionService {
-  static snapshots =
-    new Map();
-
-  static MAX_HISTORY =
-    20;
+  static snapshots = new Map();
+  static MAX_HISTORY = 20;
 
   static SUPPORTED_ACTIONS = [
     "focus_file",
@@ -37,26 +34,14 @@ export default class ActionService {
 
     matches.forEach(block => {
       try {
-        const json =
-          block
-            .replace(
-              /```nexus-action/,
-              ""
-            )
-            .replace(
-              /```$/,
-              ""
-            )
-            .trim();
+        const json = block
+          .replace(/```nexus-action/, "")
+          .replace(/```$/, "")
+          .trim();
 
-        console.log(
-          "ACTION JSON:",
-          json
-        );
+        console.log("ACTION JSON:", json);
 
-        const action =
-          JSON.parse(json);
-
+        const action = JSON.parse(json);
         actions.push(action);
       } catch (error) {
         console.error(
@@ -75,13 +60,8 @@ export default class ActionService {
   }
 
   static validateAction(action) {
-    if (!action) {
-      return false;
-    }
-
-    if (!action.type) {
-      return false;
-    }
+    if (!action) return false;
+    if (!action.type) return false;
 
     if (
       !this.SUPPORTED_ACTIONS.includes(
@@ -92,78 +72,61 @@ export default class ActionService {
     }
 
     if (
-      action.type ===
-        "focus_file" ||
-      action.type ===
-        "open_file" ||
-      action.type ===
-        "undo_file"
+      action.type === "focus_file" ||
+      action.type === "open_file" ||
+      action.type === "undo_file"
     ) {
       return !!action.file;
     }
 
     if (
-      action.type ===
-      "replace_file"
+      action.type === "replace_file"
     ) {
       return (
         !!action.file &&
-        typeof action.content ===
-          "string"
+        typeof action.content === "string"
       );
     }
 
     if (
-      action.type ===
-      "patch_file"
+      action.type === "patch_file"
     ) {
       return (
         !!action.file &&
-        typeof action.search ===
-          "string" &&
-        typeof action.replace ===
-          "string"
+        typeof action.search === "string" &&
+        typeof action.replace === "string"
       );
     }
 
     return true;
   }
 
-  static findOpenEditorFile(
-  filename
-) {
-  if (
-    !filename ||
-    !editorManager ||
-    !editorManager.files
-  ) {
-    return null;
-  }
+  static findOpenEditorFile(filename) {
+    if (
+      !filename ||
+      !editorManager ||
+      !editorManager.files
+    ) {
+      return null;
+    }
 
-  const normalize = value =>
-    String(value || "")
-      .trim()
-      .replace(/\\/g, "/")
-      .toLowerCase();
+    const normalize = value =>
+      String(value || "")
+        .trim()
+        .replace(/\\/g, "/")
+        .toLowerCase();
 
-  const target =
-    normalize(filename);
+    const target = normalize(filename);
+    const targetBase =
+      target.split("/").pop();
 
-  const targetBase =
-    target.split("/").pop();
+    return (
+      editorManager.files.find(file => {
+        const name = normalize(
+          file.filename || file.name
+        );
 
-  return (
-    editorManager.files.find(
-      file => {
-        const name =
-          normalize(
-            file.filename ||
-            file.name
-          );
-
-        const uri =
-          normalize(file.uri);
-
+        const uri = normalize(file.uri);
         const uriBase =
           uri.split("/").pop();
 
@@ -174,18 +137,12 @@ export default class ActionService {
           uri.includes(target) ||
           uriBase === targetBase
         );
-      }
-    ) || null
-  );
-}
+      }) || null
+    );
+  }
 
-  static saveSnapshot(
-    file
-  ) {
-    if (
-      !file ||
-      !file.session
-    ) {
+  static saveSnapshot(file) {
+    if (!file || !file.session) {
       return;
     }
 
@@ -198,9 +155,7 @@ export default class ActionService {
       file.session.getValue();
 
     let history =
-      this.snapshots.get(
-        key
-      ) || [];
+      this.snapshots.get(key) || [];
 
     if (
       history.length &&
@@ -220,15 +175,10 @@ export default class ActionService {
       history.shift();
     }
 
-    this.snapshots.set(
-      key,
-      history
-    );
+    this.snapshots.set(key, history);
   }
 
-  static async focusFile(
-    action
-  ) {
+  static async focusFile(action) {
     try {
       const file =
         this.findOpenEditorFile(
@@ -249,8 +199,7 @@ export default class ActionService {
 
       if (
         action.line &&
-        editorManager.editor
-          ?.gotoLine
+        editorManager.editor?.gotoLine
       ) {
         setTimeout(() => {
           try {
@@ -263,9 +212,7 @@ export default class ActionService {
         }, 150);
       }
 
-      return {
-        success: true
-      };
+      return { success: true };
     } catch (error) {
       console.error(
         "focusFile failed:",
@@ -274,15 +221,12 @@ export default class ActionService {
 
       return {
         success: false,
-        error:
-          error.message
+        error: error.message
       };
     }
   }
 
-  static async openFile(
-    action
-  ) {
+  static async openFile(action) {
     try {
       const alreadyOpen =
         this.findOpenEditorFile(
@@ -309,8 +253,7 @@ export default class ActionService {
       if (!file) {
         return {
           success: false,
-          error:
-            "File not found"
+          error: "File not found"
         };
       }
 
@@ -332,16 +275,16 @@ export default class ActionService {
           .constructor;
 
       const openedFile =
-  new EditorFile(
-    file.name,
-    {
-      uri:
-        file.url ||
-        file.path,
-      text: content,
-      editable: true
-    }
-  );
+        new EditorFile(
+          file.name,
+          {
+            uri:
+              file.url ||
+              file.path,
+            text: content,
+            editable: true
+          }
+        );
 
       return {
         success: true,
@@ -355,15 +298,12 @@ export default class ActionService {
 
       return {
         success: false,
-        error:
-          error.message
+        error: error.message
       };
     }
   }
 
-  static async replaceFile(
-    action
-  ) {
+  static async replaceFile(action) {
     try {
       let file =
         this.findOpenEditorFile(
@@ -373,18 +313,14 @@ export default class ActionService {
       if (!file) {
         const openResult =
           await this.openFile({
-            file:
-              action.file
+            file: action.file
           });
 
-        if (
-          !openResult.success
-        ) {
+        if (!openResult.success) {
           return openResult;
         }
 
-        file =
-          openResult.file;
+        file = openResult.file;
       }
 
       if (!file) {
@@ -395,21 +331,17 @@ export default class ActionService {
         };
       }
 
-      this.saveSnapshot(
-        file
+      editorManager.switchFile(
+        file.id
       );
+
+      this.saveSnapshot(file);
 
       file.session.setValue(
         action.content
       );
 
-      editorManager.switchFile(
-        file.id
-      );
-
-      return {
-        success: true
-      };
+      return { success: true };
     } catch (error) {
       console.error(
         "replaceFile failed:",
@@ -418,45 +350,43 @@ export default class ActionService {
 
       return {
         success: false,
-        error:
-          error.message
+        error: error.message
       };
     }
   }
 
-  static async patchFile(
-    action
-  ) {
+  static async patchFile(action) {
     try {
       let file =
         this.findOpenEditorFile(
           action.file
         );
 
-      console.log("PATCH FILE DEBUG:", {
-  found: !!file,
-  name: file?.name,
-  uri: file?.uri,
-  activeName: editorManager.activeFile?.name,
-  sameObject:
-    file === editorManager.activeFile
-});
+      console.log(
+        "PATCH FILE DEBUG:",
+        {
+          found: !!file,
+          name: file?.name,
+          uri: file?.uri,
+          activeName:
+            editorManager.activeFile?.name,
+          sameObject:
+            file ===
+            editorManager.activeFile
+        }
+      );
 
       if (!file) {
         const openResult =
           await this.openFile({
-            file:
-              action.file
+            file: action.file
           });
 
-        if (
-          !openResult.success
-        ) {
+        if (!openResult.success) {
           return openResult;
         }
 
-        file =
-          openResult.file;
+        file = openResult.file;
       }
 
       if (!file) {
@@ -471,18 +401,18 @@ export default class ActionService {
         file.session.getValue();
 
       console.log(
-  "PATCH TARGET START:",
-  JSON.stringify(
-    currentContent.slice(0, 200)
-  )
-);
+        "PATCH TARGET START:",
+        JSON.stringify(
+          currentContent.slice(0, 200)
+        )
+      );
 
-console.log(
-  "SEARCH TEXT:",
-  JSON.stringify(
-    action.search
-  )
-);
+      console.log(
+        "SEARCH TEXT:",
+        JSON.stringify(
+          action.search
+        )
+      );
 
       if (
         !currentContent.includes(
@@ -515,29 +445,37 @@ console.log(
           action.replace
         );
 
-      this.saveSnapshot(
-        file
+      editorManager.switchFile(
+        file.id
       );
+
+      console.log(
+        "PATCH ACTIVE CHECK",
+        {
+          activeId:
+            editorManager.activeFile?.id,
+          fileId: file.id,
+          same:
+            editorManager.activeFile?.id ===
+            file.id
+        }
+      );
+
+      this.saveSnapshot(file);
 
       file.session.setValue(
         patchedContent
       );
 
       console.log(
-  "AFTER PATCH ACTIVE VALUE START:",
-  editorManager.activeFile
-    ?.session
-    ?.getValue()
-    ?.slice(0, 100)
-);
-
-      editorManager.switchFile(
-        file.id
+        "AFTER PATCH ACTIVE VALUE START:",
+        editorManager.activeFile
+          ?.session
+          ?.getValue()
+          ?.slice(0, 100)
       );
 
-      return {
-        success: true
-      };
+      return { success: true };
     } catch (error) {
       console.error(
         "patchFile failed:",
@@ -546,15 +484,12 @@ console.log(
 
       return {
         success: false,
-        error:
-          error.message
+        error: error.message
       };
     }
   }
 
-  static async undoFile(
-    action
-  ) {
+  static async undoFile(action) {
     try {
       let file =
         this.findOpenEditorFile(
@@ -564,18 +499,14 @@ console.log(
       if (!file) {
         const openResult =
           await this.openFile({
-            file:
-              action.file
+            file: action.file
           });
 
-        if (
-          !openResult.success
-        ) {
+        if (!openResult.success) {
           return openResult;
         }
 
-        file =
-          openResult.file;
+        file = openResult.file;
       }
 
       const key =
@@ -584,9 +515,7 @@ console.log(
         file.uri;
 
       const history =
-        this.snapshots.get(
-          key
-        );
+        this.snapshots.get(key);
 
       if (
         !history ||
@@ -623,9 +552,7 @@ console.log(
         file.id
       );
 
-      return {
-        success: true
-      };
+      return { success: true };
     } catch (error) {
       console.error(
         "undoFile failed:",
@@ -634,8 +561,7 @@ console.log(
 
       return {
         success: false,
-        error:
-          error.message
+        error: error.message
       };
     }
   }
@@ -660,9 +586,7 @@ console.log(
       };
     }
 
-    switch (
-      action.type
-    ) {
+    switch (action.type) {
       case "focus_file":
         return await this.focusFile(
           action
