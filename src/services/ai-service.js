@@ -689,6 +689,22 @@ ${mentionResult.content}`;
       });
     }
 
+    const hasLiveBuffer =
+  processedMessages.some(
+    msg =>
+      msg.role === "user" &&
+      msg.content.includes(
+        "LIVE EDITOR BUFFER"
+      )
+  );
+
+if (!hasLiveBuffer) {
+  processedMessages =
+    ContextManager.prepareMessages(
+      processedMessages
+    );
+}
+
     processedMessages =
       ContextManager.prepareMessages(
         processedMessages
