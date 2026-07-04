@@ -4,6 +4,9 @@ export default class ActionService {
   static snapshots =
     new Map();
 
+  static MAX_HISTORY =
+    20;
+
   static SUPPORTED_ACTIONS = [
     "focus_file",
     "open_file",
@@ -180,9 +183,35 @@ export default class ActionService {
       file.name ||
       file.uri;
 
+    const content =
+      file.session.getValue();
+
+    let history =
+      this.snapshots.get(
+        key
+      ) || [];
+
+    if (
+      history.length &&
+      history[
+        history.length - 1
+      ] === content
+    ) {
+      return;
+    }
+
+    history.push(content);
+
+    if (
+      history.length >
+      this.MAX_HISTORY
+    ) {
+      history.shift();
+    }
+
     this.snapshots.set(
       key,
-      file.session.getValue()
+      history
     );
   }
 
@@ -510,14 +539,14 @@ export default class ActionService {
         file.name ||
         file.uri;
 
-      const snapshot =
+      const history =
         this.snapshots.get(
           key
         );
 
       if (
-        snapshot ===
-        undefined
+        !history ||
+        !history.length
       ) {
         return {
           success: false,
@@ -526,9 +555,25 @@ export default class ActionService {
         };
       }
 
+      const snapshot =
+        history.pop();
+
       file.session.setValue(
         snapshot
       );
+
+      if (
+        history.length === 0
+      ) {
+        this.snapshots.delete(
+          key
+        );
+      } else {
+        this.snapshots.set(
+          key,
+          history
+        );
+      }
 
       editorManager.switchFile(
         file.id
