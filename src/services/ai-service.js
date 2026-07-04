@@ -5,6 +5,7 @@ import AttachmentStorage from "./attachment-storage.js";
 import ContextManager from "./context-manager.js";
 import SearchService from "./search-service.js";
 import WorkspaceSummaryService from "./workspace-summary-service.js";
+import LiveContextService from "./live-context-service.js";
 
 const MAX_ATTACHMENT_CHARS =
   120000;
@@ -78,6 +79,78 @@ Content:
 };
 
 export default class AIService {
+  static getActiveFileContext() {
+    try {
+      if (
+        !editorManager ||
+        !editorManager.activeFile
+      ) {
+        return "";
+      }
+
+      const file =
+        editorManager.activeFile;
+
+      if (!file.session) {
+        return "";
+      }
+
+      const content =
+        file.session.getValue();
+
+      if (!content) {
+        return "";
+      }
+
+      return `
+ACTIVE FILE (LIVE EDITOR BUFFER)
+
+File:
+${file.name || file.filename}
+
+IMPORTANT:
+This is the latest unsaved editor content.
+Use this exact content for patch_file.
+
+${content}
+`;
+    } catch (error) {
+      console.error(
+        "getActiveFileContext failed:",
+        error
+      );
+      return "";
+    }
+  }
+
+  static shouldInjectLiveFile(
+    text
+  ) {
+    if (!text) {
+      return false;
+    }
+
+    const lower =
+      text.toLowerCase();
+
+    const editWords = [
+      "patch",
+      "modify",
+      "replace",
+      "change",
+      "add",
+      "remove",
+      "update",
+      "edit",
+      "insert"
+    ];
+
+    return editWords.some(
+      word =>
+        lower.includes(word)
+    );
+  }
+
   static buildWorkspaceContext() {
     const summary =
       WorkspaceSummaryService.getSummary();
@@ -289,144 +362,6 @@ ${content}`
     };
   }
 
-  static shouldInjectCodeContext(text) {
-    if (!text) {
-      return false;
-    }
-
-    const lower =
-      text.toLowerCase();
-
-    const debugWords = [
-      "bug",
-      "error",
-      "issue",
-      "broken",
-      "duplicate",
-      "undefined",
-      "null",
-      "crash",
-      "function",
-      "class",
-      "method",
-      "why"
-    ];
-
-    const hasDebugWord =
-      debugWords.some(word =>
-        lower.includes(word)
-      );
-
-    const hasCodeSymbol =
-      /[A-Z]/.test(text) ||
-      /[a-z]+_[a-z]+/.test(text);
-
-    return (
-      hasDebugWord ||
-      hasCodeSymbol
-    );
-  }
-
-  static extractSymbol(text) {
-    if (!text) {
-      return null;
-    }
-
-    const words =
-      text.match(
-        /[A-Za-z_][A-Za-z0-9_]*/g
-      ) || [];
-
-    let symbol =
-      words.find(word =>
-        /[a-z][A-Z]/.test(word)
-      );
-
-    if (!symbol) {
-      symbol =
-        words.find(word =>
-          /[a-z]+_[a-z]+/.test(word)
-        );
-    }
-
-    return symbol || null;
-  }
-
-  static async buildAutoContext(text) {
-    if (
-      !this.shouldInjectCodeContext(text)
-    ) {
-      return "";
-    }
-
-    let symbol =
-      this.extractSymbol(text);
-
-    if (!symbol) {
-      const messages =
-        SessionService.getMessages();
-
-      for (
-        let i = messages.length - 1;
-        i >= 0;
-        i--
-      ) {
-        const msg =
-          messages[i];
-
-        if (
-          msg.role !== "user"
-        ) {
-          continue;
-        }
-
-        symbol =
-          this.extractSymbol(
-            msg.content
-          );
-
-        if (symbol) {
-          break;
-        }
-      }
-    }
-
-    if (!symbol) {
-      return "";
-    }
-
-    const results =
-      await SearchService.searchCode(
-        symbol
-      );
-
-    if (!results.length) {
-      return "";
-    }
-
-    const snippets =
-      results
-        .slice(0, 5)
-        .map(
-          match =>
-`FILE: ${match.file}
-LINE: ${match.line}
-
-${match.snippet || match.text}`
-        )
-        .join(
-          "\n\n----------------\n\n"
-        );
-
-    return `
-Relevant workspace code for "${symbol}":
-
-${snippets}
-
-Use this code context when answering.
-`;
-  }
-
   static async getMessageAttachments(
     message
   ) {
@@ -499,7 +434,7 @@ Use this code context when answering.
       content.length >
       allowedChars;
 
-    const finalContent =
+        const finalContent =
       truncated
         ? content.slice(
             0,
@@ -545,6 +480,22 @@ ${finalContent}`,
       if (
         cloned.role === "user"
       ) {
+        if (
+  LiveContextService.shouldInject(
+    cloned.content
+  )
+) {
+  const liveContext =
+    LiveContextService.getContext();
+
+  if (liveContext) {
+    cloned.content =
+      liveContext +
+      "\n\n" +
+      cloned.content;
+  }
+        }
+        
         const mentionResult =
           await this.buildMentionContext(
             cloned.content
@@ -560,6 +511,22 @@ ${mentionResult.context}
 
 User request:
 ${mentionResult.content}`;
+        }
+
+        if (
+          this.shouldInjectLiveFile(
+            cloned.content
+          )
+        ) {
+          const liveContext =
+            this.getActiveFileContext();
+
+          if (liveContext) {
+            cloned.content =
+              liveContext +
+              "\n\n" +
+              cloned.content;
+          }
         }
 
         const parsed =
@@ -578,74 +545,14 @@ ${mentionResult.content}`;
               "[No additional content provided]";
           }
 
-          if (
-            parsed.command ===
-            "search"
-          ) {
-            const fileResults =
-              SearchService.searchFiles(
-                content
-              );
-
-            const codeResults =
-              await SearchService.searchCode(
-                content
-              );
-
-            const workspaceText =
-              fileResults.length
-                ? fileResults
-                    .map(
-                      file =>
-                        `- ${file.name} (${file.path})`
-                    )
-                    .join("\n")
-                : "No matching files";
-
-            const codeText =
-              codeResults.length
-                ? codeResults
-                    .slice(0, 20)
-                    .map(
-                      match =>
-                        `FILE: ${match.file}
-LINE: ${match.line}
-
-${match.snippet || match.text}`
-                    )
-                    .join(
-                      "\n\n--------------------\n\n"
-                    )
-                : "No code matches";
-
-            cloned.content = `
-Search query: ${content}
-
-Workspace matches:
-${workspaceText}
-
-Code matches:
-${codeText}
-`;
-          } else {
-            cloned.content =
-              COMMANDS[
-                parsed.command
-              ].prefix + content;
-          }
-        } else if (
-          !mentionResult.context
-        ) {
-          const autoContext =
-            await this.buildAutoContext(
-              cloned.content
-            );
-
-          if (autoContext) {
-            cloned.content +=
-              "\n\n" +
-              autoContext;
-          }
+          cloned.content =
+            COMMANDS[
+              parsed.command
+            ]?.prefix
+              ? COMMANDS[
+                  parsed.command
+                ].prefix + content
+              : content;
         }
 
         if (
@@ -697,7 +604,7 @@ ${codeText}
     return processed;
   }
 
-    static async getModels(
+  static async getModels(
     provider = null,
     apiKey = null
   ) {
@@ -750,32 +657,8 @@ ${codeText}
         "model"
       );
 
-    if (!provider) {
-      throw new Error(
-        "No provider selected"
-      );
-    }
-
-    if (!apiKey) {
-      throw new Error(
-        "No API key saved"
-      );
-    }
-
-    if (!model) {
-      throw new Error(
-        "No model selected"
-      );
-    }
-
     const messages =
       SessionService.getMessages();
-
-    if (!messages.length) {
-      throw new Error(
-        "No messages found"
-      );
-    }
 
     const cleanedMessages =
       messages
