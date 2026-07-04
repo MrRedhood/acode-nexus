@@ -321,14 +321,16 @@ export default class ActionService {
           .constructor;
 
       const openedFile =
-        new EditorFile(
-          file.name,
-          {
-            uri: file.path,
-            text: content,
-            editable: true
-          }
-        );
+  new EditorFile(
+    file.name,
+    {
+      uri:
+        file.url ||
+        file.path,
+      text: content,
+      editable: true
+    }
+  );
 
       return {
         success: true,
