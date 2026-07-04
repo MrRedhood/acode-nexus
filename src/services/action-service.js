@@ -1,11 +1,15 @@
 import SearchService from "./search-service.js";
 
 export default class ActionService {
+  static snapshots =
+    new Map();
+
   static SUPPORTED_ACTIONS = [
     "focus_file",
     "open_file",
     "replace_file",
-    "patch_file"
+    "patch_file",
+    "undo_file"
   ];
 
   static parseActions(text) {
@@ -88,7 +92,9 @@ export default class ActionService {
       action.type ===
         "focus_file" ||
       action.type ===
-        "open_file"
+        "open_file" ||
+      action.type ===
+        "undo_file"
     ) {
       return !!action.file;
     }
@@ -156,6 +162,27 @@ export default class ActionService {
           );
         }
       ) || null
+    );
+  }
+
+  static saveSnapshot(
+    file
+  ) {
+    if (
+      !file ||
+      !file.session
+    ) {
+      return;
+    }
+
+    const key =
+      file.filename ||
+      file.name ||
+      file.uri;
+
+    this.snapshots.set(
+      key,
+      file.session.getValue()
     );
   }
 
@@ -326,6 +353,10 @@ export default class ActionService {
         };
       }
 
+      this.saveSnapshot(
+        file
+      );
+
       file.session.setValue(
         action.content
       );
@@ -401,27 +432,35 @@ export default class ActionService {
       }
 
       const occurrences =
-  currentContent.split(
-    action.search
-  ).length - 1;
+        currentContent.split(
+          action.search
+        ).length - 1;
 
-if (occurrences > 1) {
-  return {
-    success: false,
-    error:
-      "Search text appears multiple times"
-  };
-}
+      if (occurrences > 1) {
+        return {
+          success: false,
+          error:
+            "Search text appears multiple times"
+        };
+      }
 
-const patchedContent =
-  currentContent.replace(
-    action.search,
-    action.replace
-  );
+      const patchedContent =
+        currentContent.replace(
+          action.search,
+          action.replace
+        );
 
-file.session.setValue(
-  patchedContent
-);
+      this.saveSnapshot(
+        file
+      );
+
+      file.session.setValue(
+        patchedContent
+      );
+
+      editorManager.switchFile(
+        file.id
+      );
 
       return {
         success: true
@@ -429,6 +468,78 @@ file.session.setValue(
     } catch (error) {
       console.error(
         "patchFile failed:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message
+      };
+    }
+  }
+
+  static async undoFile(
+    action
+  ) {
+    try {
+      let file =
+        this.findOpenEditorFile(
+          action.file
+        );
+
+      if (!file) {
+        const openResult =
+          await this.openFile({
+            file:
+              action.file
+          });
+
+        if (
+          !openResult.success
+        ) {
+          return openResult;
+        }
+
+        file =
+          openResult.file;
+      }
+
+      const key =
+        file.filename ||
+        file.name ||
+        file.uri;
+
+      const snapshot =
+        this.snapshots.get(
+          key
+        );
+
+      if (
+        snapshot ===
+        undefined
+      ) {
+        return {
+          success: false,
+          error:
+            "No snapshot found"
+        };
+      }
+
+      file.session.setValue(
+        snapshot
+      );
+
+      editorManager.switchFile(
+        file.id
+      );
+
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error(
+        "undoFile failed:",
         error
       );
 
@@ -480,6 +591,11 @@ file.session.setValue(
 
       case "patch_file":
         return await this.patchFile(
+          action
+        );
+
+      case "undo_file":
+        return await this.undoFile(
           action
         );
 
