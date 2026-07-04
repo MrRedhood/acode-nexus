@@ -130,43 +130,54 @@ export default class ActionService {
   }
 
   static findOpenEditorFile(
-    filename
+  filename
+) {
+  if (
+    !filename ||
+    !editorManager ||
+    !editorManager.files
   ) {
-    if (
-      !filename ||
-      !editorManager ||
-      !editorManager.files
-    ) {
-      return null;
-    }
-
-    const lower =
-      filename.toLowerCase();
-
-    return (
-      editorManager.files.find(
-        file => {
-          const name =
-            (
-              file.filename ||
-              file.name ||
-              ""
-            ).toLowerCase();
-
-          const uri =
-            (
-              file.uri || ""
-            ).toLowerCase();
-
-          return (
-            name === lower ||
-            name.includes(lower) ||
-            uri.includes(lower)
-          );
-        }
-      ) || null
-    );
+    return null;
   }
+
+  const normalize = value =>
+    String(value || "")
+      .trim()
+      .replace(/\\/g, "/")
+      .toLowerCase();
+
+  const target =
+    normalize(filename);
+
+  const targetBase =
+    target.split("/").pop();
+
+  return (
+    editorManager.files.find(
+      file => {
+        const name =
+          normalize(
+            file.filename ||
+            file.name
+          );
+
+        const uri =
+          normalize(file.uri);
+
+        const uriBase =
+          uri.split("/").pop();
+
+        return (
+          name === target ||
+          name === targetBase ||
+          uri === target ||
+          uri.includes(target) ||
+          uriBase === targetBase
+        );
+      }
+    ) || null
+  );
+}
 
   static saveSnapshot(
     file
