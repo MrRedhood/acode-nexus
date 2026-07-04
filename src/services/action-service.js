@@ -433,6 +433,15 @@ export default class ActionService {
           action.file
         );
 
+      console.log("PATCH FILE DEBUG:", {
+  found: !!file,
+  name: file?.name,
+  uri: file?.uri,
+  activeName: editorManager.activeFile?.name,
+  sameObject:
+    file === editorManager.activeFile
+});
+
       if (!file) {
         const openResult =
           await this.openFile({
@@ -513,6 +522,14 @@ console.log(
       file.session.setValue(
         patchedContent
       );
+
+      console.log(
+  "AFTER PATCH ACTIVE VALUE START:",
+  editorManager.activeFile
+    ?.session
+    ?.getValue()
+    ?.slice(0, 100)
+);
 
       editorManager.switchFile(
         file.id
