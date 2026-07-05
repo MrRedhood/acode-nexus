@@ -1,19 +1,13 @@
 import GeminiProvider from "../providers/gemini.js";
 import StorageService from "./storage-service.js";
 import SessionService from "./session-service.js";
-import AttachmentStorage from "./attachment-storage.js";
-import ContextManager from "./context-manager.js";
+import AttachmentService from "./attachment-service.js";
+import TokenBudgetService from "./token-budget-service.js";
 import SearchService from "./search-service.js";
 import LiveContextService from "./live-context-service.js";
 import RouterService from "./router-service.js";
 import EditService from "./edit-service.js";
 import PromptService from "./prompt-service.js";
-
-const MAX_ATTACHMENT_CHARS =
-  120000;
-
-const MAX_TOTAL_ATTACHMENT_CHARS =
-  250000;
 
 const COMMANDS = {
   explain: {
@@ -184,7 +178,7 @@ ${content}
     };
   }
 
-  static parseFileMentions(text) {
+    static parseFileMentions(text) {
     if (!text) {
       return {
         files: [],
@@ -262,107 +256,6 @@ ${content}`
     };
   }
 
-  static async getMessageAttachments(
-    message
-  ) {
-    if (
-      !message ||
-      !message.attachmentIds ||
-      message.attachmentIds.length === 0
-    ) {
-      return [];
-    }
-
-    const attachments = [];
-
-    for (const id of message.attachmentIds) {
-      try {
-        const attachment =
-          await AttachmentStorage.getAttachment(
-            id
-          );
-
-        if (attachment) {
-          attachments.push(
-            attachment
-          );
-        }
-      } catch (error) {
-        console.error(
-          "Attachment read failed:",
-          error
-        );
-      }
-    }
-
-    return attachments;
-  }
-
-  static attachmentToText(
-    attachment,
-    remainingBudget
-  ) {
-    if (!attachment) {
-      return {
-        text: "",
-        usedChars: 0
-      };
-    }
-
-    const typeLabel =
-      attachment.type ===
-      "clipboard"
-        ? "CLIPBOARD"
-        : attachment.type ===
-          "current-file"
-        ? "CURRENT FILE"
-        : "FILE";
-
-    const content =
-      attachment.content || "";
-
-    const allowedChars =
-      Math.max(
-        0,
-        Math.min(
-          MAX_ATTACHMENT_CHARS,
-          remainingBudget
-        )
-      );
-
-    const truncated =
-      content.length >
-      allowedChars;
-
-    const finalContent =
-      truncated
-        ? content.slice(
-            0,
-            allowedChars
-          )
-        : content;
-
-    const warning =
-      truncated
-        ? `
-
-WARNING: Attachment truncated
-Original size: ${content.length} chars
-Sent size: ${finalContent.length} chars`
-        : "";
-
-    return {
-      text: `[${typeLabel} ATTACHMENT]
-Name: ${attachment.name}${warning}
-
-Content:
-${finalContent}`,
-      usedChars:
-        finalContent.length
-    };
-  }
-}
-
   static async preprocessMessages(
     messages
   ) {
@@ -374,7 +267,7 @@ ${finalContent}`,
       };
 
       const attachments =
-        await this.getMessageAttachments(
+        await AttachmentService.getMessageAttachments(
           cloned
         );
 
@@ -460,12 +353,12 @@ ${mentionResult.content}`;
           attachments.length > 0
         ) {
           let remainingBudget =
-            MAX_TOTAL_ATTACHMENT_CHARS;
+            AttachmentService.MAX_TOTAL_ATTACHMENT_CHARS;
 
           const attachmentTexts =
             [];
 
-          for (const att of attachments) {
+                    for (const att of attachments) {
             if (
               remainingBudget <= 0
             ) {
@@ -476,7 +369,7 @@ ${mentionResult.content}`;
             }
 
             const result =
-              this.attachmentToText(
+              AttachmentService.attachmentToText(
                 att,
                 remainingBudget
               );
@@ -497,9 +390,7 @@ ${mentionResult.content}`;
         }
       }
 
-      processed.push(
-        cloned
-      );
+      processed.push(cloned);
     }
 
     return processed;
@@ -510,28 +401,18 @@ ${mentionResult.content}`;
     apiKey = null
   ) {
     provider ??=
-      StorageService.get(
-        "provider"
-      );
+      StorageService.get("provider");
 
     apiKey ??=
-      StorageService.get(
-        "apiKey"
-      );
+      StorageService.get("apiKey");
 
-    if (
-      !provider ||
-      !apiKey
-    ) {
+    if (!provider || !apiKey) {
       throw new Error(
         "Provider or API key missing"
       );
     }
 
-    if (
-      provider ===
-      "gemini"
-    ) {
+    if (provider === "gemini") {
       return await GeminiProvider.getModels(
         apiKey
       );
@@ -544,19 +425,11 @@ ${mentionResult.content}`;
 
   static async prepareMessages() {
     const provider =
-      StorageService.get(
-        "provider"
-      );
-
+      StorageService.get("provider");
     const apiKey =
-      StorageService.get(
-        "apiKey"
-      );
-
+      StorageService.get("apiKey");
     const model =
-      StorageService.get(
-        "model"
-      );
+      StorageService.get("model");
 
     const messages =
       SessionService.getMessages();
@@ -570,9 +443,7 @@ ${mentionResult.content}`;
             typeof msg.content ===
               "string"
         )
-        .map(msg => ({
-          ...msg
-        }));
+        .map(msg => ({ ...msg }));
 
     let processedMessages =
       await this.preprocessMessages(
@@ -585,26 +456,14 @@ ${mentionResult.content}`;
     if (systemPrompt) {
       processedMessages.unshift({
         role: "system",
-        content:
-          systemPrompt
+        content: systemPrompt
       });
     }
 
-    const hasLiveBuffer =
-      processedMessages.some(
-        msg =>
-          msg.role === "user" &&
-          msg.content.includes(
-            "LIVE EDITOR BUFFER"
-          )
+    processedMessages =
+      TokenBudgetService.enforceBudget(
+        processedMessages
       );
-
-    if (!hasLiveBuffer) {
-      processedMessages =
-        ContextManager.prepareMessages(
-          processedMessages
-        );
-    }
 
     return {
       provider,
@@ -617,22 +476,17 @@ ${mentionResult.content}`;
   static async sendMessage(
     signal = null
   ) {
-    const {
-      provider,
-      apiKey,
-      model,
-      processedMessages
-    } =
+    const payload =
       await this.prepareMessages();
 
     if (
-      provider ===
+      payload.provider ===
       "gemini"
     ) {
       return await GeminiProvider.chat(
-        apiKey,
-        model,
-        processedMessages,
+        payload.apiKey,
+        payload.model,
+        payload.processedMessages,
         signal
       );
     }
@@ -654,10 +508,6 @@ ${mentionResult.content}`;
         messages
       )
     ) {
-      console.log(
-        "ROUTED TO EDIT SERVICE"
-      );
-
       return await EditService.sendMessageStream(
         messages,
         onChunk,
@@ -665,31 +515,17 @@ ${mentionResult.content}`;
       );
     }
 
-    const {
-      provider,
-      apiKey,
-      model,
-      processedMessages
-    } =
+    const payload =
       await this.prepareMessages();
 
     if (
-      provider ===
+      payload.provider ===
       "gemini"
     ) {
-      console.log(
-        "FINAL MESSAGE CONTENT:",
-        JSON.stringify(
-          processedMessages,
-          null,
-          2
-        )
-      );
-
       return await GeminiProvider.streamChat(
-        apiKey,
-        model,
-        processedMessages,
+        payload.apiKey,
+        payload.model,
+        payload.processedMessages,
         onChunk,
         signal
       );
