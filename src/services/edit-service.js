@@ -62,6 +62,32 @@ export default class EditService {
     return "";
   }
 
+  static cleanUserRequest(text) {
+    if (!text) {
+      return "";
+    }
+
+    const markers = [
+      "ACTIVE FILE (LIVE EDITOR BUFFER)",
+      "LIVE EDITOR FILE",
+      "ACTIVE FILE"
+    ];
+
+    let cleaned = text;
+
+    for (const marker of markers) {
+      const index =
+        cleaned.indexOf(marker);
+
+      if (index !== -1) {
+        cleaned =
+          cleaned.slice(0, index);
+      }
+    }
+
+    return cleaned.trim();
+  }
+
   static async prepareMessages(
     messages
   ) {
@@ -109,9 +135,14 @@ export default class EditService {
       );
     }
 
-    const userRequest =
+    const rawUserRequest =
       this.extractUserRequest(
         messages
+      );
+
+    const userRequest =
+      this.cleanUserRequest(
+        rawUserRequest
       );
 
     const processedMessages = [
@@ -126,7 +157,10 @@ export default class EditService {
 ${liveBuffer}
 
 USER REQUEST:
-${userRequest}
+${
+  userRequest ||
+  "[No request provided]"
+}
 `
       }
     ];
