@@ -122,8 +122,65 @@ export default class PatchService {
     }
   }
 
+  static isActiveFile(file) {
+    return (
+      editorManager?.activeFile?.id ===
+      file?.id
+    );
+  }
+
+  static getFileContent(file) {
+    if (!file) {
+      return "";
+    }
+
+    if (
+      this.isActiveFile(file) &&
+      editorManager?.editor?.state?.doc
+    ) {
+      return editorManager.editor
+        .state.doc
+        .toString();
+    }
+
+    return (
+      file.session?.getValue?.() || ""
+    );
+  }
+
+  static setFileContent(
+    file,
+    content
+  ) {
+    if (!file) {
+      return;
+    }
+
+    if (
+      this.isActiveFile(file) &&
+      editorManager?.editor?.dispatch &&
+      editorManager?.editor?.state?.doc
+    ) {
+      editorManager.editor.dispatch({
+        changes: {
+          from: 0,
+          to:
+            editorManager.editor
+              .state.doc.length,
+          insert: content
+        }
+      });
+
+      return;
+    }
+
+    file.session?.setValue?.(
+      content
+    );
+  }
+
   static saveSnapshot(file) {
-    if (!file || !file.session) {
+    if (!file) {
       return;
     }
 
@@ -133,12 +190,7 @@ export default class PatchService {
       file.uri;
 
     const content =
-      editorManager.activeFile?.id ===
-        file.id &&
-      editorManager.editor
-        ?.session
-        ? editorManager.editor.session.getValue()
-        : file.session.getValue();
+      this.getFileContent(file);
 
     let history =
       this.snapshots.get(key) || [];
@@ -197,22 +249,14 @@ export default class PatchService {
       );
 
       this.saveSnapshot(file);
+      this.setFileContent(
+        file,
+        action.content
+      );
 
-      if (
-        editorManager.activeFile?.id ===
-          file.id &&
-        editorManager.editor?.session
-      ) {
-        editorManager.editor.session.setValue(
-          action.content
-        );
-      } else {
-        file.session.setValue(
-          action.content
-        );
-      }
-
-      return { success: true };
+      return {
+        success: true
+      };
     } catch (error) {
       console.error(
         "replaceFile failed:",
@@ -255,12 +299,7 @@ export default class PatchService {
       }
 
       const currentContent =
-        editorManager.activeFile?.id ===
-          file.id &&
-        editorManager.editor
-          ?.session
-          ? editorManager.editor.session.getValue()
-          : file.session.getValue();
+        this.getFileContent(file);
 
       if (
         !currentContent.includes(
@@ -299,35 +338,14 @@ export default class PatchService {
 
       this.saveSnapshot(file);
 
-      console.log("SESSION DEBUG", {
-  fileSessionExists: !!file.session,
-  editorSessionExists:
-    !!editorManager.editor?.session,
-  sameSession:
-    file.session ===
-    editorManager.editor?.session,
-  fileSessionType:
-    file.session?.constructor?.name,
-  editorSessionType:
-    editorManager.editor?.session
-      ?.constructor?.name
-});
+      this.setFileContent(
+        file,
+        patchedContent
+      );
 
-      if (
-        editorManager.activeFile?.id ===
-          file.id &&
-        editorManager.editor?.session
-      ) {
-        editorManager.editor.session.setValue(
-          patchedContent
-        );
-      } else {
-        file.session.setValue(
-          patchedContent
-        );
-      }
-
-      return { success: true };
+      return {
+        success: true
+      };
     } catch (error) {
       console.error(
         "patchFile failed:",
@@ -383,19 +401,10 @@ export default class PatchService {
       const snapshot =
         history.pop();
 
-      if (
-        editorManager.activeFile?.id ===
-          file.id &&
-        editorManager.editor?.session
-      ) {
-        editorManager.editor.session.setValue(
-          snapshot
-        );
-      } else {
-        file.session.setValue(
-          snapshot
-        );
-      }
+      this.setFileContent(
+        file,
+        snapshot
+      );
 
       if (
         history.length === 0
@@ -414,7 +423,9 @@ export default class PatchService {
         file.id
       );
 
-      return { success: true };
+      return {
+        success: true
+      };
     } catch (error) {
       console.error(
         "undoFile failed:",
