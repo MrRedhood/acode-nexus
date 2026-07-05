@@ -6,6 +6,8 @@ import ContextManager from "./context-manager.js";
 import SearchService from "./search-service.js";
 import WorkspaceSummaryService from "./workspace-summary-service.js";
 import LiveContextService from "./live-context-service.js";
+import RouterService from "./router-service.js";
+import EditService from "./edit-service.js";
 
 const MAX_ATTACHMENT_CHARS =
   120000;
