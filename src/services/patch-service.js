@@ -273,45 +273,11 @@ export default class PatchService {
           action.replace
         );
 
-      editorManager.switchFile(
-  file.id
-);
+      editorManager.switchFile(file.id);
 
-console.log(
-  "PATCH DEBUG",
-  {
-    fileId: file.id,
-    activeFileId:
-      editorManager.activeFile?.id,
-    sameFile:
-      file ===
-      editorManager.activeFile,
-    sameSession:
-      editorManager.editor
-        ?.session ===
-      file.session
-  }
-);
+      this.saveSnapshot(file);
 
-this.saveSnapshot(file);
-
-file.session.setValue(
-  patchedContent
-);
-
-console.log(
-  "PATCH VERIFY",
-  {
-    fileLength:
-      file.session.getValue()
-        .length,
-    editorLength:
-      editorManager.editor
-        ?.session
-        ?.getValue?.()
-        ?.length
-  }
-);
+      file.session.setValue(patchedContent);
 
 return { success: true };
     } catch (error) {
