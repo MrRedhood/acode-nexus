@@ -439,17 +439,10 @@ export default class SearchService {
 
         if (!content) continue;
 
-        const lines = content.split("\n");
+        const lines =
+          content.split("\n");
 
-        lines.forEach((line, index) => {
-          if (line.toLowerCase().includes(lower)) {
-            matches.push({
-              file,
-              line: index + 1,
-              content: line.trim()
-            });
-          }
-        });(
+        lines.forEach(
           (line, index) => {
             if (
               matches.length >= 50
