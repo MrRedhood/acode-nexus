@@ -752,6 +752,26 @@ if (!hasLiveBuffer) {
     onChunk,
     signal = null
   ) {
+
+    const messages =
+  SessionService.getMessages();
+
+if (
+  RouterService.isEditRequest(
+    messages
+  )
+) {
+  console.log(
+    "ROUTED TO EDIT SERVICE"
+  );
+
+  return await EditService.sendMessageStream(
+    messages,
+    onChunk,
+    signal
+  );
+}
+    
     const {
       provider,
       apiKey,
