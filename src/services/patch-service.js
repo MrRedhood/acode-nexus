@@ -299,6 +299,20 @@ export default class PatchService {
 
       this.saveSnapshot(file);
 
+      console.log("SESSION DEBUG", {
+  fileSessionExists: !!file.session,
+  editorSessionExists:
+    !!editorManager.editor?.session,
+  sameSession:
+    file.session ===
+    editorManager.editor?.session,
+  fileSessionType:
+    file.session?.constructor?.name,
+  editorSessionType:
+    editorManager.editor?.session
+      ?.constructor?.name
+});
+
       if (
         editorManager.activeFile?.id ===
           file.id &&
