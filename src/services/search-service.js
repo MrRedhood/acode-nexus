@@ -518,7 +518,6 @@ export default class SearchService {
     return await this.searchCode(query);
   }
 
-  //TE
   static openFile(path) {
     if (!path) return null;
 
