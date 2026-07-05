@@ -3,7 +3,7 @@ import StorageService from "./storage-service.js";
 import SessionService from "./session-service.js";
 import AttachmentService from "./attachment-service.js";
 import TokenBudgetService from "./token-budget-service.js";
-import SearchService from "./search-service.js";
+import MentionService from "./mention-service.js";
 import LiveContextService from "./live-context-service.js";
 import RouterService from "./router-service.js";
 import EditService from "./edit-service.js";
@@ -178,85 +178,7 @@ ${content}
     };
   }
 
-    static parseFileMentions(text) {
-    if (!text) {
-      return {
-        files: [],
-        cleanedText: ""
-      };
-    }
-
-    const matches =
-      text.match(
-        /@([A-Za-z0-9._\\-\\/]+)/g
-      ) || [];
-
-    const files =
-      matches.map(
-        item => item.slice(1)
-      );
-
-    const cleanedText =
-      text
-        .replace(
-          /@([A-Za-z0-9._\\-\\/]+)/g,
-          ""
-        )
-        .trim();
-
-    return {
-      files,
-      cleanedText
-    };
-  }
-
-  static async buildMentionContext(text) {
-    const parsed =
-      this.parseFileMentions(text);
-
-    if (!parsed.files.length) {
-      return {
-        content: text,
-        context: ""
-      };
-    }
-
-    const chunks = [];
-
-    for (const fileName of parsed.files) {
-      const content =
-        await SearchService.readFullFile(
-          fileName
-        );
-
-      if (!content) {
-        chunks.push(
-`FILE: ${fileName}
-
-[Unable to read file]`
-        );
-        continue;
-      }
-
-      chunks.push(
-`FILE: ${fileName}
-
-${content}`
-      );
-    }
-
-    return {
-      content:
-        parsed.cleanedText ||
-        "Explain this file.",
-      context:
-        chunks.join(
-          "\n\n----------------\n\n"
-        )
-    };
-  }
-
-  static async preprocessMessages(
+    static async preprocessMessages(
     messages
   ) {
     const processed = [];
@@ -291,7 +213,7 @@ ${content}`
         }
 
         const mentionResult =
-          await this.buildMentionContext(
+          await MentionService.buildMentionContext(
             cloned.content
           );
 
@@ -358,7 +280,7 @@ ${mentionResult.content}`;
           const attachmentTexts =
             [];
 
-                    for (const att of attachments) {
+          for (const att of attachments) {
             if (
               remainingBudget <= 0
             ) {
@@ -396,7 +318,7 @@ ${mentionResult.content}`;
     return processed;
   }
 
-  static async getModels(
+    static async getModels(
     provider = null,
     apiKey = null
   ) {
@@ -426,8 +348,10 @@ ${mentionResult.content}`;
   static async prepareMessages() {
     const provider =
       StorageService.get("provider");
+
     const apiKey =
       StorageService.get("apiKey");
+
     const model =
       StorageService.get("model");
 
