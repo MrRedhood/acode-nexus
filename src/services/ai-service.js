@@ -4,10 +4,10 @@ import SessionService from "./session-service.js";
 import AttachmentStorage from "./attachment-storage.js";
 import ContextManager from "./context-manager.js";
 import SearchService from "./search-service.js";
-import WorkspaceSummaryService from "./workspace-summary-service.js";
 import LiveContextService from "./live-context-service.js";
 import RouterService from "./router-service.js";
 import EditService from "./edit-service.js";
+import PromptService from "./prompt-service.js";
 
 const MAX_ATTACHMENT_CHARS =
   120000;
@@ -151,108 +151,6 @@ ${content}
       word =>
         lower.includes(word)
     );
-  }
-
-  static buildWorkspaceContext() {
-    const summary =
-      WorkspaceSummaryService.getSummary();
-
-    const actionProtocol = `
-NEXUS ACTION PROTOCOL
-
-You are running inside Acode Nexus.
-
-IMPORTANT:
-When user wants editor actions
-(open file, focus file, modify file),
-respond ONLY with nexus action blocks.
-
-Supported actions:
-
-Open file:
-\`\`\`nexus-action
-{
-  "type": "open_file",
-  "file": "search-service.js"
-}
-\`\`\`
-
-Focus file:
-\`\`\`nexus-action
-{
-  "type": "focus_file",
-  "file": "search-service.js",
-  "line": 120
-}
-\`\`\`
-
-Patch file (preferred for edits):
-\`\`\`nexus-action
-{
-  "type": "patch_file",
-  "file": "search-service.js",
-  "search": "OLD_CODE",
-  "replace": "NEW_CODE"
-}
-\`\`\`
-
-Replace file (only for full rewrites):
-\`\`\`nexus-action
-{
-  "type": "replace_file",
-  "file": "search-service.js",
-  "content": "FULL FILE CONTENT"
-}
-\`\`\`
-
-Rules:
-1. Prefer patch_file for partial edits
-2. Use replace_file only for full file rewrites
-3. patch_file search must exactly match existing code
-4. Never say action succeeded
-5. Never say action executed
-6. Never narrate results
-7. Output only action block
-`;
-
-    if (!summary) {
-      return actionProtocol;
-    }
-
-    return `
-${actionProtocol}
-
-ACTIVE WORKSPACE SUMMARY
-
-Workspace:
-${summary.workspace}
-
-Total files:
-${summary.totalFiles}
-
-Architecture:
-- Core: ${summary.architecture.hasCore}
-- Services: ${summary.architecture.hasServices}
-- UI: ${summary.architecture.hasUI}
-- Agents: ${summary.architecture.hasAgents}
-
-Important modules:
-${summary.keyModules
-  .map(
-    module =>
-      `- ${module.name} (${module.path})`
-  )
-  .join("\n")}
-
-Total symbols:
-- Functions: ${summary.totals.functions}
-- Classes: ${summary.totals.classes}
-- Imports: ${summary.totals.imports}
-
-IMPORTANT:
-When user asks about this workspace,
-assume they mean this project.
-`;
   }
 
   static parseSlashCommand(text) {
@@ -436,7 +334,7 @@ ${content}`
       content.length >
       allowedChars;
 
-        const finalContent =
+    const finalContent =
       truncated
         ? content.slice(
             0,
@@ -463,6 +361,7 @@ ${finalContent}`,
         finalContent.length
     };
   }
+}
 
   static async preprocessMessages(
     messages
@@ -483,21 +382,21 @@ ${finalContent}`,
         cloned.role === "user"
       ) {
         if (
-  LiveContextService.shouldInject(
-    cloned.content
-  )
-) {
-  const liveContext =
-    LiveContextService.getContext();
+          LiveContextService.shouldInject(
+            cloned.content
+          )
+        ) {
+          const liveContext =
+            LiveContextService.getContext();
 
-  if (liveContext) {
-    cloned.content =
-      liveContext +
-      "\n\n" +
-      cloned.content;
-  }
+          if (liveContext) {
+            cloned.content =
+              liveContext +
+              "\n\n" +
+              cloned.content;
+          }
         }
-        
+
         const mentionResult =
           await this.buildMentionContext(
             cloned.content
@@ -680,37 +579,32 @@ ${mentionResult.content}`;
         cleanedMessages
       );
 
-    const workspaceContext =
-      this.buildWorkspaceContext();
+    const systemPrompt =
+      PromptService.buildChatPrompt();
 
-    if (workspaceContext) {
+    if (systemPrompt) {
       processedMessages.unshift({
         role: "system",
         content:
-          workspaceContext
+          systemPrompt
       });
     }
 
     const hasLiveBuffer =
-  processedMessages.some(
-    msg =>
-      msg.role === "user" &&
-      msg.content.includes(
-        "LIVE EDITOR BUFFER"
-      )
-  );
-
-if (!hasLiveBuffer) {
-  processedMessages =
-    ContextManager.prepareMessages(
-      processedMessages
-    );
-}
-
-    processedMessages =
-      ContextManager.prepareMessages(
-        processedMessages
+      processedMessages.some(
+        msg =>
+          msg.role === "user" &&
+          msg.content.includes(
+            "LIVE EDITOR BUFFER"
+          )
       );
+
+    if (!hasLiveBuffer) {
+      processedMessages =
+        ContextManager.prepareMessages(
+          processedMessages
+        );
+    }
 
     return {
       provider,
@@ -752,26 +646,25 @@ if (!hasLiveBuffer) {
     onChunk,
     signal = null
   ) {
-
     const messages =
-  SessionService.getMessages();
+      SessionService.getMessages();
 
-if (
-  RouterService.isEditRequest(
-    messages
-  )
-) {
-  console.log(
-    "ROUTED TO EDIT SERVICE"
-  );
+    if (
+      RouterService.isEditRequest(
+        messages
+      )
+    ) {
+      console.log(
+        "ROUTED TO EDIT SERVICE"
+      );
 
-  return await EditService.sendMessageStream(
-    messages,
-    onChunk,
-    signal
-  );
-}
-    
+      return await EditService.sendMessageStream(
+        messages,
+        onChunk,
+        signal
+      );
+    }
+
     const {
       provider,
       apiKey,
