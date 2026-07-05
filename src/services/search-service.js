@@ -1,5 +1,6 @@
 import WorkspaceScopeService from "./workspace-scope-service.js";
 import WorkspaceManager from "./workspace-manager.js";
+
 export default class SearchService {
   static fileCache = new Map();
 
