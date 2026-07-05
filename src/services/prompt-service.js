@@ -59,7 +59,7 @@ Rules:
 `;
   }
 
-  static buildWorkspaceSummary() {
+  static buildWorkspaceContext() {
     const summary =
       WorkspaceSummaryService.getSummary();
 
@@ -98,10 +98,15 @@ Total symbols:
   }
 
   static buildChatPrompt() {
+    const protocol =
+      this.buildActionProtocol();
+
     const workspace =
-      this.buildWorkspaceSummary();
+      this.buildWorkspaceContext();
 
     return `
+${protocol}
+
 ${workspace}
 
 IMPORTANT:
@@ -114,17 +119,13 @@ assume they mean current project.
     const protocol =
       this.buildActionProtocol();
 
-    const workspace =
-      this.buildWorkspaceSummary();
-
     return `
 ${protocol}
 
-${workspace}
-
 IMPORTANT:
-Use LIVE EDITOR BUFFER if provided.
-Never use previous conversation patches.
+Use LIVE EDITOR BUFFER as source of truth.
+Never trust stale conversation context.
+Patch using exact code from live buffer.
 `;
   }
 }
