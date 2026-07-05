@@ -1,6 +1,6 @@
+import GeminiProvider from "../providers/gemini.js";
 import StorageService from "./storage-service.js";
 import PromptService from "./prompt-service.js";
-import ProviderService from "./provider-service.js";
 
 export default class EditService {
   static extractLiveBuffer(messages) {
@@ -197,13 +197,21 @@ ${
       )
     );
 
-    return await ProviderService.streamChat(
-      provider,
-      apiKey,
-      model,
-      processedMessages,
-      onChunk,
-      signal
+    if (
+      provider ===
+      "gemini"
+    ) {
+      return await GeminiProvider.streamChat(
+        apiKey,
+        model,
+        processedMessages,
+        onChunk,
+        signal
+      );
+    }
+
+    throw new Error(
+      "Unsupported provider"
     );
   }
 }
