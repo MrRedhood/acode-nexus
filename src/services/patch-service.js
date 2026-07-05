@@ -133,7 +133,12 @@ export default class PatchService {
       file.uri;
 
     const content =
-      file.session.getValue();
+      editorManager.activeFile?.id ===
+        file.id &&
+      editorManager.editor
+        ?.session
+        ? editorManager.editor.session.getValue()
+        : file.session.getValue();
 
     let history =
       this.snapshots.get(key) || [];
@@ -193,9 +198,19 @@ export default class PatchService {
 
       this.saveSnapshot(file);
 
-      file.session.setValue(
-        action.content
-      );
+      if (
+        editorManager.activeFile?.id ===
+          file.id &&
+        editorManager.editor?.session
+      ) {
+        editorManager.editor.session.setValue(
+          action.content
+        );
+      } else {
+        file.session.setValue(
+          action.content
+        );
+      }
 
       return { success: true };
     } catch (error) {
@@ -240,7 +255,12 @@ export default class PatchService {
       }
 
       const currentContent =
-        file.session.getValue();
+        editorManager.activeFile?.id ===
+          file.id &&
+        editorManager.editor
+          ?.session
+          ? editorManager.editor.session.getValue()
+          : file.session.getValue();
 
       if (
         !currentContent.includes(
@@ -274,46 +294,26 @@ export default class PatchService {
         );
 
       editorManager.switchFile(
-  file.id
-);
+        file.id
+      );
 
-console.log(
-  "PATCH DEBUG",
-  {
-    fileId: file.id,
-    activeFileId:
-      editorManager.activeFile?.id,
-    sameFile:
-      file ===
-      editorManager.activeFile,
-    sameSession:
-      editorManager.editor
-        ?.session ===
-      file.session
-  }
-);
+      this.saveSnapshot(file);
 
-this.saveSnapshot(file);
+      if (
+        editorManager.activeFile?.id ===
+          file.id &&
+        editorManager.editor?.session
+      ) {
+        editorManager.editor.session.setValue(
+          patchedContent
+        );
+      } else {
+        file.session.setValue(
+          patchedContent
+        );
+      }
 
-file.session.setValue(
-  patchedContent
-);
-
-console.log(
-  "PATCH VERIFY",
-  {
-    fileLength:
-      file.session.getValue()
-        .length,
-    editorLength:
-      editorManager.editor
-        ?.session
-        ?.getValue?.()
-        ?.length
-  }
-);
-
-return { success: true };
+      return { success: true };
     } catch (error) {
       console.error(
         "patchFile failed:",
@@ -369,9 +369,19 @@ return { success: true };
       const snapshot =
         history.pop();
 
-      file.session.setValue(
-        snapshot
-      );
+      if (
+        editorManager.activeFile?.id ===
+          file.id &&
+        editorManager.editor?.session
+      ) {
+        editorManager.editor.session.setValue(
+          snapshot
+        );
+      } else {
+        file.session.setValue(
+          snapshot
+        );
+      }
 
       if (
         history.length === 0
