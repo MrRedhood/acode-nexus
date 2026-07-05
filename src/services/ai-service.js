@@ -1,4 +1,3 @@
-import GeminiProvider from "../providers/gemini.js";
 import StorageService from "./storage-service.js";
 import SessionService from "./session-service.js";
 import TokenBudgetService from "./token-budget-service.js";
@@ -6,6 +5,7 @@ import RouterService from "./router-service.js";
 import EditService from "./edit-service.js";
 import PromptService from "./prompt-service.js";
 import MessagePreprocessorService from "./message-preprocessor-service.js";
+import ProviderService from "./provider-service.js";
 
 export default class AIService {
   static async getModels(
@@ -31,17 +31,9 @@ export default class AIService {
       );
     }
 
-    if (
-      provider ===
-      "gemini"
-    ) {
-      return await GeminiProvider.getModels(
-        apiKey
-      );
-    }
-
-    throw new Error(
-      "Unsupported provider"
+    return await ProviderService.getModels(
+      provider,
+      apiKey
     );
   }
 
@@ -112,20 +104,12 @@ export default class AIService {
     const payload =
       await this.prepareMessages();
 
-    if (
-      payload.provider ===
-      "gemini"
-    ) {
-      return await GeminiProvider.chat(
-        payload.apiKey,
-        payload.model,
-        payload.processedMessages,
-        signal
-      );
-    }
-
-    throw new Error(
-      "Unsupported provider"
+    return await ProviderService.chat(
+      payload.provider,
+      payload.apiKey,
+      payload.model,
+      payload.processedMessages,
+      signal
     );
   }
 
@@ -151,21 +135,13 @@ export default class AIService {
     const payload =
       await this.prepareMessages();
 
-    if (
-      payload.provider ===
-      "gemini"
-    ) {
-      return await GeminiProvider.streamChat(
-        payload.apiKey,
-        payload.model,
-        payload.processedMessages,
-        onChunk,
-        signal
-      );
-    }
-
-    throw new Error(
-      "Unsupported provider"
+    return await ProviderService.streamChat(
+      payload.provider,
+      payload.apiKey,
+      payload.model,
+      payload.processedMessages,
+      onChunk,
+      signal
     );
   }
 }
