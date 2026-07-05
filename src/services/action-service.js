@@ -1,4 +1,10 @@
 import SearchService from "./search-service.js";
+import PatchService from "./patch-service.js";
+
+console.log(
+  "PatchService loaded:",
+  PatchService
+);
 
 export default class ActionService {
   static snapshots = new Map();
