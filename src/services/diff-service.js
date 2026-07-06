@@ -130,8 +130,7 @@ export default class DiffService {
   ) {
     for (
       let i = 0;
-      i <
-      diff.length - 1;
+      i < diff.length - 1;
       i++
     ) {
       const remove =
@@ -153,6 +152,13 @@ export default class DiffService {
 
       const newText =
         add.text;
+
+      if (
+        !oldText.length &&
+        !newText.length
+      ) {
+        continue;
+      }
 
       let prefix = 0;
 
@@ -178,13 +184,13 @@ export default class DiffService {
             prefix &&
         oldText[
           oldText.length -
-            1 -
-            suffix
+            suffix -
+            1
         ] ===
           newText[
             newText.length -
-              1 -
-              suffix
+              suffix -
+              1
           ]
       ) {
         suffix++;
@@ -204,18 +210,39 @@ export default class DiffService {
             suffix
         );
 
-      remove.html =
+      const similarity =
+        (prefix + suffix) /
+        Math.max(
+          oldText.length,
+          newText.length,
+          1
+        );
+
+      if (
+        similarity < 0.25
+      ) {
+        remove.html =
+          this.escapeHtml(
+            oldText
+          );
+
+        add.html =
+          this.escapeHtml(
+            newText
+          );
+
+        continue;
+      }
+
+      const oldPrefix =
         this.escapeHtml(
           oldText.slice(
             0,
             prefix
           )
-        ) +
-        `<span class="nexus-diff-char-remove">` +
-        this.escapeHtml(
-          oldMiddle
-        ) +
-        `</span>` +
+        );
+
+      const oldSuffix =
         this.escapeHtml(
           oldText.slice(
             oldText.length -
@@ -223,24 +250,43 @@ export default class DiffService {
           )
         );
 
-      add.html =
+      const newPrefix =
         this.escapeHtml(
           newText.slice(
             0,
             prefix
           )
-        ) +
-        `<span class="nexus-diff-char-add">` +
-        this.escapeHtml(
-          newMiddle
-        ) +
-        `</span>` +
+        );
+
+      const newSuffix =
         this.escapeHtml(
           newText.slice(
             newText.length -
               suffix
           )
         );
+
+      remove.html =
+        oldPrefix +
+        (
+          oldMiddle
+            ? `<span class="nexus-diff-char-remove">${this.escapeHtml(
+                oldMiddle
+              )}</span>`
+            : ""
+        ) +
+        oldSuffix;
+
+      add.html =
+        newPrefix +
+        (
+          newMiddle
+            ? `<span class="nexus-diff-char-add">${this.escapeHtml(
+                newMiddle
+              )}</span>`
+            : ""
+        ) +
+        newSuffix;
     }
   }
 
@@ -331,7 +377,9 @@ export default class DiffService {
         }
       }
 
-      result.push(diff[i]);
+      result.push(
+        diff[i]
+      );
 
       previous = i;
     }
