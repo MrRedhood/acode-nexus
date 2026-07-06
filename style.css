@@ -850,7 +850,7 @@
   color: white;
 }
 
-/* ==========================================
+  /* ==========================================
    Diff Preview Modal
 ========================================== */
 
@@ -876,9 +876,9 @@
 .nexus-diff-header {
   padding: 16px 20px;
 
-  border-bottom: 1px solid #333;
-
   background: #252526;
+
+  border-bottom: 1px solid #333;
 }
 
 .nexus-diff-header h3 {
@@ -889,8 +889,8 @@
 .nexus-diff-file {
   margin-top: 6px;
 
-  font-size: 13px;
   color: #aaa;
+  font-size: 13px;
 
   word-break: break-all;
 }
@@ -905,60 +905,111 @@
   background: #1e1e1e;
 }
 
+/* ==========================================
+   Diff View
+========================================== */
+
 .nexus-diff-view {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.nexus-diff-section {
-  border: 1px solid #333;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.nexus-diff-title {
-  padding: 10px 14px;
-
-  font-weight: 600;
-
-  background: #2d2d2d;
-
-  border-bottom: 1px solid #333;
-}
-
-.nexus-diff-code {
-  margin: 0;
-
-  padding: 14px;
-
-  overflow: auto;
-
-  white-space: pre;
-  word-break: normal;
-
   font-family:
     Consolas,
     Monaco,
     monospace;
 
   font-size: 13px;
-  line-height: 1.55;
+
+  border: 1px solid #333;
+  border-radius: 8px;
+
+  overflow: auto;
 
   background: #1b1b1b;
   color: #dcdcdc;
 }
 
+.nexus-diff-row {
+  display: flex;
+
+  min-height: 22px;
+
+  border-bottom: 1px solid #2b2b2b;
+}
+
+.nexus-diff-row:last-child {
+  border-bottom: none;
+}
+
+.nexus-diff-gutter {
+  width: 56px;
+
+  flex-shrink: 0;
+
+  text-align: right;
+
+  padding: 4px 10px;
+
+  color: #777;
+
+  background: #252526;
+
+  border-right: 1px solid #333;
+
+  user-select: none;
+}
+
+.nexus-diff-prefix {
+  width: 28px;
+
+  flex-shrink: 0;
+
+  text-align: center;
+
+  padding: 4px 0;
+
+  font-weight: bold;
+}
+
+.nexus-diff-line {
+  flex: 1;
+
+  padding: 4px 10px;
+
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  line-height: 1.55;
+}
+
+.nexus-diff-added {
+  background: rgba(40,167,69,.18);
+}
+
+.nexus-diff-added .nexus-diff-prefix {
+  color: #53d769;
+}
+
+.nexus-diff-removed {
+  background: rgba(220,53,69,.18);
+}
+
+.nexus-diff-removed .nexus-diff-prefix {
+  color: #ff5c5c;
+}
+
+/* ==========================================
+   Footer
+========================================== */
+
 .nexus-diff-footer {
   display: flex;
   justify-content: flex-end;
+
   gap: 12px;
 
   padding: 16px 20px;
 
-  border-top: 1px solid #333;
-
   background: #252526;
+
+  border-top: 1px solid #333;
 }
 
 .nexus-diff-footer button {
