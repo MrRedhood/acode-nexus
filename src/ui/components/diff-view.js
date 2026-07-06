@@ -19,7 +19,7 @@ export default class DiffView {
   <div class="nexus-diff-collapse-line"></div>
 
   <div class="nexus-diff-collapse-text">
-    ⋯ ${row.hiddenLines} unchanged ${
+    ${row.hiddenLines} unchanged ${
               row.hiddenLines === 1
                 ? "line"
                 : "lines"
@@ -32,65 +32,47 @@ export default class DiffView {
           break;
 
         case "context":
-          html += `
-<div class="nexus-diff-row">
-
-  <div class="nexus-diff-gutter">
-    ${row.oldLine ?? ""}
-  </div>
-
-  <div class="nexus-diff-line">
-    ${
-      row.html ??
-      escapeHtml(row.text)
-    }
-  </div>
-
-</div>`;
+          html += this.renderRow({
+            line:
+              row.oldLine,
+            sign: "",
+            html:
+              row.html ??
+              escapeHtml(
+                row.text
+              ),
+            className: ""
+          });
           break;
 
         case "remove":
-          html += `
-<div class="nexus-diff-row nexus-diff-removed">
-
-  <div class="nexus-diff-gutter">
-    ${row.oldLine ?? ""}
-  </div>
-
-  <div class="nexus-diff-prefix">
-    −
-  </div>
-
-  <div class="nexus-diff-line">
-    ${
-      row.html ??
-      escapeHtml(row.text)
-    }
-  </div>
-
-</div>`;
+          html += this.renderRow({
+            line:
+              row.oldLine,
+            sign: "−",
+            html:
+              row.html ??
+              escapeHtml(
+                row.text
+              ),
+            className:
+              "nexus-diff-removed"
+          });
           break;
 
         case "add":
-          html += `
-<div class="nexus-diff-row nexus-diff-added">
-
-  <div class="nexus-diff-gutter">
-    ${row.newLine ?? ""}
-  </div>
-
-  <div class="nexus-diff-prefix">
-    +
-  </div>
-
-  <div class="nexus-diff-line">
-    ${
-      row.html ??
-      escapeHtml(row.text)
-    }
-  </div>
-
-</div>`;
+          html += this.renderRow({
+            line:
+              row.newLine,
+            sign: "+",
+            html:
+              row.html ??
+              escapeHtml(
+                row.text
+              ),
+            className:
+              "nexus-diff-added"
+          });
           break;
       }
     }
@@ -98,5 +80,29 @@ export default class DiffView {
     html += `</div>`;
 
     return html;
+  }
+
+  static renderRow({
+    line,
+    sign,
+    html,
+    className
+  }) {
+    return `
+<div class="nexus-diff-row ${className}">
+
+  <div class="nexus-diff-number">
+    ${line ?? ""}
+  </div>
+
+  <div class="nexus-diff-sign">
+    ${sign}
+  </div>
+
+  <div class="nexus-diff-code">
+    <code>${html}</code>
+  </div>
+
+</div>`;
   }
 }
