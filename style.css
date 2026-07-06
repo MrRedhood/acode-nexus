@@ -1073,3 +1073,15 @@
 
   user-select: none;
 }
+
+.nexus-diff-char-remove {
+  background: rgba(255, 92, 92, .35);
+  color: #fff;
+  border-radius: 3px;
+}
+
+.nexus-diff-char-add {
+  background: rgba(83, 215, 105, .35);
+  color: #fff;
+  border-radius: 3px;
+}
