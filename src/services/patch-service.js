@@ -1,6 +1,5 @@
 import SearchService from "./search-service.js";
 
-
 export default class PatchService {
   static snapshots = new Map();
 
