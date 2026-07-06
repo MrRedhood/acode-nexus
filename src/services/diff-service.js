@@ -9,6 +9,10 @@ export default class DiffService {
         modifiedText
       );
 
+    this.highlightChanges(
+      diff
+    );
+
     return this.collapseContext(
       diff
     );
@@ -53,17 +57,14 @@ export default class DiffService {
       ) {
         diff.push({
           type: "context",
-
           oldLine:
             oldLine !== undefined
               ? oldLineNumber
               : null,
-
           newLine:
             newLine !== undefined
               ? newLineNumber
               : null,
-
           text:
             oldLine ?? ""
         });
@@ -88,13 +89,11 @@ export default class DiffService {
       ) {
         diff.push({
           type: "remove",
-
           oldLine:
             oldLineNumber,
-
           newLine: null,
-
-          text: oldLine
+          text: oldLine,
+          html: null
         });
 
         oldLineNumber++;
@@ -105,13 +104,11 @@ export default class DiffService {
       ) {
         diff.push({
           type: "add",
-
           oldLine: null,
-
           newLine:
             newLineNumber,
-
-          text: newLine
+          text: newLine,
+          html: null
         });
 
         newLineNumber++;
@@ -119,6 +116,132 @@ export default class DiffService {
     }
 
     return diff;
+  }
+
+  static escapeHtml(text) {
+    return String(text || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  static highlightChanges(
+    diff
+  ) {
+    for (
+      let i = 0;
+      i <
+      diff.length - 1;
+      i++
+    ) {
+      const remove =
+        diff[i];
+
+      const add =
+        diff[i + 1];
+
+      if (
+        remove.type !==
+          "remove" ||
+        add.type !== "add"
+      ) {
+        continue;
+      }
+
+      const oldText =
+        remove.text;
+
+      const newText =
+        add.text;
+
+      let prefix = 0;
+
+      while (
+        prefix <
+          oldText.length &&
+        prefix <
+          newText.length &&
+        oldText[prefix] ===
+          newText[prefix]
+      ) {
+        prefix++;
+      }
+
+      let suffix = 0;
+
+      while (
+        suffix <
+          oldText.length -
+            prefix &&
+        suffix <
+          newText.length -
+            prefix &&
+        oldText[
+          oldText.length -
+            1 -
+            suffix
+        ] ===
+          newText[
+            newText.length -
+              1 -
+              suffix
+          ]
+      ) {
+        suffix++;
+      }
+
+      const oldMiddle =
+        oldText.slice(
+          prefix,
+          oldText.length -
+            suffix
+        );
+
+      const newMiddle =
+        newText.slice(
+          prefix,
+          newText.length -
+            suffix
+        );
+
+      remove.html =
+        this.escapeHtml(
+          oldText.slice(
+            0,
+            prefix
+          )
+        ) +
+        `<span class="nexus-diff-char-remove">` +
+        this.escapeHtml(
+          oldMiddle
+        ) +
+        `</span>` +
+        this.escapeHtml(
+          oldText.slice(
+            oldText.length -
+              suffix
+          )
+        );
+
+      add.html =
+        this.escapeHtml(
+          newText.slice(
+            0,
+            prefix
+          )
+        ) +
+        `<span class="nexus-diff-char-add">` +
+        this.escapeHtml(
+          newMiddle
+        ) +
+        `</span>` +
+        this.escapeHtml(
+          newText.slice(
+            newText.length -
+              suffix
+          )
+        );
+    }
   }
 
   static collapseContext(
@@ -136,7 +259,8 @@ export default class DiffService {
               : -1
         )
         .filter(
-          index => index >= 0
+          index =>
+            index >= 0
         );
 
     if (
@@ -151,14 +275,17 @@ export default class DiffService {
     changed.forEach(index => {
       for (
         let i =
-          index - CONTEXT;
+          index -
+          CONTEXT;
         i <=
-        index + CONTEXT;
+        index +
+          CONTEXT;
         i++
       ) {
         if (
           i >= 0 &&
-          i < diff.length
+          i <
+            diff.length
         ) {
           visible.add(i);
         }
@@ -172,7 +299,8 @@ export default class DiffService {
 
     for (
       let i = 0;
-      i < diff.length;
+      i <
+      diff.length;
       i++
     ) {
       if (
@@ -182,7 +310,8 @@ export default class DiffService {
       }
 
       if (
-        i - previous >
+        i -
+          previous >
         1
       ) {
         const hidden =
@@ -196,7 +325,6 @@ export default class DiffService {
           result.push({
             type:
               "collapsed",
-
             hiddenLines:
               hidden
           });
@@ -215,7 +343,6 @@ export default class DiffService {
       result.push({
         type:
           "collapsed",
-
         hiddenLines:
           diff.length -
           previous -
