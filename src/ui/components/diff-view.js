@@ -12,6 +12,25 @@ export default class DiffView {
 
     for (const row of diff) {
       switch (row.type) {
+        case "collapsed":
+          html += `
+<div class="nexus-diff-collapsed">
+
+  <div class="nexus-diff-collapse-line"></div>
+
+  <div class="nexus-diff-collapse-text">
+    ⋯ ${row.hiddenLines} unchanged ${
+              row.hiddenLines === 1
+                ? "line"
+                : "lines"
+            }
+  </div>
+
+  <div class="nexus-diff-collapse-line"></div>
+
+</div>`;
+          break;
+
         case "context":
           html += `
 <div class="nexus-diff-row">
