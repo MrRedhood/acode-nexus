@@ -1,3 +1,4 @@
+import DiffService from "../services/diff-service.js";
 import DiffView from "./components/diff-view.js";
 
 export default class DiffPreviewModal {
@@ -7,6 +8,12 @@ export default class DiffPreviewModal {
     modified
   }) {
     return new Promise(resolve => {
+      const diff =
+        DiffService.build(
+          original,
+          modified
+        );
+
       const overlay =
         document.createElement("div");
 
@@ -25,10 +32,7 @@ export default class DiffPreviewModal {
           </div>
 
           <div class="nexus-diff-body">
-            ${DiffView.render(
-              original,
-              modified
-            )}
+            ${DiffView.render(diff)}
           </div>
 
           <div class="nexus-diff-footer">
@@ -63,7 +67,8 @@ export default class DiffPreviewModal {
         "click",
         event => {
           if (
-            event.target === overlay
+            event.target ===
+            overlay
           ) {
             close(false);
           }
