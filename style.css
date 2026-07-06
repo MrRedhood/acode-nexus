@@ -1042,3 +1042,34 @@
 .nexus-diff-apply:hover {
   background: #5093ff;
 }
+
+.nexus-diff-collapsed {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 10px 14px;
+
+  background: #202225;
+
+  border-top: 1px solid #303030;
+  border-bottom: 1px solid #303030;
+}
+
+.nexus-diff-collapse-line {
+  flex: 1;
+  height: 1px;
+  background: #444;
+}
+
+.nexus-diff-collapse-text {
+  flex-shrink: 0;
+
+  color: #9aa0a6;
+
+  font-size: 12px;
+  font-weight: 500;
+
+  user-select: none;
+}
