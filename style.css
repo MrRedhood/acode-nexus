@@ -849,3 +849,145 @@
   background: rgb(24,24,30);
   color: white;
 }
+
+/* ==========================================
+   Diff Preview Modal
+========================================== */
+
+.nexus-diff-modal {
+  width: min(95vw, 900px);
+  max-height: 90vh;
+
+  display: flex;
+  flex-direction: column;
+
+  background: #1e1e1e;
+  color: #eee;
+
+  border-radius: 12px;
+  overflow: hidden;
+
+  border: 1px solid #3a3a3a;
+
+  box-shadow:
+    0 10px 40px rgba(0,0,0,.45);
+}
+
+.nexus-diff-header {
+  padding: 16px 20px;
+
+  border-bottom: 1px solid #333;
+
+  background: #252526;
+}
+
+.nexus-diff-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.nexus-diff-file {
+  margin-top: 6px;
+
+  font-size: 13px;
+  color: #aaa;
+
+  word-break: break-all;
+}
+
+.nexus-diff-body {
+  flex: 1;
+
+  overflow: auto;
+
+  padding: 20px;
+
+  background: #1e1e1e;
+}
+
+.nexus-diff-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.nexus-diff-section {
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.nexus-diff-title {
+  padding: 10px 14px;
+
+  font-weight: 600;
+
+  background: #2d2d2d;
+
+  border-bottom: 1px solid #333;
+}
+
+.nexus-diff-code {
+  margin: 0;
+
+  padding: 14px;
+
+  overflow: auto;
+
+  white-space: pre;
+  word-break: normal;
+
+  font-family:
+    Consolas,
+    Monaco,
+    monospace;
+
+  font-size: 13px;
+  line-height: 1.55;
+
+  background: #1b1b1b;
+  color: #dcdcdc;
+}
+
+.nexus-diff-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+
+  padding: 16px 20px;
+
+  border-top: 1px solid #333;
+
+  background: #252526;
+}
+
+.nexus-diff-footer button {
+  padding: 10px 22px;
+
+  border: none;
+  border-radius: 8px;
+
+  font-size: 14px;
+
+  cursor: pointer;
+
+  transition: .15s;
+}
+
+.nexus-diff-cancel {
+  background: #3a3a3a;
+  color: white;
+}
+
+.nexus-diff-cancel:hover {
+  background: #505050;
+}
+
+.nexus-diff-apply {
+  background: #2d7dff;
+  color: white;
+}
+
+.nexus-diff-apply:hover {
+  background: #5093ff;
+}
