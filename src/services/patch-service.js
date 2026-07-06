@@ -3,30 +3,46 @@ import SearchService from "./search-service.js";
 export default class PatchService {
   static snapshots = new Map();
 
-  static MAX_HISTORY = 50;
+  static MAX_HISTORY = 20;
 
-  /**
-   * Locates an editor file by filename or URI.
-   * @param {string} filename - The target filename or path.
-   * @returns {Object|null} The matching editor file object.
-   */
   static findOpenEditorFile(filename) {
-    if (!filename || !editorManager?.files) return null;
+    if (
+      !filename ||
+      !editorManager ||
+      !editorManager.files
+    ) {
+      return null;
+    }
 
-    const normalize = val => String(val || "").trim().replace(/\\/g, "/").toLowerCase();
+    const normalize = value =>
+      String(value || "")
+        .trim()
+        .replace(/\\/g, "/")
+        .toLowerCase();
+
     const target = normalize(filename);
-    const targetBase = target.split("/").pop();
+    const targetBase =
+      target.split("/").pop();
 
-    return editorManager.files.find(file => {
-      const name = normalize(file.filename || file.name);
-      const uri = normalize(file.uri);
-      const uriBase = uri.split("/").pop();
+    return (
+      editorManager.files.find(file => {
+        const name = normalize(
+          file.filename || file.name
+        );
 
-      const matchName = name === target || name === targetBase;
-      const matchUri = uri === target || uri.includes(target) || uriBase === targetBase;
+        const uri = normalize(file.uri);
+        const uriBase =
+          uri.split("/").pop();
 
-      return matchName || matchUri;
-    }) || null;
+        return (
+          name === target ||
+          name === targetBase ||
+          uri === target ||
+          uri.includes(target) ||
+          uriBase === targetBase
+        );
+      }) || null
+    );
   }
 
   static async openFile(filename) {
