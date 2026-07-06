@@ -40,7 +40,10 @@ export default class DiffView {
   </div>
 
   <div class="nexus-diff-line">
-    ${escapeHtml(row.text)}
+    ${
+      row.html ??
+      escapeHtml(row.text)
+    }
   </div>
 
 </div>`;
@@ -59,7 +62,10 @@ export default class DiffView {
   </div>
 
   <div class="nexus-diff-line">
-    ${escapeHtml(row.text)}
+    ${
+      row.html ??
+      escapeHtml(row.text)
+    }
   </div>
 
 </div>`;
@@ -78,7 +84,10 @@ export default class DiffView {
   </div>
 
   <div class="nexus-diff-line">
-    ${escapeHtml(row.text)}
+    ${
+      row.html ??
+      escapeHtml(row.text)
+    }
   </div>
 
 </div>`;
