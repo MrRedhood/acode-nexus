@@ -313,7 +313,18 @@ export default class PatchService {
         };
       }
 
+      const occurrences =
+        currentContent.split(
+          action.search
+        ).length - 1;
 
+      if (occurrences > 1) {
+        return {
+          success: false,
+          error:
+            "Search text appears multiple times"
+        };
+      }
 
       const patchedContent =
         currentContent.replace(
