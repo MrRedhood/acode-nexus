@@ -10,30 +10,103 @@ export default class DiffView {
     originalText,
     modifiedText
   ) {
-    return `
-      <div class="nexus-diff-view">
+    const oldLines =
+      String(originalText || "")
+        .split("\n");
 
-        <div class="nexus-diff-section">
-          <div class="nexus-diff-title">
-            Original
-          </div>
+    const newLines =
+      String(modifiedText || "")
+        .split("\n");
 
-          <pre class="nexus-diff-code">${escapeHtml(
-            originalText
-          )}</pre>
-        </div>
+    const maxLines =
+      Math.max(
+        oldLines.length,
+        newLines.length
+      );
 
-        <div class="nexus-diff-section">
-          <div class="nexus-diff-title">
-            Modified
-          </div>
+    let html =
+      `<div class="nexus-diff-view">`;
 
-          <pre class="nexus-diff-code">${escapeHtml(
-            modifiedText
-          )}</pre>
-        </div>
+    for (
+      let i = 0;
+      i < maxLines;
+      i++
+    ) {
+      const oldLine =
+        oldLines[i];
 
-      </div>
-    `;
+      const newLine =
+        newLines[i];
+
+      if (
+        oldLine === newLine
+      ) {
+        html += `
+<div class="nexus-diff-row">
+
+  <div class="nexus-diff-gutter">
+    ${i + 1}
+  </div>
+
+  <div class="nexus-diff-line">
+    ${escapeHtml(
+      oldLine ?? ""
+    )}
+  </div>
+
+</div>`;
+        continue;
+      }
+
+      if (
+        oldLine !== undefined
+      ) {
+        html += `
+<div class="nexus-diff-row nexus-diff-removed">
+
+  <div class="nexus-diff-gutter">
+    ${i + 1}
+  </div>
+
+  <div class="nexus-diff-prefix">
+    −
+  </div>
+
+  <div class="nexus-diff-line">
+    ${escapeHtml(
+      oldLine
+    )}
+  </div>
+
+</div>`;
+      }
+
+      if (
+        newLine !== undefined
+      ) {
+        html += `
+<div class="nexus-diff-row nexus-diff-added">
+
+  <div class="nexus-diff-gutter">
+    ${i + 1}
+  </div>
+
+  <div class="nexus-diff-prefix">
+    +
+  </div>
+
+  <div class="nexus-diff-line">
+    ${escapeHtml(
+      newLine
+    )}
+  </div>
+
+</div>`;
+      }
+    }
+
+    html += `</div>`;
+
+    return html;
   }
 }
