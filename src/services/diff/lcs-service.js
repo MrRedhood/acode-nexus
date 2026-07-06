@@ -1,3 +1,4 @@
+// LCS TEST
 export default class LCSService {
   static build(
     originalText,
