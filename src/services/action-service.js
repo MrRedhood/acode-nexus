@@ -1,5 +1,6 @@
 import FileService from "./file-service.js";
 import PatchService from "./patch-service.js";
+import DiffPreviewService from "./diff-preview-service.js";
 
 export default class ActionService {
   static SUPPORTED_ACTIONS = [
@@ -33,8 +34,14 @@ export default class ActionService {
     matches.forEach(block => {
       try {
         const json = block
-          .replace(/```nexus-action/, "")
-          .replace(/```$/, "")
+          .replace(
+            /```nexus-action/,
+            ""
+          )
+          .replace(
+            /```$/,
+            ""
+          )
           .trim();
 
         console.log(
@@ -80,15 +87,19 @@ export default class ActionService {
     }
 
     if (
-      action.type === "focus_file" ||
-      action.type === "open_file" ||
-      action.type === "undo_file"
+      action.type ===
+        "focus_file" ||
+      action.type ===
+        "open_file" ||
+      action.type ===
+        "undo_file"
     ) {
       return !!action.file;
     }
 
     if (
-      action.type === "replace_file"
+      action.type ===
+      "replace_file"
     ) {
       return (
         !!action.file &&
@@ -98,7 +109,8 @@ export default class ActionService {
     }
 
     if (
-      action.type === "patch_file"
+      action.type ===
+      "patch_file"
     ) {
       return (
         !!action.file &&
@@ -144,15 +156,41 @@ export default class ActionService {
           action.file
         );
 
-      case "replace_file":
+      case "replace_file": {
+        const approved =
+          await DiffPreviewService.previewReplace(
+            action
+          );
+
+        if (!approved) {
+          return {
+            success: false,
+            cancelled: true
+          };
+        }
+
         return await PatchService.replaceFile(
           action
         );
+      }
 
-      case "patch_file":
+      case "patch_file": {
+        const approved =
+          await DiffPreviewService.previewPatch(
+            action
+          );
+
+        if (!approved) {
+          return {
+            success: false,
+            cancelled: true
+          };
+        }
+
         return await PatchService.patchFile(
           action
         );
+      }
 
       case "undo_file":
         return await PatchService.undoFile(
