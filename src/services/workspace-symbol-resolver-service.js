@@ -11,11 +11,7 @@ export default class WorkspaceSymbolResolverService {
     if (!plan) {
       return {
         plan: null,
-        symbol: null,
-        liveBuffer: null,
-        file: null,
-        path: null,
-        source: null
+        target: null
       };
     }
 
@@ -28,11 +24,7 @@ export default class WorkspaceSymbolResolverService {
     if (!symbolName) {
       return {
         plan,
-        symbol: null,
-        liveBuffer,
-        file: null,
-        path: null,
-        source: null
+        target: null
       };
     }
 
@@ -46,16 +38,31 @@ export default class WorkspaceSymbolResolverService {
       return {
         plan,
 
-        symbol: currentSymbol,
+        target: {
+          source:
+            "current-file",
 
-        liveBuffer,
+          file: null,
 
-        file: null,
+          path: null,
 
-        path: null,
+          liveBuffer,
 
-        source:
-          "current-file"
+          symbolType:
+            currentSymbol.type,
+
+          name:
+            currentSymbol.name,
+
+          startLine:
+            currentSymbol.startLine,
+
+          endLine:
+            currentSymbol.endLine,
+
+          content:
+            currentSymbol.content
+        }
       };
     }
 
@@ -67,11 +74,7 @@ export default class WorkspaceSymbolResolverService {
     if (!indexedSymbol) {
       return {
         plan,
-        symbol: null,
-        liveBuffer,
-        file: null,
-        path: null,
-        source: null
+        target: null
       };
     }
 
@@ -80,44 +83,51 @@ export default class WorkspaceSymbolResolverService {
         indexedSymbol.path
       );
 
-    if (!latestBuffer) {
-      return {
-        plan,
-        symbol: indexedSymbol,
-        liveBuffer: null,
-        file:
-          indexedSymbol.file,
-        path:
-          indexedSymbol.path,
-        source:
-          "workspace"
-      };
-    }
+    const buffer =
+      latestBuffer ||
+      "";
 
     const latestSymbol =
       LiveBufferSymbolService.findSymbol(
-        latestBuffer,
+        buffer,
         symbolName
       );
+
+    const symbol =
+      latestSymbol ||
+      indexedSymbol;
 
     return {
       plan,
 
-      symbol:
-        latestSymbol ||
-        indexedSymbol,
+      target: {
+        source:
+          "workspace",
 
-      liveBuffer:
-        latestBuffer,
+        file:
+          indexedSymbol.file,
 
-      file:
-        indexedSymbol.file,
+        path:
+          indexedSymbol.path,
 
-      path:
-        indexedSymbol.path,
+        liveBuffer:
+          latestBuffer,
 
-      source:
-        "workspace"
+        symbolType:
+          symbol.type,
+
+        name:
+          symbol.name,
+
+        startLine:
+          symbol.startLine,
+
+        endLine:
+          symbol.endLine,
+
+        content:
+          symbol.content
+      }
     };
   }
 
