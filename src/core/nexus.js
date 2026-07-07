@@ -2,6 +2,7 @@ import Sidebar from "../ui/sidebar.js";
 import SessionService from "../services/session-service.js";
 import AttachmentStorage from "../services/attachment-storage.js";
 import WorkspaceManager from "../services/workspace-manager.js";
+import WorkspaceSymbolIndexService from "../services/workspace-symbol-index-service.js";
 
 export default class Nexus {
   constructor(baseUrl, page, options) {
@@ -288,6 +289,7 @@ export default class Nexus {
       );
 
       await this.injectStyles();
+
       await this.migrateAttachments();
 
       console.log(
@@ -298,6 +300,21 @@ export default class Nexus {
 
       console.log(
         "Workspace scan finished"
+      );
+
+      console.log(
+        "Building workspace symbol index..."
+      );
+
+      await WorkspaceSymbolIndexService.buildIndex();
+
+      console.log(
+        "Indexed symbols:",
+        WorkspaceSymbolIndexService.getSymbols()
+      );
+
+      console.log(
+        "Workspace symbol index finished"
       );
 
       window.NexusBridge = {
