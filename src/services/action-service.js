@@ -1,6 +1,8 @@
 import FileService from "./file-service.js";
 import PatchService from "./patch-service.js";
-import DiffPreviewService from "./diff-preview-service.js";
+import ActionParserService from "./action-parser-service.js";
+import PatchSetService from "./patch-set-service.js";
+import MultiDiffPreviewService from "./multi-diff-preview-service.js";
 
 export default class ActionService {
   static SUPPORTED_ACTIONS = [
@@ -12,64 +14,24 @@ export default class ActionService {
   ];
 
   static parseActions(text) {
-    console.log("RAW AI TEXT:");
-    console.log(text);
+    const result =
+      ActionParserService.parseActions(
+        text
+      );
 
-    if (!text) {
+    if (!result.success) {
+      console.warn(
+        result.error
+      );
       return [];
     }
 
-    const matches =
-      text.match(
-        /```nexus-action\s*([\s\S]*?)```/g
-      ) || [];
-
-    console.log(
-      "ACTION BLOCK MATCHES:",
-      matches
-    );
-
-    const actions = [];
-
-    matches.forEach(block => {
-      try {
-        const json = block
-          .replace(
-            /```nexus-action/,
-            ""
-          )
-          .replace(
-            /```$/,
-            ""
-          )
-          .trim();
-
-        console.log(
-          "ACTION JSON:",
-          json
-        );
-
-        const action =
-          JSON.parse(json);
-
-        actions.push(action);
-      } catch (error) {
-        console.error(
-          "Action parse failed:",
-          error
-        );
-      }
-    });
-
-    console.log(
-      "PARSED ACTIONS:",
-      actions
-    );
-
-    return actions;
+    return result.actions;
   }
 
-  static validateAction(action) {
+  static validateAction(
+    action
+  ) {
     if (!action) {
       return false;
     }
@@ -78,50 +40,62 @@ export default class ActionService {
       return false;
     }
 
+    return this.SUPPORTED_ACTIONS.includes(
+      action.type
+    );
+  }
+
+  static async executePatchActions(
+    actions
+  ) {
     if (
-      !this.SUPPORTED_ACTIONS.includes(
-        action.type
-      )
+      !actions ||
+      !actions.length
     ) {
-      return false;
+      return {
+        success: true,
+        results: []
+      };
     }
 
-    if (
-      action.type ===
-        "focus_file" ||
-      action.type ===
-        "open_file" ||
-      action.type ===
-        "undo_file"
-    ) {
-      return !!action.file;
-    }
-
-    if (
-      action.type ===
-      "replace_file"
-    ) {
-      return (
-        !!action.file &&
-        typeof action.content ===
-          "string"
+    const patchActions =
+      actions.filter(
+        action =>
+          action.type ===
+            "patch_file" ||
+          action.type ===
+            "replace_file"
       );
-    }
 
     if (
-      action.type ===
-      "patch_file"
+      !patchActions.length
     ) {
-      return (
-        !!action.file &&
-        typeof action.search ===
-          "string" &&
-        typeof action.replace ===
-          "string"
-      );
+      return {
+        success: true,
+        results: []
+      };
     }
 
-    return true;
+    const patchSet =
+      PatchSetService.build(
+        patchActions
+      );
+
+    const approved =
+      await MultiDiffPreviewService.preview(
+        patchSet
+      );
+
+    if (!approved) {
+      return {
+        success: false,
+        cancelled: true
+      };
+    }
+
+    return await PatchService.applyPatchSet(
+      patchSet
+    );
   }
 
   static async executeAction(
@@ -144,7 +118,9 @@ export default class ActionService {
       };
     }
 
-    switch (action.type) {
+    switch (
+      action.type
+    ) {
       case "focus_file":
         return await FileService.focusFile(
           action.file,
@@ -156,41 +132,11 @@ export default class ActionService {
           action.file
         );
 
-      case "replace_file": {
-        const approved =
-          await DiffPreviewService.previewReplace(
-            action
-          );
-
-        if (!approved) {
-          return {
-            success: false,
-            cancelled: true
-          };
-        }
-
-        return await PatchService.replaceFile(
-          action
+      case "replace_file":
+      case "patch_file":
+        return await this.executePatchActions(
+          [action]
         );
-      }
-
-      case "patch_file": {
-        const approved =
-          await DiffPreviewService.previewPatch(
-            action
-          );
-
-        if (!approved) {
-          return {
-            success: false,
-            cancelled: true
-          };
-        }
-
-        return await PatchService.patchFile(
-          action
-        );
-      }
 
       case "undo_file":
         return await PatchService.undoFile(
@@ -204,5 +150,56 @@ export default class ActionService {
             "Unsupported action"
         };
     }
+  }
+
+  static async executeActions(
+    actions
+  ) {
+    if (
+      !actions ||
+      !actions.length
+    ) {
+      return [];
+    }
+
+    const results = [];
+
+    const patchActions =
+      actions.filter(
+        action =>
+          action.type ===
+            "patch_file" ||
+          action.type ===
+            "replace_file"
+      );
+
+    const otherActions =
+      actions.filter(
+        action =>
+          action.type !==
+            "patch_file" &&
+          action.type !==
+            "replace_file"
+      );
+
+    if (
+      patchActions.length
+    ) {
+      results.push(
+        await this.executePatchActions(
+          patchActions
+        )
+      );
+    }
+
+    for (const action of otherActions) {
+      results.push(
+        await this.executeAction(
+          action
+        )
+      );
+    }
+
+    return results;
   }
 }
