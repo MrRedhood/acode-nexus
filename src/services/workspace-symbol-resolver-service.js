@@ -1,6 +1,7 @@
 import LiveBufferSymbolService from "./live-buffer-symbol-service.js";
 import WorkspaceSymbolIndexService from "./workspace-symbol-index-service.js";
 import WorkspaceQueryService from "./workspace-query-service.js";
+import WorkspaceIntentResolverService from "./workspace-intent-resolver-service.js";
 import SearchService from "./search-service.js";
 
 export default class WorkspaceSymbolResolverService {
@@ -24,73 +25,88 @@ export default class WorkspaceSymbolResolverService {
         userRequest
       );
 
-    if (!symbolName) {
-      return {
-        plan,
-        target: null,
-        definition: null,
-        references: []
-      };
+    let definition = null;
+    let references = [];
+
+    if (symbolName) {
+      definition =
+        await WorkspaceQueryService.findDefinition(
+          symbolName
+        );
+
+      references =
+        await WorkspaceQueryService.findReferences(
+          symbolName
+        );
     }
 
-    const definition =
-      await WorkspaceQueryService.findDefinition(
-        symbolName
-      );
-
-    const references =
-      await WorkspaceQueryService.findReferences(
-        symbolName
-      );
-
-    const currentSymbol =
-      LiveBufferSymbolService.findSymbol(
-        liveBuffer,
-        symbolName
-      );
-
-    if (currentSymbol) {
-      return {
-        plan,
-
-        definition,
-
-        references,
-
-        target: {
-          source:
-            "current-file",
-
-          file: null,
-
-          path: null,
-
+    if (symbolName) {
+      const currentSymbol =
+        LiveBufferSymbolService.findSymbol(
           liveBuffer,
+          symbolName
+        );
 
-          symbolType:
-            currentSymbol.type,
+      if (currentSymbol) {
+        return {
+          plan,
+          definition,
+          references,
+          target: {
+            source:
+              "current-file",
 
-          name:
-            currentSymbol.name,
+            file: null,
 
-          startLine:
-            currentSymbol.startLine,
+            path: null,
 
-          endLine:
-            currentSymbol.endLine,
+            liveBuffer,
 
-          content:
-            currentSymbol.content
-        }
-      };
+            symbolType:
+              currentSymbol.type,
+
+            name:
+              currentSymbol.name,
+
+            startLine:
+              currentSymbol.startLine,
+
+            endLine:
+              currentSymbol.endLine,
+
+            content:
+              currentSymbol.content
+          }
+        };
+      }
     }
 
-    const indexedSymbol =
-      WorkspaceSymbolIndexService.findExact(
-        symbolName
+    if (symbolName) {
+      const indexedSymbol =
+        WorkspaceSymbolIndexService.findExact(
+          symbolName
+        );
+
+      if (indexedSymbol) {
+        return await this.resolveWorkspaceSymbol(
+          plan,
+          definition,
+          references,
+          indexedSymbol
+        );
+      }
+    }
+
+    const intent =
+      await WorkspaceIntentResolverService.resolve(
+        userRequest
       );
 
-    if (!indexedSymbol) {
+    if (
+      !intent ||
+      !intent.candidates ||
+      !intent.candidates.length
+    ) {
       return {
         plan,
         target: null,
@@ -99,19 +115,118 @@ export default class WorkspaceSymbolResolverService {
       };
     }
 
+    for (const candidate of intent.candidates) {
+      if (
+        candidate.type !==
+        "symbol"
+      ) {
+        continue;
+      }
+
+      const result =
+        await this.resolveWorkspaceSymbol(
+          plan,
+          definition,
+          references,
+          candidate.result
+        );
+
+      if (
+        result.target
+      ) {
+        result.intent =
+          intent;
+
+        result.confidence =
+          candidate.score;
+
+        return result;
+      }
+    }
+
+    for (const candidate of intent.candidates) {
+      if (
+        candidate.type ===
+        "file"
+      ) {
+        const buffer =
+          await SearchService.readFullFile(
+            candidate.result.path
+          );
+
+        return {
+          plan,
+
+          definition,
+
+          references,
+
+          intent,
+
+          confidence:
+            candidate.score,
+
+          target: {
+            source:
+              "workspace",
+
+            file:
+              candidate.result.name,
+
+            path:
+              candidate.result.path,
+
+            liveBuffer:
+              buffer,
+
+            symbolType:
+              "file",
+
+            name:
+              candidate.result.name,
+
+            startLine: 1,
+
+            endLine:
+              buffer
+                ? buffer.split("\n")
+                    .length
+                : 1,
+
+            content:
+              buffer || ""
+          }
+        };
+      }
+    }
+
+    return {
+      plan,
+      target: null,
+      definition,
+      references,
+      intent
+    };
+  }
+
+  static async resolveWorkspaceSymbol(
+    plan,
+    definition,
+    references,
+    indexedSymbol
+  ) {
     const latestBuffer =
       await SearchService.readFullFile(
         indexedSymbol.path
       );
 
-    const buffer =
-      latestBuffer || "";
-
     const latestSymbol =
-      LiveBufferSymbolService.findSymbol(
-        buffer,
-        symbolName
-      );
+      latestBuffer
+        ? LiveBufferSymbolService.findSymbol(
+            latestBuffer,
+            indexedSymbol.name
+          )
+        : null;
 
     const symbol =
       latestSymbol ||
