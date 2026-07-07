@@ -961,7 +961,7 @@
 }
 
 .nexus-diff-sign {
-  width: 24px;
+  width: 18px;
 
   flex-shrink: 0;
 
@@ -975,7 +975,7 @@
 
   user-select: none;
 
-  line-height: 20px;
+  line-height: 18px;
 
   font-weight: bold;
 }
