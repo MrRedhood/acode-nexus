@@ -52,7 +52,7 @@ ${request}
   ) {
     const rename =
       userRequest.match(
-        /rename\s+([A-Za-z0-9_$]+)\s+to\s+([A-Za-z0-9_$]+)/i
+        /rename\s+([A-Za-z_$][A-Za-z0-9_$]*)\s+to\s+([A-Za-z_$][A-Za-z0-9_$]*)/i
       );
 
     if (!rename) {
@@ -208,12 +208,7 @@ ${userRequest}
   static extractSymbolName(
     request
   ) {
-    const match =
-      request.match(
-        /\b([A-Za-z_$][A-Za-z0-9_$]*)\s*\(?\)?/
-      );
-
-    if (!match) {
+    if (!request) {
       return null;
     }
 
@@ -221,6 +216,7 @@ ${userRequest}
       new Set([
         "fix",
         "optimize",
+        "optimization",
         "refactor",
         "rewrite",
         "modify",
@@ -232,12 +228,95 @@ ${userRequest}
         "remove",
         "add",
         "document",
-        "explain"
+        "documentation",
+        "explain",
+        "improve",
+        "rename",
+        "create",
+        "make",
+        "implement",
+        "convert",
+        "move",
+        "the",
+        "this",
+        "that",
+        "a",
+        "an",
+        "method",
+        "function",
+        "class",
+        "file",
+        "inside",
+        "into",
+        "for",
+        "to",
+        "of",
+        "in",
+        "on",
+        "please",
+        "can",
+        "you"
       ]);
 
-    for (const token of request.match(
-      /[A-Za-z_$][A-Za-z0-9_$]*/g
-    ) || []) {
+    const backtick =
+      request.match(
+        /`([A-Za-z_$][A-Za-z0-9_$]*)`/
+      );
+
+    if (backtick) {
+      return backtick[1];
+    }
+
+    const call =
+      request.match(
+        /([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/
+      );
+
+    if (call) {
+      return call[1];
+    }
+
+    const tokens =
+      request.match(
+        /[A-Za-z_$][A-Za-z0-9_$]*/g
+      ) || [];
+
+    for (const token of tokens) {
+      const lower =
+        token.toLowerCase();
+
+      if (
+        keywords.has(
+          lower
+        )
+      ) {
+        continue;
+      }
+
+      if (
+        /^[A-Z]/.test(
+          token
+        )
+      ) {
+        return token;
+      }
+
+      if (
+        /[A-Z]/.test(
+          token.slice(1)
+        )
+      ) {
+        return token;
+      }
+
+      if (
+        token.includes("_")
+      ) {
+        return token;
+      }
+    }
+
+    for (const token of tokens) {
       if (
         !keywords.has(
           token.toLowerCase()
