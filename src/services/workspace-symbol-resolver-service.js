@@ -1,8 +1,9 @@
 import LiveBufferSymbolService from "./live-buffer-symbol-service.js";
 import WorkspaceSymbolIndexService from "./workspace-symbol-index-service.js";
+import SearchService from "./search-service.js";
 
 export default class WorkspaceSymbolResolverService {
-  static resolve(
+  static async resolve(
     plan,
     userRequest,
     liveBuffer
@@ -10,7 +11,11 @@ export default class WorkspaceSymbolResolverService {
     if (!plan) {
       return {
         plan: null,
-        symbol: null
+        symbol: null,
+        liveBuffer: null,
+        file: null,
+        path: null,
+        source: null
       };
     }
 
@@ -23,7 +28,11 @@ export default class WorkspaceSymbolResolverService {
     if (!symbolName) {
       return {
         plan,
-        symbol: null
+        symbol: null,
+        liveBuffer,
+        file: null,
+        path: null,
+        source: null
       };
     }
 
@@ -37,36 +46,78 @@ export default class WorkspaceSymbolResolverService {
       return {
         plan,
 
-        symbol: {
-          ...currentSymbol,
+        symbol: currentSymbol,
 
-          source:
-            "current-file"
-        }
+        liveBuffer,
+
+        file: null,
+
+        path: null,
+
+        source:
+          "current-file"
       };
     }
 
-    const workspaceSymbol =
+    const indexedSymbol =
       WorkspaceSymbolIndexService.findExact(
         symbolName
       );
 
-    if (workspaceSymbol) {
+    if (!indexedSymbol) {
       return {
         plan,
-
-        symbol: {
-          ...workspaceSymbol,
-
-          source:
-            "workspace"
-        }
+        symbol: null,
+        liveBuffer,
+        file: null,
+        path: null,
+        source: null
       };
     }
 
+    const latestBuffer =
+      await SearchService.readFullFile(
+        indexedSymbol.path
+      );
+
+    if (!latestBuffer) {
+      return {
+        plan,
+        symbol: indexedSymbol,
+        liveBuffer: null,
+        file:
+          indexedSymbol.file,
+        path:
+          indexedSymbol.path,
+        source:
+          "workspace"
+      };
+    }
+
+    const latestSymbol =
+      LiveBufferSymbolService.findSymbol(
+        latestBuffer,
+        symbolName
+      );
+
     return {
       plan,
-      symbol: null
+
+      symbol:
+        latestSymbol ||
+        indexedSymbol,
+
+      liveBuffer:
+        latestBuffer,
+
+      file:
+        indexedSymbol.file,
+
+      path:
+        indexedSymbol.path,
+
+      source:
+        "workspace"
     };
   }
 
