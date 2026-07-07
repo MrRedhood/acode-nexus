@@ -905,7 +905,9 @@
   background: #1e1e1e;
 }
 
-/* ==========================================
+
+
+  /* ==========================================
    Diff View
 ========================================== */
 
@@ -917,82 +919,144 @@
 
   font-size: 13px;
 
+  background: #1b1b1b;
+
   border: 1px solid #333;
   border-radius: 8px;
 
-  overflow: auto;
-
-  background: #1b1b1b;
-  color: #dcdcdc;
+  overflow: hidden;
 }
 
 .nexus-diff-row {
   display: flex;
+  align-items: stretch;
 
-  min-height: 22px;
-
-  border-bottom: 1px solid #2b2b2b;
+  border-bottom: 1px solid #2a2a2a;
 }
 
 .nexus-diff-row:last-child {
   border-bottom: none;
 }
 
-.nexus-diff-gutter {
-  width: 56px;
+.nexus-diff-number {
+  width: 52px;
 
   flex-shrink: 0;
+
+  padding: 3px 8px;
 
   text-align: right;
 
-  padding: 4px 10px;
+  color: #7d8590;
 
-  color: #777;
+  background: #202225;
 
-  background: #252526;
-
-  border-right: 1px solid #333;
+  border-right: 1px solid #2d2d2d;
 
   user-select: none;
+
+  line-height: 20px;
 }
 
-.nexus-diff-prefix {
-  width: 28px;
+.nexus-diff-sign {
+  width: 24px;
 
   flex-shrink: 0;
 
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  padding: 4px 0;
+  color: #888;
+
+  border-right: 1px solid #2d2d2d;
+
+  user-select: none;
+
+  line-height: 20px;
 
   font-weight: bold;
 }
 
-.nexus-diff-line {
+.nexus-diff-code {
   flex: 1;
 
-  padding: 4px 10px;
+  overflow-x: auto;
 
-  white-space: pre-wrap;
-  word-break: break-word;
+  padding: 3px 10px;
 
-  line-height: 1.55;
+  white-space: pre;
+
+  line-height: 20px;
+}
+
+.nexus-diff-code code {
+  font-family: inherit;
+  font-size: inherit;
 }
 
 .nexus-diff-added {
-  background: rgba(40,167,69,.18);
+  background: rgba(46, 160, 67, .18);
 }
 
-.nexus-diff-added .nexus-diff-prefix {
-  color: #53d769;
+.nexus-diff-added .nexus-diff-sign {
+  color: #3fb950;
 }
 
 .nexus-diff-removed {
-  background: rgba(220,53,69,.18);
+  background: rgba(248, 81, 73, .18);
 }
 
-.nexus-diff-removed .nexus-diff-prefix {
-  color: #ff5c5c;
+.nexus-diff-removed .nexus-diff-sign {
+  color: #f85149;
+}
+
+.nexus-diff-char-remove {
+  background: rgba(248,81,73,.35);
+
+  border-radius: 3px;
+
+  color: inherit;
+}
+
+.nexus-diff-char-add {
+  background: rgba(46,160,67,.35);
+
+  border-radius: 3px;
+
+  color: inherit;
+}
+
+.nexus-diff-collapsed {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 8px 12px;
+
+  background: #202225;
+
+  border-top: 1px solid #30363d;
+  border-bottom: 1px solid #30363d;
+}
+
+.nexus-diff-collapse-line {
+  flex: 1;
+
+  height: 1px;
+
+  background: #30363d;
+}
+
+.nexus-diff-collapse-text {
+  color: #8b949e;
+
+  font-size: 12px;
+
+  white-space: nowrap;
+
+  user-select: none;
 }
 
 /* ==========================================
