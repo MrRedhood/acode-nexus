@@ -1,3 +1,4 @@
+// This is a very very very very very very very very very very long comment for
 import SearchService from "./search-service.js";
 
 export default class PatchService {
