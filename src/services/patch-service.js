@@ -432,10 +432,78 @@ export default class PatchService {
         error
       );
 
-      return {
+            return {
         success: false,
         error: error.message
       };
     }
+  }
+
+  static async applyPatchSet(
+    patchSet = []
+  ) {
+    const results = [];
+
+    for (const fileSet of patchSet) {
+      const fileResult = {
+        file: fileSet.file,
+        actions: [],
+        success: true
+      };
+
+      for (const action of fileSet.actions) {
+        let result;
+
+        switch (
+          action.type
+        ) {
+          case "patch_file":
+            result =
+              await this.patchFile(
+                action
+              );
+            break;
+
+          case "replace_file":
+            result =
+              await this.replaceFile(
+                action
+              );
+            break;
+
+          default:
+            result = {
+              success: false,
+              error:
+                `Unsupported action: ${action.type}`
+            };
+        }
+
+        fileResult.actions.push(
+          result
+        );
+
+        if (
+          !result.success
+        ) {
+          fileResult.success =
+            false;
+
+          break;
+        }
+      }
+
+      results.push(
+        fileResult
+      );
+    }
+
+    return {
+      success: results.every(
+        item =>
+          item.success
+      ),
+      results
+    };
   }
 }
