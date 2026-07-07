@@ -1,5 +1,6 @@
 import LiveBufferSymbolService from "./live-buffer-symbol-service.js";
 import WorkspaceSymbolIndexService from "./workspace-symbol-index-service.js";
+import WorkspaceQueryService from "./workspace-query-service.js";
 import SearchService from "./search-service.js";
 
 export default class WorkspaceSymbolResolverService {
@@ -11,7 +12,9 @@ export default class WorkspaceSymbolResolverService {
     if (!plan) {
       return {
         plan: null,
-        target: null
+        target: null,
+        definition: null,
+        references: []
       };
     }
 
@@ -24,9 +27,21 @@ export default class WorkspaceSymbolResolverService {
     if (!symbolName) {
       return {
         plan,
-        target: null
+        target: null,
+        definition: null,
+        references: []
       };
     }
+
+    const definition =
+      await WorkspaceQueryService.findDefinition(
+        symbolName
+      );
+
+    const references =
+      await WorkspaceQueryService.findReferences(
+        symbolName
+      );
 
     const currentSymbol =
       LiveBufferSymbolService.findSymbol(
@@ -37,6 +52,10 @@ export default class WorkspaceSymbolResolverService {
     if (currentSymbol) {
       return {
         plan,
+
+        definition,
+
+        references,
 
         target: {
           source:
@@ -74,7 +93,9 @@ export default class WorkspaceSymbolResolverService {
     if (!indexedSymbol) {
       return {
         plan,
-        target: null
+        target: null,
+        definition,
+        references
       };
     }
 
@@ -84,8 +105,7 @@ export default class WorkspaceSymbolResolverService {
       );
 
     const buffer =
-      latestBuffer ||
-      "";
+      latestBuffer || "";
 
     const latestSymbol =
       LiveBufferSymbolService.findSymbol(
@@ -99,6 +119,10 @@ export default class WorkspaceSymbolResolverService {
 
     return {
       plan,
+
+      definition,
+
+      references,
 
       target: {
         source:
