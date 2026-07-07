@@ -1,26 +1,70 @@
 export default class LiveBufferSymbolService {
+  static findSymbol(
+    buffer,
+    symbolName
+  ) {
+    return (
+      this.findFunction(
+        buffer,
+        symbolName
+      ) ||
+      this.findClass(
+        buffer,
+        symbolName
+      )
+    );
+  }
+
   static findClass(
     buffer,
     className
   ) {
-    return this.findPattern(
-      buffer,
-      new RegExp(
-        `export\\s+default\\s+class\\s+${className}\\b|class\\s+${className}\\b`
-      )
-    );
+    const result =
+      this.findPattern(
+        buffer,
+        new RegExp(
+          `export\\s+default\\s+class\\s+${className}\\b|class\\s+${className}\\b`
+        )
+      );
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      type: "class",
+      name: className,
+      ...result
+    };
   }
 
   static findFunction(
     buffer,
     functionName
   ) {
-    return this.findPattern(
-      buffer,
-      new RegExp(
-        `static\\s+${functionName}\\s*\\(|${functionName}\\s*\\(`
-      )
-    );
+    const result =
+      this.findPattern(
+        buffer,
+        new RegExp(
+          [
+            `static\\s+${functionName}\\s*\\(`,
+            `${functionName}\\s*\\(`,
+            `${functionName}\\s*=\\s*\\(`,
+            `${functionName}\\s*=\\s*async\\s*\\(`,
+            `async\\s+${functionName}\\s*\\(`
+          ].join("|")
+        )
+      );
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      type: "function",
+      name: functionName,
+      ...result
+    };
   }
 
   static findPattern(
@@ -36,6 +80,8 @@ export default class LiveBufferSymbolService {
       i < lines.length;
       i++
     ) {
+      pattern.lastIndex = 0;
+
       if (
         pattern.test(
           lines[i]
