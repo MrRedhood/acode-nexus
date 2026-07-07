@@ -15,65 +15,82 @@ export default class LiveBufferSymbolService {
     );
   }
 
+  static findAllSymbols(
+    buffer
+  ) {
+    return [
+      ...this.findAllClasses(
+        buffer
+      ),
+      ...this.findAllFunctions(
+        buffer
+      )
+    ];
+  }
+
+  static findAllClasses(
+    buffer
+  ) {
+    return this.findAllByPattern(
+      buffer,
+      /(?:export\s+default\s+)?class\s+([A-Za-z_$][A-Za-z0-9_$]*)/
+    ).map(symbol => ({
+      type: "class",
+      ...symbol
+    }));
+  }
+
+  static findAllFunctions(
+    buffer
+  ) {
+    return this.findAllByPattern(
+      buffer,
+      /(?:static\s+|async\s+)?([A-Za-z_$][A-Za-z0-9_$]*)\s*\(|([A-Za-z_$][A-Za-z0-9_$]*)\s*=\s*(?:async\s*)?\(/
+    ).map(symbol => ({
+      type: "function",
+      ...symbol
+    }));
+  }
+
   static findClass(
     buffer,
     className
   ) {
-    const result =
-      this.findPattern(
-        buffer,
-        new RegExp(
-          `export\\s+default\\s+class\\s+${className}\\b|class\\s+${className}\\b`
-        )
-      );
-
-    if (!result) {
-      return null;
-    }
-
-    return {
-      type: "class",
-      name: className,
-      ...result
-    };
+    return (
+      this.findAllClasses(
+        buffer
+      ).find(
+        symbol =>
+          symbol.name ===
+          className
+      ) || null
+    );
   }
 
   static findFunction(
     buffer,
     functionName
   ) {
-    const result =
-      this.findPattern(
-        buffer,
-        new RegExp(
-          [
-            `static\\s+${functionName}\\s*\\(`,
-            `${functionName}\\s*\\(`,
-            `${functionName}\\s*=\\s*\\(`,
-            `${functionName}\\s*=\\s*async\\s*\\(`,
-            `async\\s+${functionName}\\s*\\(`
-          ].join("|")
-        )
-      );
-
-    if (!result) {
-      return null;
-    }
-
-    return {
-      type: "function",
-      name: functionName,
-      ...result
-    };
+    return (
+      this.findAllFunctions(
+        buffer
+      ).find(
+        symbol =>
+          symbol.name ===
+          functionName
+      ) || null
+    );
   }
 
-  static findPattern(
+  static findAllByPattern(
     buffer,
     pattern
   ) {
     const lines =
       String(buffer || "")
         .split("\n");
+
+    const results = [];
 
     for (
       let i = 0;
@@ -82,19 +99,30 @@ export default class LiveBufferSymbolService {
     ) {
       pattern.lastIndex = 0;
 
-      if (
-        pattern.test(
+      const match =
+        pattern.exec(
           lines[i]
-        )
-      ) {
-        return this.extractBlock(
+        );
+
+      if (!match) {
+        continue;
+      }
+
+      const block =
+        this.extractBlock(
           lines,
           i
         );
-      }
+
+      results.push({
+        name:
+          match[1] ||
+          match[2],
+        ...block
+      });
     }
 
-    return null;
+    return results;
   }
 
   static extractBlock(
