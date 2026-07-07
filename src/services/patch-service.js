@@ -1,6 +1,6 @@
 import SearchService from "./search-service.js";
 
-export default class PatchManager {
+export default class PatchService {
   static snapshots = new Map();
 
   static MAX_HISTORY = 20;
