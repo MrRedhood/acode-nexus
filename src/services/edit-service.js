@@ -125,7 +125,6 @@ export default class EditService {
 
     return cleaned.trim();
   }
-}
 
   static async prepareMessages(
     messages
@@ -185,7 +184,7 @@ export default class EditService {
       );
 
     const plan =
-      PatchPlannerService.createPlan(
+      await PatchPlannerService.createPlan(
         userRequest
       );
 
