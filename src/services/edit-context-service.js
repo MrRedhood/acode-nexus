@@ -21,19 +21,11 @@ export default class EditContextService {
         );
 
       case "patch_function":
-        return this.prepareFunction(
-          request,
-          liveBuffer
-        );
-
       case "patch_class":
-        return this.prepareClass(
-          request,
-          liveBuffer
-        );
-
       case "insert":
-        return this.prepareInsert(
+      case "delete":
+        return this.prepareFocusedEdit(
+          plan,
           request,
           liveBuffer
         );
@@ -41,7 +33,6 @@ export default class EditContextService {
       default:
         return {
           plan,
-
           context: `
 CURRENT FILE:
 
@@ -67,7 +58,6 @@ ${request}
     if (!rename) {
       return {
         plan: null,
-
         context: `
 CURRENT FILE:
 
@@ -86,30 +76,15 @@ ${userRequest}
     const newName =
       rename[2];
 
-    let symbol =
-      LiveBufferSymbolService.findFunction(
+    const symbol =
+      LiveBufferSymbolService.findSymbol(
         liveBuffer,
         oldName
       );
 
-    let symbolType =
-      "function";
-
-    if (!symbol) {
-      symbol =
-        LiveBufferSymbolService.findClass(
-          liveBuffer,
-          oldName
-        );
-
-      symbolType =
-        "class";
-    }
-
     if (!symbol) {
       return {
         plan: null,
-
         context: `
 CURRENT FILE:
 
@@ -127,7 +102,8 @@ ${userRequest}
         strategy:
           "rename_symbol",
 
-        symbolType,
+        symbolType:
+          symbol.type,
 
         oldName,
 
@@ -141,7 +117,10 @@ ${userRequest}
       },
 
       context: `
-TARGET ${symbolType.toUpperCase()}
+TARGET ${symbol.type.toUpperCase()}
+
+NAME:
+${symbol.name}
 
 LINES:
 ${symbol.startLine}-${symbol.endLine}
@@ -157,20 +136,67 @@ ${userRequest}
     };
   }
 
-  static prepareFunction(
+  static prepareFocusedEdit(
+    plan,
     userRequest,
     liveBuffer
   ) {
-    return {
-      plan: {
-        strategy:
-          "patch_function"
-      },
+    const symbolName =
+      this.extractSymbolName(
+        userRequest
+      );
 
-      context: `
+    if (!symbolName) {
+      return {
+        plan,
+        context: `
 CURRENT FILE:
 
 ${liveBuffer}
+
+USER REQUEST:
+
+${userRequest}
+`
+      };
+    }
+
+    const symbol =
+      LiveBufferSymbolService.findSymbol(
+        liveBuffer,
+        symbolName
+      );
+
+    if (!symbol) {
+      return {
+        plan,
+        context: `
+CURRENT FILE:
+
+${liveBuffer}
+
+USER REQUEST:
+
+${userRequest}
+`
+      };
+    }
+
+    return {
+      plan,
+
+      context: `
+TARGET ${symbol.type.toUpperCase()}
+
+NAME:
+${symbol.name}
+
+LINES:
+${symbol.startLine}-${symbol.endLine}
+
+CODE:
+
+${symbol.content}
 
 USER REQUEST:
 
@@ -179,47 +205,48 @@ ${userRequest}
     };
   }
 
-  static prepareClass(
-    userRequest,
-    liveBuffer
+  static extractSymbolName(
+    request
   ) {
-    return {
-      plan: {
-        strategy:
-          "patch_class"
-      },
+    const match =
+      request.match(
+        /\b([A-Za-z_$][A-Za-z0-9_$]*)\s*\(?\)?/
+      );
 
-      context: `
-CURRENT FILE:
+    if (!match) {
+      return null;
+    }
 
-${liveBuffer}
+    const keywords =
+      new Set([
+        "fix",
+        "optimize",
+        "refactor",
+        "rewrite",
+        "modify",
+        "change",
+        "update",
+        "replace",
+        "insert",
+        "delete",
+        "remove",
+        "add",
+        "document",
+        "explain"
+      ]);
 
-USER REQUEST:
+    for (const token of request.match(
+      /[A-Za-z_$][A-Za-z0-9_$]*/g
+    ) || []) {
+      if (
+        !keywords.has(
+          token.toLowerCase()
+        )
+      ) {
+        return token;
+      }
+    }
 
-${userRequest}
-`
-    };
-  }
-
-  static prepareInsert(
-    userRequest,
-    liveBuffer
-  ) {
-    return {
-      plan: {
-        strategy:
-          "insert"
-      },
-
-      context: `
-CURRENT FILE:
-
-${liveBuffer}
-
-USER REQUEST:
-
-${userRequest}
-`
-    };
+    return null;
   }
 }
