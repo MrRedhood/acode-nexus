@@ -943,9 +943,11 @@
 
   flex-shrink: 0;
 
-  padding: 3px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 
-  text-align: right;
+  padding: 1px 8px;
 
   color: #7d8590;
 
@@ -955,7 +957,7 @@
 
   user-select: none;
 
-  line-height: 20px;
+  line-height: 18px;
 }
 
 .nexus-diff-sign {
