@@ -38,10 +38,30 @@ ${request}
     const target =
       resolved.target;
 
+    const definition =
+      resolved.definition;
+
+    const references =
+      resolved.references || [];
+
+    const referenceText =
+      references.length
+        ? references
+            .map(
+              ref =>
+                `${ref.file}:${ref.line} (${ref.type})`
+            )
+            .join("\n")
+        : "[None]";
+
     return {
       plan: resolved.plan,
 
       target,
+
+      definition,
+
+      references,
 
       context: `
 TARGET FILE:
@@ -62,6 +82,18 @@ ${target.name}
 LINES:
 
 ${target.startLine}-${target.endLine}
+
+DEFINITION:
+
+${
+  definition
+    ? `${definition.file}:${definition.line}`
+    : "[Unknown]"
+}
+
+REFERENCES:
+
+${referenceText}
 
 CODE:
 
