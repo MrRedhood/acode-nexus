@@ -78,19 +78,74 @@ export default class SymbolService {
       i++
     ) {
       if (
-        pattern.test(
+        !pattern.test(
           lines[i]
         )
       ) {
-        return {
-          line:
-            i + 1,
-          content:
-            lines[i]
-        };
+        continue;
       }
+
+      return this.extractBlock(
+        lines,
+        i
+      );
     }
 
     return null;
+  }
+
+  static extractBlock(
+    lines,
+    startIndex
+  ) {
+    let braceDepth = 0;
+    let started = false;
+    let endIndex =
+      startIndex;
+
+    for (
+      let i = startIndex;
+      i < lines.length;
+      i++
+    ) {
+      const line =
+        lines[i];
+
+      for (const ch of line) {
+        if (ch === "{") {
+          braceDepth++;
+          started = true;
+        }
+
+        if (ch === "}") {
+          braceDepth--;
+        }
+      }
+
+      endIndex = i;
+
+      if (
+        started &&
+        braceDepth === 0
+      ) {
+        break;
+      }
+    }
+
+    return {
+      startLine:
+        startIndex + 1,
+
+      endLine:
+        endIndex + 1,
+
+      content:
+        lines
+          .slice(
+            startIndex,
+            endIndex + 1
+          )
+          .join("\n")
+    };
   }
 }
