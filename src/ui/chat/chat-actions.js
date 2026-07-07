@@ -177,21 +177,19 @@ export default {
         "No response returned.";
 
       const parsedActions =
-        ActionService.parseActions(
-          assistantMessage.content
-        );
+  ActionService.parseActions(
+    assistantMessage.content
+  );
 
-      for (const action of parsedActions) {
-        const result =
-          await ActionService.executeAction(
-            action
-          );
+const results =
+  await ActionService.executeActions(
+    parsedActions
+  );
 
-        console.log(
-          "AI Action Result:",
-          result
-        );
-      }
+console.log(
+  "AI Action Results:",
+  results
+);
 
             if (!assistantNode) {
         this.stopThinkingAnimation();
