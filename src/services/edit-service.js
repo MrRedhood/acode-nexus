@@ -1,9 +1,13 @@
 import StorageService from "./storage-service.js";
 import PromptService from "./prompt-service.js";
 import ProviderService from "./provider-service.js";
+import PatchPlannerService from "./patch-planner-service.js";
+import EditContextService from "./edit-context-service.js";
 
 export default class EditService {
-  static extractLiveBuffer(messages) {
+  static extractLiveBuffer(
+    messages
+  ) {
     if (!messages?.length) {
       return null;
     }
@@ -17,28 +21,52 @@ export default class EditService {
         messages[i];
 
       if (
-        msg.role === "user" &&
-        msg.content &&
-        (
-          msg.content.includes(
+        msg.role !== "user" ||
+        !msg.content
+      ) {
+        continue;
+      }
+
+      const text =
+        msg.content;
+
+      if (
+        !(
+          text.includes(
             "LIVE EDITOR BUFFER"
           ) ||
-          msg.content.includes(
+          text.includes(
             "ACTIVE FILE"
           ) ||
-          msg.content.includes(
+          text.includes(
             "LIVE EDITOR FILE"
           )
         )
       ) {
-        return msg.content;
+        continue;
       }
+
+      const fenced =
+        text.match(
+          /```(?:[\w-]+)?\n([\s\S]*?)```/
+        );
+
+      if (
+        fenced &&
+        fenced[1]
+      ) {
+        return fenced[1].trim();
+      }
+
+      return text.trim();
     }
 
     return null;
   }
 
-  static extractUserRequest(messages) {
+  static extractUserRequest(
+    messages
+  ) {
     if (!messages?.length) {
       return "";
     }
@@ -62,7 +90,9 @@ export default class EditService {
     return "";
   }
 
-  static cleanUserRequest(text) {
+  static cleanUserRequest(
+    text
+  ) {
     if (!text) {
       return "";
     }
@@ -73,20 +103,29 @@ export default class EditService {
       "ACTIVE FILE"
     ];
 
-    let cleaned = text;
+    let cleaned =
+      text;
 
     for (const marker of markers) {
       const index =
-        cleaned.indexOf(marker);
+        cleaned.indexOf(
+          marker
+        );
 
-      if (index !== -1) {
+      if (
+        index !== -1
+      ) {
         cleaned =
-          cleaned.slice(0, index);
+          cleaned.slice(
+            0,
+            index
+          );
       }
     }
 
     return cleaned.trim();
   }
+}
 
   static async prepareMessages(
     messages
@@ -145,6 +184,18 @@ export default class EditService {
         rawUserRequest
       );
 
+    const plan =
+      PatchPlannerService.createPlan(
+        userRequest
+      );
+
+    const context =
+      await EditContextService.prepare(
+        plan,
+        userRequest,
+        liveBuffer
+      );
+
     const processedMessages = [
       {
         role: "system",
@@ -153,15 +204,8 @@ export default class EditService {
       },
       {
         role: "user",
-        content: `
-${liveBuffer}
-
-USER REQUEST:
-${
-  userRequest ||
-  "[No request provided]"
-}
-`
+        content:
+          context.context
       }
     ];
 
@@ -169,7 +213,8 @@ ${
       provider,
       apiKey,
       model,
-      processedMessages
+      processedMessages,
+      plan
     };
   }
 
@@ -182,11 +227,17 @@ ${
       provider,
       apiKey,
       model,
-      processedMessages
+      processedMessages,
+      plan
     } =
       await this.prepareMessages(
         messages
       );
+
+    console.log(
+      "PATCH PLAN:",
+      plan
+    );
 
     console.log(
       "EDIT MODE PROMPT:",
