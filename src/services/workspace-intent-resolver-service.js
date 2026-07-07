@@ -51,21 +51,80 @@ export default class WorkspaceIntentResolverService {
         request
       );
 
-    const candidates = [];
+    const candidates =
+      new Map();
+
+    const addCandidate = (
+      key,
+      candidate
+    ) => {
+      const existing =
+        candidates.get(key);
+
+      if (!existing) {
+        candidates.set(
+          key,
+          candidate
+        );
+        return;
+      }
+
+      existing.score +=
+        candidate.score;
+
+      existing.matches++;
+
+      existing.keywords.push(
+        ...candidate.keywords
+      );
+    };
 
     for (const keyword of keywords) {
+      const lower =
+        keyword.toLowerCase();
+
       const symbols =
         WorkspaceSymbolIndexService.findSimilar(
           keyword
         ) || [];
 
       for (const symbol of symbols) {
-        candidates.push({
-          score: 100,
-          type: "symbol",
-          keyword,
-          result: symbol
-        });
+        let score = 80;
+
+        if (
+          symbol.name &&
+          symbol.name
+            .toLowerCase() ===
+            lower
+        ) {
+          score += 100;
+        } else if (
+          symbol.name &&
+          symbol.name
+            .toLowerCase()
+            .includes(lower)
+        ) {
+          score += 50;
+        }
+
+        addCandidate(
+          `${symbol.path}:${symbol.name}`,
+          {
+            type:
+              "symbol",
+
+            score,
+
+            matches: 1,
+
+            keywords: [
+              keyword
+            ],
+
+            result:
+              symbol
+          }
+        );
       }
 
       const code =
@@ -74,12 +133,39 @@ export default class WorkspaceIntentResolverService {
         );
 
       for (const match of code) {
-        candidates.push({
-          score: 60,
-          type: "code",
-          keyword,
-          result: match
-        });
+        let score = 20;
+
+        const line =
+          String(
+            match.text || ""
+          ).toLowerCase();
+
+        if (
+          line.includes(
+            lower
+          )
+        ) {
+          score += 20;
+        }
+
+        addCandidate(
+          `${match.path}:${match.line}`,
+          {
+            type:
+              "code",
+
+            score,
+
+            matches: 1,
+
+            keywords: [
+              keyword
+            ],
+
+            result:
+              match
+          }
+        );
       }
 
       const files =
@@ -88,23 +174,60 @@ export default class WorkspaceIntentResolverService {
         );
 
       for (const file of files) {
-        candidates.push({
-          score: 30,
-          type: "file",
-          keyword,
-          result: file
-        });
+        let score = 30;
+
+        const name =
+          String(
+            file.name || ""
+          ).toLowerCase();
+
+        if (
+          name === lower
+        ) {
+          score += 80;
+        } else if (
+          name.includes(
+            lower
+          )
+        ) {
+          score += 40;
+        }
+
+        addCandidate(
+          file.path,
+          {
+            type:
+              "file",
+
+            score,
+
+            matches: 1,
+
+            keywords: [
+              keyword
+            ],
+
+            result:
+              file
+          }
+        );
       }
     }
 
-    candidates.sort(
-      (a, b) =>
-        b.score - a.score
-    );
-
     return {
       keywords,
-      candidates
+
+      candidates:
+        Array.from(
+          candidates.values()
+        ).sort(
+          (
+            a,
+            b
+          ) =>
+            b.score -
+            a.score
+        )
     };
   }
 
@@ -112,10 +235,11 @@ export default class WorkspaceIntentResolverService {
     request
   ) {
     const tokens =
-      String(request || "")
-        .match(
-          /[A-Za-z_$][A-Za-z0-9_$]*/g
-        ) || [];
+      String(
+        request || ""
+      ).match(
+        /[A-Za-z_$][A-Za-z0-9_$]*/g
+      ) || [];
 
     return [
       ...new Set(
