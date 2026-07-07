@@ -1,120 +1,96 @@
-import SymbolService from "./symbol-service.js";
-
 export default class PatchPlannerService {
-  static async createPlan(
+  static createPlan(
     userPrompt
   ) {
     if (!userPrompt) {
-      return null;
+      return {
+        strategy:
+          "replace_file"
+      };
     }
 
     const prompt =
       userPrompt.toLowerCase();
 
     if (
-      prompt.includes("rename")
+      /rename\s+\S+\s+to\s+\S+/i.test(
+        prompt
+      )
     ) {
-      return await this.planRename(
-        userPrompt
-      );
+      return {
+        strategy:
+          "rename_symbol"
+      };
     }
 
     if (
-      prompt.includes("replace")
+      prompt.includes(
+        "replace function"
+      ) ||
+      prompt.includes(
+        "rewrite function"
+      ) ||
+      prompt.includes(
+        "modify function"
+      ) ||
+      prompt.includes(
+        "change function"
+      )
     ) {
-      return await this.planReplace(
-        userPrompt
-      );
+      return {
+        strategy:
+          "patch_function"
+      };
     }
 
     if (
-      prompt.includes("add") ||
-      prompt.includes("insert")
+      prompt.includes(
+        "replace class"
+      ) ||
+      prompt.includes(
+        "rewrite class"
+      ) ||
+      prompt.includes(
+        "modify class"
+      )
     ) {
-      return await this.planInsert(
-        userPrompt
-      );
+      return {
+        strategy:
+          "patch_class"
+      };
+    }
+
+    if (
+      prompt.includes(
+        "insert"
+      ) ||
+      prompt.includes(
+        "add"
+      )
+    ) {
+      return {
+        strategy:
+          "insert"
+      };
+    }
+
+    if (
+      prompt.includes(
+        "delete"
+      ) ||
+      prompt.includes(
+        "remove"
+      )
+    ) {
+      return {
+        strategy:
+          "delete"
+      };
     }
 
     return {
       strategy:
         "replace_file"
-    };
-  }
-
-  static async planRename(
-    prompt
-  ) {
-    const match =
-      prompt.match(
-        /rename\s+([A-Za-z0-9_$]+)\s+to\s+([A-Za-z0-9_$]+)/i
-      );
-
-    if (!match) {
-      return null;
-    }
-
-    const oldName =
-      match[1];
-
-    const newName =
-      match[2];
-
-    let symbol =
-      await SymbolService.findFunction(
-        oldName
-      );
-
-    let type =
-      "function";
-
-    if (!symbol) {
-      symbol =
-        await SymbolService.findClass(
-          oldName
-        );
-
-      type = "class";
-    }
-
-    if (!symbol) {
-      return null;
-    }
-
-    return {
-      strategy:
-        "rename_symbol",
-
-      symbolType:
-        type,
-
-      oldName,
-
-      newName,
-
-      ...symbol
-    };
-  }
-
-  static async planReplace(
-    prompt
-  ) {
-    return {
-      strategy:
-        "patch_function",
-
-      prompt
-    };
-  }
-
-  static async planInsert(
-    prompt
-  ) {
-    return {
-      strategy:
-        "insert",
-
-      prompt
-    };
+      };
   }
 }
