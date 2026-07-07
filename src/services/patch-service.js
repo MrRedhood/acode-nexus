@@ -1,5 +1,6 @@
 import SearchService from "./search-service.js";
 
+// This is a very very very very very very very very very very long comment for testing horizontal scrolling.
 export default class PatchService {
   static snapshots = new Map();
 
