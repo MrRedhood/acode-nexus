@@ -1,111 +1,22 @@
-import SessionService from "../../services/session-service.js";
-import AttachmentStorage from "../../services/attachment-storage.js";
+import AttachmentStorageHelper from "./helpers/attachment-storage-helper.js";
+import TextPreviewHelper from "./helpers/text-preview-helper.js";
+import AttachmentPickerHelper from "./helpers/attachment-picker-helper.js";
+import AttachmentRenderer from "./helpers/attachment-renderer.js";
 
 export default {
   async getAttachmentsHybrid(
     attachmentIds = []
   ) {
-    if (
-      !attachmentIds ||
-      attachmentIds.length === 0
-    ) {
-      return [];
-    }
-
-    const attachments = [];
-
-    for (const id of attachmentIds) {
-      let attachment = null;
-
-      try {
-        attachment =
-          await AttachmentStorage.getAttachment(
-            id
-          );
-      } catch (error) {
-        console.error(
-          "IndexedDB read failed:",
-          error
-        );
-      }
-
-      if (!attachment) {
-        if (
-          SessionService.getAttachments
-        ) {
-          const legacy =
-            SessionService.getAttachments(
-              [id]
-            );
-
-          attachment =
-            legacy[0] || null;
-        }
-      }
-
-      if (attachment) {
-        attachments.push(
-          attachment
-        );
-      }
-    }
-
-    return attachments;
+    return AttachmentStorageHelper.getAttachments(
+      attachmentIds
+    );
   },
 
-  openTextPreview(att) {
-    const old =
-      document.querySelector(
-        ".nexus-text-preview-overlay"
-      );
-
-    if (old) {
-      old.remove();
-    }
-
-    const overlay =
-      document.createElement("div");
-
-    overlay.className =
-      "nexus-text-preview-overlay";
-
-    overlay.innerHTML = `
-      <div class="nexus-text-preview-modal">
-        <div class="nexus-text-preview-header">
-          <div class="nexus-text-preview-title">
-            ${att.name}
-          </div>
-
-          <button class="nexus-text-preview-close">
-            ×
-          </button>
-        </div>
-
-        <pre class="nexus-text-preview-content">${(
-          att.content || ""
-        )
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")}</pre>
-      </div>
-    `;
-
-    overlay.addEventListener(
-      "click",
-      e => {
-        if (
-          e.target === overlay ||
-          e.target.classList.contains(
-            "nexus-text-preview-close"
-          )
-        ) {
-          overlay.remove();
-        }
-      }
-    );
-
-    document.body.appendChild(
-      overlay
+  openTextPreview(
+    attachment
+  ) {
+    return TextPreviewHelper.open(
+      attachment
     );
   },
 
@@ -113,129 +24,22 @@ export default {
     root = document,
     attachments = []
   ) {
-    root
-      .querySelectorAll(
-        ".nexus-file-card"
-      )
-      .forEach(card => {
-        const id =
-          card.dataset.id;
-
-        const att =
-          attachments.find(
-            a => a.id === id
-          );
-
-        if (!att) {
-          return;
-        }
-
-        card.onclick = () =>
-          this.openTextPreview(
-            att
-          );
-      });
+    return TextPreviewHelper.attach(
+      root,
+      attachments
+    );
   },
 
   openFilePicker(type) {
-    const self = this;
-
-    const input =
-      document.createElement(
-        "input"
-      );
-
-    input.type = "file";
-    input.accept = "*/*";
-
-    input.addEventListener(
-      "change",
-      async function (e) {
-        const files =
-          e.target &&
-          e.target.files;
-
-        const file =
-          files &&
-          files[0];
-
-        if (!file) {
-          return;
-        }
-
-        if (
-          type === "code"
-        ) {
-          const allowed = [
-            ".js",
-            ".ts",
-            ".jsx",
-            ".tsx",
-            ".py",
-            ".java",
-            ".cpp",
-            ".c",
-            ".cs",
-            ".html",
-            ".css",
-            ".json",
-            ".xml",
-            ".md",
-            ".txt"
-          ];
-
-          const lower =
-            file.name.toLowerCase();
-
-          const valid =
-            allowed.some(ext =>
-              lower.endsWith(ext)
-            );
-
-          if (!valid) {
-            self.showToast(
-              "Unsupported file"
-            );
-            return;
-          }
-        }
-
-        await self.handleSelectedFile(
-          file,
-          type
-        );
-      }
+    return AttachmentPickerHelper.open(
+      this,
+      type
     );
-
-    input.click();
   },
 
   fileToText(file) {
-    return new Promise(
-      (resolve, reject) => {
-        const reader =
-          new FileReader();
-
-        reader.onload = () =>
-          resolve(
-            String(
-              reader.result || ""
-            )
-          );
-
-        reader.onerror = () =>
-          reject(
-            reader.error ||
-              new Error(
-                "Text read failed"
-              )
-          );
-
-        reader.readAsText(
-          file,
-          "UTF-8"
-        );
-      }
+    return AttachmentPickerHelper.fileToText(
+      file
     );
   },
 
@@ -243,257 +47,47 @@ export default {
     file,
     type
   ) {
-    try {
-      const attachment = {
-        id:
-          "att_" +
-          Date.now() +
-          "_" +
-          Math.random()
-            .toString(36)
-            .slice(2),
-
-        name: file.name,
-        size: file.size,
-        type,
-        mimeType:
-          "text/plain",
-
-        content:
-          await this.fileToText(
-            file
-          )
-      };
-
-      if (
-        !this.pendingAttachments
-      ) {
-        this.pendingAttachments =
-          [];
-      }
-
-      this.pendingAttachments.push(
-        attachment
-      );
-
-      await this.renderAttachmentPreview();
-
-      this.showToast(
-        `${file.name} attached`
-      );
-    } catch (error) {
-      console.error(
-        "Attachment error:",
-        error
-      );
-
-      this.showToast(
-        "Attachment failed"
-      );
-    }
+    return AttachmentPickerHelper.handleFile(
+      this,
+      file,
+      type
+    );
   },
 
   renderAttachmentCard(
-    att,
+    attachment,
     removable = false,
     existing = false
   ) {
-    const removeClass = existing
-      ? "nexus-attachment-remove-existing"
-      : "nexus-attachment-remove";
-
-    const removeButton = removable
-      ? `
-        <button
-          class="${removeClass}"
-          data-id="${att.id}"
-        >
-          ×
-        </button>
-      `
-      : "";
-
-    return `
-      <div
-        class="nexus-attachment-card nexus-file-card"
-        data-id="${att.id}"
-      >
-        <div class="nexus-attachment-icon">
-          📎
-        </div>
-
-        <div class="nexus-attachment-meta">
-          <div>${att.name}</div>
-          <small>
-            ${this.formatFileSize(
-              att.size
-            )}
-          </small>
-        </div>
-
-        ${removeButton}
-      </div>
-    `;
+    return AttachmentRenderer.renderCard(
+      attachment,
+      removable,
+      existing
+    );
   },
 
   async renderAttachmentPreview() {
-    const preview =
-      this.container.querySelector(
-        "#attachment-preview"
-      );
-
-    if (!preview) {
-      return;
-    }
-
-    const existingAttachments =
-      await this.getAttachmentsHybrid(
-        this.editingAttachmentIds
-      );
-
-    const hasExisting =
-      existingAttachments.length >
-      0;
-
-    const hasPending =
-      this.pendingAttachments
-        .length > 0;
-
-    if (
-      !hasExisting &&
-      !hasPending
-    ) {
-      preview.innerHTML = "";
-      preview.style.display =
-        "none";
-      return;
-    }
-
-    preview.style.display =
-      "flex";
-
-    const allAttachments = [
-      ...existingAttachments,
-      ...this.pendingAttachments
-    ];
-
-    const existingHtml =
-      existingAttachments
-        .map(att =>
-          this.renderAttachmentCard(
-            att,
-            true,
-            true
-          )
-        )
-        .join("");
-
-    const pendingHtml =
-      this.pendingAttachments
-        .map(att =>
-          this.renderAttachmentCard(
-            att,
-            true,
-            false
-          )
-        )
-        .join("");
-
-    preview.innerHTML =
-      existingHtml +
-      pendingHtml;
-
-    this.attachPreviewListeners(
-      preview,
-      allAttachments
+    return AttachmentRenderer.renderPreview(
+      this
     );
-
-    preview
-      .querySelectorAll(
-        ".nexus-attachment-remove"
-      )
-      .forEach(btn => {
-        btn.addEventListener(
-          "click",
-          e => {
-            e.stopPropagation();
-
-            this.removeAttachment(
-              btn.dataset.id
-            );
-          }
-        );
-      });
-
-    preview
-      .querySelectorAll(
-        ".nexus-attachment-remove-existing"
-      )
-      .forEach(btn => {
-        btn.addEventListener(
-          "click",
-          e => {
-            e.stopPropagation();
-
-            this.removeExistingAttachment(
-              btn.dataset.id
-            );
-          }
-        );
-      });
   },
 
   async fillMessageAttachments(
     container,
     attachmentIds = []
   ) {
-    if (
-      !attachmentIds ||
-      attachmentIds.length === 0
-    ) {
-      container.innerHTML = "";
-      return;
-    }
-
-    container.innerHTML =
-      `<div class="nexus-message-attachment-chip">
-        Loading...
-      </div>`;
-
-    const attachments =
-      await this.getAttachmentsHybrid(
-        attachmentIds
-      );
-
-    if (!attachments.length) {
-      container.innerHTML = "";
-      return;
-    }
-
-    container.innerHTML = `
-      <div class="nexus-message-attachments">
-        ${attachments
-          .map(att =>
-            this.renderAttachmentCard(
-              att,
-              false,
-              false
-            )
-          )
-          .join("")}
-      </div>
-    `;
-
-    this.attachPreviewListeners(
+    return AttachmentRenderer.fillMessage(
+      this,
       container,
-      attachments
+      attachmentIds
     );
   },
 
   removeAttachment(id) {
     this.pendingAttachments =
       this.pendingAttachments.filter(
-        att => att.id !== id
+        attachment =>
+          attachment.id !== id
       );
 
     this.renderAttachmentPreview();
@@ -504,35 +98,18 @@ export default {
   ) {
     this.editingAttachmentIds =
       this.editingAttachmentIds.filter(
-        attId => attId !== id
+        attachmentId =>
+          attachmentId !== id
       );
 
     this.renderAttachmentPreview();
   },
 
-  formatFileSize(bytes) {
-    if (bytes < 1024) {
-      return bytes + " B";
-    }
-
-    if (
-      bytes <
-      1024 * 1024
-    ) {
-      return (
-        (
-          bytes / 1024
-        ).toFixed(1) +
-        " KB"
-      );
-    }
-
-    return (
-      (
-        bytes /
-        (1024 * 1024)
-      ).toFixed(1) +
-      " MB"
+  formatFileSize(
+    bytes
+  ) {
+    return AttachmentRenderer.formatFileSize(
+      bytes
     );
   }
 };
