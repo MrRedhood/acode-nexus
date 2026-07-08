@@ -10,6 +10,7 @@ export default class ActionService {
     "focus_file",
     "open_file",
     "replace_file",
+    "replace_symbol",
     "patch_file",
     "undo_file"
   ];
@@ -182,6 +183,12 @@ export default class ActionService {
           action.file
         );
 
+      case "replace_symbol":
+        return await PatchService.replaceSymbol(
+          action,
+          editContext
+        );
+
       case "replace_file":
       case "patch_file":
         return await this.executePatchActions(
@@ -225,13 +232,22 @@ export default class ActionService {
             "replace_file"
       );
 
+    const symbolActions =
+      actions.filter(
+        action =>
+          action.type ===
+          "replace_symbol"
+      );
+
     const otherActions =
       actions.filter(
         action =>
           action.type !==
             "patch_file" &&
           action.type !==
-            "replace_file"
+            "replace_file" &&
+          action.type !==
+            "replace_symbol"
       );
 
     if (
@@ -240,6 +256,15 @@ export default class ActionService {
       results.push(
         await this.executePatchActions(
           patchActions,
+          editContext
+        )
+      );
+    }
+
+    for (const action of symbolActions) {
+      results.push(
+        await this.executeAction(
+          action,
           editContext
         )
       );
