@@ -56,6 +56,16 @@ export default class TaskPlanService {
         completed: 0
       },
 
+      actions: [],
+
+      preview: [],
+
+      diagnostics: [],
+
+      warnings: [],
+
+      result: null,
+
       tasks: []
     };
 
@@ -106,6 +116,12 @@ export default class TaskPlanService {
         completed:
           false,
 
+        startedAt:
+          null,
+
+        completedAt:
+          null,
+
         result:
           null
       });
@@ -141,33 +157,23 @@ export default class TaskPlanService {
 
     if (
       strategy ===
-        "rename_symbol"
+      "rename_symbol"
     ) {
       addTask(
         "find_references",
-        "Find symbol references",
-        {}
+        "Find symbol references"
       );
     }
 
     if (
       scope ===
-        "workspace"
+      "workspace"
     ) {
       addTask(
         "impact_analysis",
-        "Analyze workspace impact",
-        {}
+        "Analyze workspace impact"
       );
     }
-
-    addTask(
-      "generate_actions",
-      "Generate Nexus actions",
-      {
-        strategy
-      }
-    );
 
     addTask(
       "preview_changes",
@@ -235,6 +241,9 @@ export default class TaskPlanService {
     task.status =
       "running";
 
+    task.startedAt =
+      Date.now();
+
     return true;
   }
 
@@ -257,6 +266,9 @@ export default class TaskPlanService {
 
     task.completed =
       true;
+
+    task.completedAt =
+      Date.now();
 
     task.result =
       result;
@@ -294,6 +306,9 @@ export default class TaskPlanService {
 
     task.status =
       "failed";
+
+    task.completedAt =
+      Date.now();
 
     task.result =
       error;
