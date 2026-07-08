@@ -77,7 +77,17 @@ export default class TaskExecutorService {
 
     return {
       success: true,
-      plan
+      plan,
+      actions:
+        plan.actions,
+      preview:
+        plan.preview,
+      diagnostics:
+        plan.diagnostics,
+      warnings:
+        plan.warnings,
+      result:
+        plan.result
     };
   }
 
@@ -85,6 +95,15 @@ export default class TaskExecutorService {
     plan,
     executor
   ) {
+    if (
+      plan.status ===
+      "draft"
+    ) {
+      TaskPlanService.approve(
+        plan
+      );
+    }
+
     const task =
       plan.tasks.find(
         task =>
@@ -98,7 +117,17 @@ export default class TaskExecutorService {
       return {
         success: true,
         completed: true,
-        plan
+        plan,
+        actions:
+          plan.actions,
+        preview:
+          plan.preview,
+        diagnostics:
+          plan.diagnostics,
+        warnings:
+          plan.warnings,
+        result:
+          plan.result
       };
     }
 
@@ -129,7 +158,15 @@ export default class TaskExecutorService {
             .completed ===
           plan.progress
             .total,
-        plan
+        plan,
+        actions:
+          plan.actions,
+        preview:
+          plan.preview,
+        diagnostics:
+          plan.diagnostics,
+        warnings:
+          plan.warnings
       };
     } catch (error) {
       TaskPlanService.failTask(
@@ -208,8 +245,18 @@ export default class TaskExecutorService {
     plan.status =
       "approved";
 
-    plan.progress
-      .completed = 0;
+    plan.progress.completed =
+      0;
+
+    plan.actions = [];
+
+    plan.preview = [];
+
+    plan.diagnostics = [];
+
+    plan.warnings = [];
+
+    plan.result = null;
 
     for (const task of plan.tasks) {
       task.status =
@@ -217,6 +264,12 @@ export default class TaskExecutorService {
 
       task.completed =
         false;
+
+      task.startedAt =
+        null;
+
+      task.completedAt =
+        null;
 
       task.result =
         null;
