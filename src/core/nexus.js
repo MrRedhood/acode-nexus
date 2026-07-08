@@ -4,6 +4,7 @@ import AttachmentStorage from "../services/attachment-storage.js";
 import WorkspaceManager from "../services/workspace-manager.js";
 import WorkspaceSymbolIndexService from "../services/workspace-symbol-index-service.js";
 import DependencyIndexService from "../services/dependency-index-service.js";
+import registerTasks from "../tasks/index.js";
 
 export default class Nexus {
   constructor(baseUrl, page, options) {
@@ -321,6 +322,16 @@ export default class Nexus {
 
       console.log(
         "Dependency index finished"
+      );
+
+      console.log(
+        "Registering task engine..."
+      );
+
+      registerTasks();
+
+      console.log(
+        "Task engine ready"
       );
 
       window.WorkspaceSymbolIndexService =
