@@ -2,6 +2,7 @@ import SessionService from "../../services/session-service.js";
 import SearchService from "../../services/search-service.js";
 import parseMarkdown from "../../utils/markdown.js";
 import ThinkingRenderer from "./helpers/thinking-renderer.js";
+import ClipboardHelper from "./helpers/clipboard-helper.js";
 
 export default {
   convertFileReferences(content) {
@@ -156,7 +157,9 @@ export default {
         "#chat-messages"
       );
 
-    if (!box) return;
+    if (!box) {
+      return;
+    }
 
     box.innerHTML = "";
 
@@ -199,167 +202,41 @@ export default {
   },
 
   startThinkingAnimation(
-  node
-) {
-  return ThinkingRenderer.start(
-    this,
     node
-  );
-},
-
-stopThinkingAnimation() {
-  return ThinkingRenderer.stop(
-    this
-  );
-},
-
-    showToast(text) {
-    const old =
-      document.querySelector(
-        ".nexus-copy-toast"
-      );
-
-    if (old) {
-      old.remove();
-    }
-
-    const toast =
-      document.createElement(
-        "div"
-      );
-
-    toast.className =
-      "nexus-copy-toast";
-    toast.textContent = text;
-
-    document.body.appendChild(
-      toast
+  ) {
+    return ThinkingRenderer.start(
+      this,
+      node
     );
+  },
 
-    setTimeout(
-      () => toast.remove(),
-      1500
+  stopThinkingAnimation() {
+    return ThinkingRenderer.stop(
+      this
+    );
+  },
+
+  showToast(text) {
+    return ClipboardHelper.showToast(
+      this,
+      text
     );
   },
 
   copyText(content) {
-    if (!content) {
-      this.showToast(
-        "Nothing to copy"
-      );
-      return;
-    }
-
-    const fallbackCopy = () => {
-      try {
-        const textarea =
-          document.createElement(
-            "textarea"
-          );
-
-        textarea.value =
-          content;
-        textarea.style.position =
-          "fixed";
-        textarea.style.left =
-          "-9999px";
-        textarea.style.top =
-          "0";
-
-        document.body.appendChild(
-          textarea
-        );
-
-        textarea.focus();
-        textarea.select();
-
-        const success =
-          document.execCommand(
-            "copy"
-          );
-
-        document.body.removeChild(
-          textarea
-        );
-
-        if (success) {
-          this.showToast(
-            "Copied!"
-          );
-        } else {
-          this.showToast(
-            "Copy failed"
-          );
-        }
-      } catch (error) {
-        console.error(
-          "Copy fallback failed:",
-          error
-        );
-
-        this.showToast(
-          "Copy failed"
-        );
-      }
-    };
-
-    if (
-      navigator.clipboard &&
-      navigator.clipboard.writeText
-    ) {
-      navigator.clipboard
-        .writeText(content)
-        .then(() => {
-          this.showToast(
-            "Copied!"
-          );
-        })
-        .catch(() => {
-          fallbackCopy();
-        });
-    } else {
-      fallbackCopy();
-    }
+    return ClipboardHelper.copyText(
+      this,
+      content
+    );
   },
 
   attachCodeCopyListeners(
     msgNode
   ) {
-    const buttons =
-      msgNode.querySelectorAll(
-        ".nexus-code-copy"
-      );
-
-    buttons.forEach(button => {
-      button.addEventListener(
-        "click",
-        e => {
-          e.stopPropagation();
-
-          const wrapper =
-            button.closest(
-              ".nexus-code-block"
-            );
-
-          if (!wrapper) {
-            return;
-          }
-
-          const textarea =
-            wrapper.querySelector(
-              ".nexus-hidden-code"
-            );
-
-          if (!textarea) {
-            return;
-          }
-
-          this.copyText(
-            textarea.value
-          );
-        }
-      );
-    });
+    return ClipboardHelper.attachCodeCopyListeners(
+      this,
+      msgNode
+    );
   },
 
   animateMessage(node) {
@@ -426,7 +303,8 @@ stopThinkingAnimation() {
     let rendered;
 
     if (
-      message.role === "user"
+      message.role ===
+      "user"
     ) {
       rendered =
         message.content.replace(
@@ -442,7 +320,7 @@ stopThinkingAnimation() {
         );
     }
 
-        const label =
+    const label =
       message.role ===
       "user"
         ? "You"
@@ -473,7 +351,8 @@ stopThinkingAnimation() {
     }
 
     const attachmentContainer =
-      message.role === "user"
+      message.role ===
+      "user"
         ? `<div class="nexus-async-attachments"></div>`
         : "";
 
