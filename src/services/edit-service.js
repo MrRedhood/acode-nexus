@@ -4,7 +4,7 @@ import ProviderService from "./provider-service.js";
 import PatchPlannerService from "./patch-planner-service.js";
 import EditContextService from "./edit-context-service.js";
 import TaskPlanService from "./task-plan-service.js";
-import TaskEngineService from "./task-engine-service.js";
+import ActionContextBuilderService from "./action-context-builder-service.js";
 
 export default class EditService {
   static lastEditContext =
@@ -201,18 +201,27 @@ export default class EditService {
       );
 
     const taskPlan =
-  TaskPlanService.createPlan(
-    userRequest,
-    plan
-  );
+      TaskPlanService.createPlan(
+        userRequest,
+        plan
+      );
 
-await TaskEngineService.execute(
-    taskPlan,
-    context
-);
+    context.request =
+      userRequest;
+
+    context.liveBuffer =
+      liveBuffer;
+
+    context.taskPlan =
+      taskPlan;
 
     this.lastEditContext =
       context;
+
+    const userPrompt =
+      ActionContextBuilderService.build(
+        context
+      );
 
     const processedMessages = [
       {
@@ -223,7 +232,7 @@ await TaskEngineService.execute(
       {
         role: "user",
         content:
-          context.context
+          userPrompt
       }
     ];
 
