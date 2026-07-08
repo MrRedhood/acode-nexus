@@ -48,7 +48,7 @@ export default class ActionService {
 
   static async executePatchActions(
     actions,
-    impact = null
+    editContext = null
   ) {
     if (
       !actions ||
@@ -81,8 +81,15 @@ export default class ActionService {
     const validation =
       WorkspaceRefactorService.build(
         patchActions,
-        impact
+        editContext
       );
+
+    console.log(
+      "EDIT CONTEXT:"
+    );
+    console.log(
+      editContext
+    );
 
     console.log(
       "WORKSPACE REFACTOR:"
@@ -135,13 +142,14 @@ export default class ActionService {
     }
 
     return await PatchService.applyPatchSet(
-      patchSet
+      patchSet,
+      editContext
     );
   }
 
   static async executeAction(
     action,
-    impact = null
+    editContext = null
   ) {
     console.log(
       "EXECUTE ACTION:",
@@ -178,7 +186,7 @@ export default class ActionService {
       case "patch_file":
         return await this.executePatchActions(
           [action],
-          impact
+          editContext
         );
 
       case "undo_file":
@@ -197,7 +205,7 @@ export default class ActionService {
 
   static async executeActions(
     actions,
-    impact = null
+    editContext = null
   ) {
     if (
       !actions ||
@@ -232,7 +240,7 @@ export default class ActionService {
       results.push(
         await this.executePatchActions(
           patchActions,
-          impact
+          editContext
         )
       );
     }
@@ -241,7 +249,7 @@ export default class ActionService {
       results.push(
         await this.executeAction(
           action,
-          impact
+          editContext
         )
       );
     }
