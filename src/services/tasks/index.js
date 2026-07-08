@@ -5,6 +5,7 @@ import GenerateActionsTask from "./generate-actions-task.js";
 import PreviewChangesTask from "./preview-changes-task.js";
 import ApplyActionsTask from "./apply-actions-task.js";
 import VerifyWorkspaceTask from "./verify-workspace-task.js";
+import AnalyzeDependenciesTask from "./analyze-dependencies-task.js";
 
 export default function registerTasks() {
   TaskEngineService.register(
@@ -31,4 +32,9 @@ export default function registerTasks() {
     "verify_workspace",
     VerifyWorkspaceTask.execute
   );
+
+  TaskEngineService.register(
+  "analyze_dependencies",
+  AnalyzeDependenciesTask.execute
+);
 }
