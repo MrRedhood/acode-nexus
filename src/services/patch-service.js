@@ -216,8 +216,15 @@ export default class PatchService {
     this.snapshots.set(key, history);
   }
 
-  static async replaceFile(action) {
+  static async replaceFile(
+  action,
+  editContext = null
+) {
     try {
+      console.log(
+  "PATCH CONTEXT:",
+  editContext
+);
       let file =
         this.findOpenEditorFile(
           action.file
@@ -270,8 +277,15 @@ export default class PatchService {
     }
   }
 
-  static async patchFile(action) {
+  static async patchFile(
+  action,
+  editContext = null
+) {
     try {
+      console.log(
+  "PATCH CONTEXT:",
+  editContext
+);
       let file =
         this.findOpenEditorFile(
           action.file
@@ -440,8 +454,9 @@ export default class PatchService {
   }
 
   static async applyPatchSet(
-    patchSet = []
-  ) {
+  patchSet = [],
+  editContext = null
+) {
     const results = [];
 
     for (const fileSet of patchSet) {
@@ -460,15 +475,17 @@ export default class PatchService {
           case "patch_file":
             result =
               await this.patchFile(
-                action
-              );
+  action,
+  editContext
+);
             break;
 
           case "replace_file":
             result =
               await this.replaceFile(
-                action
-              );
+  action,
+  editContext
+);
             break;
 
           default:
