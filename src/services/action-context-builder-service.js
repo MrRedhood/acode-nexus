@@ -19,10 +19,22 @@ ${value}
     };
 
     push(
+      "USER REQUEST",
+      context.request
+    );
+
+    push(
       "PRIMARY TARGET",
       this.buildTarget(
         context.target
       )
+    );
+
+    push(
+      "TARGET CODE",
+      context.target
+        ?.content ||
+        context.liveBuffer
     );
 
     push(
@@ -67,32 +79,6 @@ ${value}
       )
     );
 
-    push(
-      "TARGET CODE",
-      context.target
-        ?.content
-    );
-
-    push(
-      "USER REQUEST",
-      context.request
-    );
-
-    push(
-      "INSTRUCTIONS",
-      `
-Modify only what is necessary.
-
-Preserve formatting.
-
-Preserve coding style.
-
-Do not rewrite unrelated code.
-
-Return Nexus actions only.
-`
-    );
-
     return sections.join(
       "\n\n"
     );
@@ -102,7 +88,7 @@ Return Nexus actions only.
     target
   ) {
     if (!target) {
-      return "[Unknown]";
+      return "[Current File]";
     }
 
     return `
@@ -113,16 +99,16 @@ PATH:
 ${target.path || "[Current File]"}
 
 TYPE:
-${target.symbolType}
+${target.symbolType || "[Unknown]"}
 
 NAME:
-${target.name}
+${target.name || "[Unknown]"}
 
 LINES:
-${target.startLine}-${target.endLine}
+${target.startLine ?? "?"}-${target.endLine ?? "?"}
 
 SOURCE:
-${target.source}
+${target.source || "[Unknown]"}
 `.trim();
   }
 
@@ -177,12 +163,9 @@ ${definition.line}
             .map(
               candidate =>
                 `${candidate.score} | ${candidate.type} | ${
-                  candidate.result
-                    .path ||
-                  candidate.result
-                    .file ||
-                  candidate.result
-                    .name
+                  candidate.result.path ||
+                  candidate.result.file ||
+                  candidate.result.name
                 }`
             )
             .join("\n")
@@ -223,10 +206,13 @@ ${candidates}
       return "[None]";
     }
 
-    return JSON.stringify(
-      impact,
-      null,
-      2
+    return (
+      impact.summary ||
+      JSON.stringify(
+        impact,
+        null,
+        2
+      )
     );
   }
 
@@ -237,11 +223,37 @@ ${candidates}
       return "[None]";
     }
 
-    return taskPlan.tasks
-      .map(
-        task =>
-          `• ${task.title} (${task.status})`
-      )
-      .join("\n");
+    const strategy =
+      taskPlan.strategy
+        ? `Strategy: ${taskPlan.strategy}\n`
+        : "";
+
+    const risk =
+      taskPlan.risk
+        ? `Risk: ${taskPlan.risk}\n`
+        : "";
+
+    const scope =
+      taskPlan.scope
+        ? `Scope: ${taskPlan.scope}\n`
+        : "";
+
+    const tasks =
+      taskPlan.tasks?.length
+        ? taskPlan.tasks
+            .map(
+              (task, index) =>
+                `${index + 1}. ${task.title} (${task.status})`
+            )
+            .join("\n")
+        : "[None]";
+
+    return `
+${strategy}${risk}${scope}
+
+TASKS
+
+${tasks}
+`.trim();
   }
 }
