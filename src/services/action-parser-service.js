@@ -103,6 +103,11 @@ export default class ActionParserService {
             action
           )
         ) {
+          console.warn(
+            "Unsupported action:",
+            action
+          );
+
           continue;
         }
 
@@ -166,6 +171,16 @@ export default class ActionParserService {
             "string"
         );
 
+      case "replace_symbol":
+        return (
+          typeof action.file ===
+            "string" &&
+          typeof action.symbol ===
+            "string" &&
+          typeof action.content ===
+            "string"
+        );
+
       case "create_file":
         return (
           typeof action.file ===
@@ -185,6 +200,14 @@ export default class ActionParserService {
           typeof action.from ===
             "string" &&
           typeof action.to ===
+            "string"
+        );
+
+      case "open_file":
+      case "focus_file":
+      case "undo_file":
+        return (
+          typeof action.file ===
             "string"
         );
 
