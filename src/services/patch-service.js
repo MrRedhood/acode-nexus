@@ -595,6 +595,14 @@ export default class PatchService {
 );
             break;
 
+            case "replace_symbol":
+  result =
+    await this.replaceSymbol(
+      action,
+      editContext
+    );
+  break;
+
           default:
             result = {
               success: false,
