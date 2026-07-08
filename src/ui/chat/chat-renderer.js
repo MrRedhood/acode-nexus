@@ -199,38 +199,19 @@ export default {
   },
 
   startThinkingAnimation(
+  node
+) {
+  return ThinkingRenderer.start(
+    this,
     node
-  ) {
-    let dots = 1;
+  );
+},
 
-    this.stopThinkingAnimation();
-
-    this.thinkingInterval =
-      setInterval(() => {
-        dots++;
-
-        if (dots > 3) {
-          dots = 1;
-        }
-
-        node.innerHTML = `
-          <strong>Nexus</strong><br>
-          Thinking${".".repeat(dots)}
-        `;
-      }, 450);
-  },
-
-  stopThinkingAnimation() {
-    if (
-      this.thinkingInterval
-    ) {
-      clearInterval(
-        this.thinkingInterval
-      );
-      this.thinkingInterval =
-        null;
-    }
-  },
+stopThinkingAnimation() {
+  return ThinkingRenderer.stop(
+    this
+  );
+},
 
     showToast(text) {
     const old =
