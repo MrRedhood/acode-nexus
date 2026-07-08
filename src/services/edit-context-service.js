@@ -1,5 +1,6 @@
 import WorkspaceSymbolResolverService from "./workspace-symbol-resolver-service.js";
 import DependencyResolverService from "./dependency-resolver-service.js";
+import ImpactAnalysisService from "./impact-analysis-service.js";
 
 export default class EditContextService {
   static async prepare(
@@ -57,6 +58,12 @@ ${request}
         target.name
       );
 
+    const impact =
+      ImpactAnalysisService.analyze(
+        plan,
+        target
+      );
+
     const referenceText =
       references.length
         ? references
@@ -94,6 +101,10 @@ ${request}
       dependency?.summary ||
       "[No dependency information available]";
 
+    const impactText =
+      impact?.summary ||
+      "[No impact analysis available]";
+
     return {
       plan: resolved.plan,
 
@@ -106,6 +117,8 @@ ${request}
       intent,
 
       dependency,
+
+      impact,
 
       context: `
 PRIMARY TARGET
@@ -164,6 +177,10 @@ DEPENDENCY GRAPH
 
 ${dependencyText}
 
+IMPACT ANALYSIS
+
+${impactText}
+
 TARGET CODE
 
 ${target.content}
@@ -177,9 +194,11 @@ INSTRUCTIONS
 - Modify only what is necessary.
 - Preserve formatting and coding style.
 - Do not rewrite unrelated code.
-- Use the dependency graph to understand architectural impact.
-- Update related files only if required.
-- If other files must also change, return Nexus actions for them.
+- Respect the dependency graph.
+- Respect the impact analysis.
+- If scope is "workspace", update every affected file.
+- If scope is "file", modify only the primary target.
+- Return Nexus actions for every modified file.
 `
     };
   }
