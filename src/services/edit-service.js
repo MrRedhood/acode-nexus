@@ -10,6 +10,9 @@ export default class EditService {
   static lastEditContext =
     null;
 
+  static lastTaskPlan =
+    null;
+
   static extractLiveBuffer(
     messages
   ) {
@@ -218,6 +221,9 @@ export default class EditService {
     this.lastEditContext =
       context;
 
+    this.lastTaskPlan =
+      taskPlan;
+
     const userPrompt =
       ActionContextBuilderService.build(
         context
@@ -242,7 +248,8 @@ export default class EditService {
       model,
       processedMessages,
       plan,
-      context
+      context,
+      taskPlan
     };
   }
 
@@ -252,9 +259,26 @@ export default class EditService {
     );
   }
 
+  static getLastTaskPlan() {
+    return (
+      this.lastTaskPlan
+    );
+  }
+
   static clearLastEditContext() {
     this.lastEditContext =
       null;
+  }
+
+  static clearLastTaskPlan() {
+    this.lastTaskPlan =
+      null;
+  }
+
+  static clearExecutionState() {
+    this.clearLastEditContext();
+
+    this.clearLastTaskPlan();
   }
 
   static async sendMessageStream(
@@ -268,7 +292,8 @@ export default class EditService {
       model,
       processedMessages,
       plan,
-      context
+      context,
+      taskPlan
     } =
       await this.prepareMessages(
         messages
@@ -277,6 +302,11 @@ export default class EditService {
     console.log(
       "PATCH PLAN:",
       plan
+    );
+
+    console.log(
+      "TASK PLAN:",
+      taskPlan
     );
 
     console.log(
