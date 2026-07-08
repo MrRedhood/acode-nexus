@@ -24,11 +24,11 @@ export default class EditContextService {
       return {
         plan,
         context: `
-CURRENT FILE:
+CURRENT FILE
 
 ${liveBuffer}
 
-USER REQUEST:
+USER REQUEST
 
 ${request}
 `
@@ -44,12 +44,42 @@ ${request}
     const references =
       resolved.references || [];
 
+    const intent =
+      resolved.intent;
+
+    const confidence =
+      resolved.confidence ??
+      "Unknown";
+
     const referenceText =
       references.length
         ? references
+            .slice(0, 20)
             .map(
               ref =>
                 `${ref.file}:${ref.line} (${ref.type})`
+            )
+            .join("\n")
+        : "[None]";
+
+    const keywordText =
+      intent?.keywords?.length
+        ? intent.keywords.join(
+            ", "
+          )
+        : "[None]";
+
+    const candidateText =
+      intent?.candidates?.length
+        ? intent.candidates
+            .slice(0, 5)
+            .map(
+              candidate =>
+                `${candidate.score} | ${candidate.type} | ${
+                  candidate.result.path ||
+                  candidate.result.file ||
+                  candidate.result.name
+                }`
             )
             .join("\n")
         : "[None]";
@@ -63,27 +93,41 @@ ${request}
 
       references,
 
-      context: `
-TARGET FILE:
+      intent,
 
+      context: `
+PRIMARY TARGET
+
+FILE:
 ${
   target.file ||
   "[Current File]"
 }
 
-SOURCE:
+PATH:
+${
+  target.path ||
+  "[Current File]"
+}
 
+SOURCE:
 ${target.source}
 
-TARGET ${target.symbolType.toUpperCase()}:
+CONFIDENCE:
+${confidence}
 
+TARGET SYMBOL
+
+TYPE:
+${target.symbolType}
+
+NAME:
 ${target.name}
 
 LINES:
-
 ${target.startLine}-${target.endLine}
 
-DEFINITION:
+DEFINITION
 
 ${
   definition
@@ -91,17 +135,33 @@ ${
     : "[Unknown]"
 }
 
-REFERENCES:
+WORKSPACE REFERENCES
 
 ${referenceText}
 
-CODE:
+INTENT ANALYSIS
+
+KEYWORDS:
+${keywordText}
+
+TOP CANDIDATES:
+
+${candidateText}
+
+TARGET CODE
 
 ${target.content}
 
-USER REQUEST:
+USER REQUEST
 
 ${request}
+
+INSTRUCTIONS
+
+- Modify only what is necessary.
+- Preserve formatting and coding style.
+- Do not rewrite unrelated code.
+- If other files must also change, return Nexus actions for them.
 `
     };
   }
