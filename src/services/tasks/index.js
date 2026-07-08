@@ -7,6 +7,7 @@ import ApplyActionsTask from "./apply-actions-task.js";
 import VerifyWorkspaceTask from "./verify-workspace-task.js";
 import AnalyzeDependenciesTask from "./analyze-dependencies-task.js";
 import FindReferencesTask from "./find-references-task.js";
+import ImpactAnalysisTask from "./impact-analysis-task.js";
 
 export default function registerTasks() {
   TaskEngineService.register(
@@ -42,5 +43,10 @@ export default function registerTasks() {
   TaskEngineService.register(
   "find_references",
   FindReferencesTask.execute
+);
+
+  TaskEngineService.register(
+  "impact_analysis",
+  ImpactAnalysisTask.execute
 );
 }
