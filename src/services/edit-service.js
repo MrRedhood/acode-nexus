@@ -3,6 +3,8 @@ import PromptService from "./prompt-service.js";
 import ProviderService from "./provider-service.js";
 import PatchPlannerService from "./patch-planner-service.js";
 import EditContextService from "./edit-context-service.js";
+import TaskPlanService from "./task-plan-service.js";
+import TaskEngineService from "./task-engine-service.js";
 
 export default class EditService {
   static lastEditContext =
@@ -197,6 +199,17 @@ export default class EditService {
         userRequest,
         liveBuffer
       );
+
+    const taskPlan =
+  TaskPlanService.createPlan(
+    userRequest,
+    plan
+  );
+
+await TaskEngineService.execute(
+    taskPlan,
+    context
+);
 
     this.lastEditContext =
       context;
