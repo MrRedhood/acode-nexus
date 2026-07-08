@@ -3,6 +3,7 @@ import SessionService from "../services/session-service.js";
 import AttachmentStorage from "../services/attachment-storage.js";
 import WorkspaceManager from "../services/workspace-manager.js";
 import WorkspaceSymbolIndexService from "../services/workspace-symbol-index-service.js";
+import DependencyIndexService from "../services/dependency-index-service.js";
 
 export default class Nexus {
   constructor(baseUrl, page, options) {
@@ -309,13 +310,24 @@ export default class Nexus {
       await WorkspaceSymbolIndexService.buildIndex();
 
       console.log(
-        "Indexed symbols:",
-        WorkspaceSymbolIndexService.getSymbols()
+        "Workspace symbol index finished"
       );
 
       console.log(
-        "Workspace symbol index finished"
+        "Building dependency index..."
       );
+
+      await DependencyIndexService.buildIndex();
+
+      console.log(
+        "Dependency index finished"
+      );
+
+      window.WorkspaceSymbolIndexService =
+        WorkspaceSymbolIndexService;
+
+      window.DependencyIndexService =
+        DependencyIndexService;
 
       window.NexusBridge = {
         getCurrentFile:
@@ -349,6 +361,8 @@ export default class Nexus {
     }
 
     delete window.NexusBridge;
+    delete window.WorkspaceSymbolIndexService;
+    delete window.DependencyIndexService;
 
     const style =
       document.getElementById(
