@@ -373,6 +373,113 @@ export default class PatchService {
     }
   }
 
+  static async replaceSymbol(
+  action,
+  editContext = null
+) {
+  try {
+    if (
+      !editContext ||
+      !editContext.target
+    ) {
+      return {
+        success: false,
+        error:
+          "No resolved symbol context."
+      };
+    }
+
+    const target =
+      editContext.target;
+
+    let file =
+      this.findOpenEditorFile(
+        target.file ||
+          action.file
+      );
+
+    if (!file) {
+      const openResult =
+        await this.openFile(
+          target.file ||
+            action.file
+        );
+
+        if (!openResult.success) {
+          return openResult;
+        }
+
+        file = openResult.file;
+    }
+
+    if (!file) {
+      return {
+        success: false,
+        error:
+          "Unable to open target file."
+      };
+    }
+
+    const currentContent =
+      this.getFileContent(file);
+
+    const original =
+      target.content;
+
+    if (!original) {
+      return {
+        success: false,
+        error:
+          "Target symbol content missing."
+      };
+    }
+
+    if (
+      !currentContent.includes(
+        original
+      )
+    ) {
+      return {
+        success: false,
+        error:
+          "Resolved symbol no longer matches file."
+      };
+    }
+
+    editorManager.switchFile(
+      file.id
+    );
+
+    this.saveSnapshot(file);
+
+    const updated =
+      currentContent.replace(
+        original,
+        action.content
+      );
+
+    this.setFileContent(
+      file,
+      updated
+    );
+
+    return {
+      success: true
+    };
+  } catch (error) {
+    console.error(
+      "replaceSymbol failed:",
+      error
+    );
+
+    return {
+      success: false,
+      error:
+        error.message
+    };
+  }
+}
+
   static async undoFile(action) {
     try {
       let file =
