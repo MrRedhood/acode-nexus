@@ -3,6 +3,7 @@ import PatchService from "./patch-service.js";
 import ActionParserService from "./action-parser-service.js";
 import PatchSetService from "./patch-set-service.js";
 import MultiDiffPreviewService from "./multi-diff-preview-service.js";
+import WorkspaceRefactorService from "./workspace-refactor-service.js";
 
 export default class ActionService {
   static SUPPORTED_ACTIONS = [
@@ -46,7 +47,8 @@ export default class ActionService {
   }
 
   static async executePatchActions(
-    actions
+    actions,
+    impact = null
   ) {
     if (
       !actions ||
@@ -76,10 +78,49 @@ export default class ActionService {
       };
     }
 
-    const patchSet =
-      PatchSetService.build(
-        patchActions
+    const validation =
+      WorkspaceRefactorService.build(
+        patchActions,
+        impact
       );
+
+    console.log(
+      "WORKSPACE REFACTOR:"
+    );
+    console.log(
+      WorkspaceRefactorService.summarize(
+        validation
+      )
+    );
+
+    if (
+      !validation.success
+    ) {
+      return {
+        success: false,
+        error:
+          validation.errors.join(
+            "\n"
+          ),
+        warnings:
+          validation.warnings
+      };
+    }
+
+    const patchSet =
+      validation.patchSet;
+
+    if (
+      !PatchSetService.validate(
+        patchSet
+      )
+    ) {
+      return {
+        success: false,
+        error:
+          "Invalid patch set."
+      };
+    }
 
     const approved =
       await MultiDiffPreviewService.preview(
@@ -99,7 +140,8 @@ export default class ActionService {
   }
 
   static async executeAction(
-    action
+    action,
+    impact = null
   ) {
     console.log(
       "EXECUTE ACTION:",
@@ -135,7 +177,8 @@ export default class ActionService {
       case "replace_file":
       case "patch_file":
         return await this.executePatchActions(
-          [action]
+          [action],
+          impact
         );
 
       case "undo_file":
@@ -153,7 +196,8 @@ export default class ActionService {
   }
 
   static async executeActions(
-    actions
+    actions,
+    impact = null
   ) {
     if (
       !actions ||
@@ -187,7 +231,8 @@ export default class ActionService {
     ) {
       results.push(
         await this.executePatchActions(
-          patchActions
+          patchActions,
+          impact
         )
       );
     }
@@ -195,7 +240,8 @@ export default class ActionService {
     for (const action of otherActions) {
       results.push(
         await this.executeAction(
-          action
+          action,
+          impact
         )
       );
     }
