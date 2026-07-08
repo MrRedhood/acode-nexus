@@ -12,8 +12,7 @@ export default class AttachmentStorageHelper {
       return [];
     }
 
-    const attachments =
-      [];
+    const attachments = [];
 
     for (const id of attachmentIds) {
       let attachment =
