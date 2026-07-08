@@ -25,15 +25,15 @@ export default class EditContextService {
     ) {
       return {
         plan,
-        context: `
-CURRENT FILE
-
-${liveBuffer}
-
-USER REQUEST
-
-${request}
-`
+        request,
+        liveBuffer,
+        target: null,
+        definition: null,
+        references: [],
+        intent: null,
+        confidence: "Unknown",
+        dependency: null,
+        impact: null
       };
     }
 
@@ -64,49 +64,13 @@ ${request}
         target
       );
 
-    const referenceText =
-      references.length
-        ? references
-            .slice(0, 20)
-            .map(
-              ref =>
-                `${ref.file}:${ref.line} (${ref.type})`
-            )
-            .join("\n")
-        : "[None]";
-
-    const keywordText =
-      intent?.keywords?.length
-        ? intent.keywords.join(
-            ", "
-          )
-        : "[None]";
-
-    const candidateText =
-      intent?.candidates?.length
-        ? intent.candidates
-            .slice(0, 5)
-            .map(
-              candidate =>
-                `${candidate.score} | ${candidate.type} | ${
-                  candidate.result.path ||
-                  candidate.result.file ||
-                  candidate.result.name
-                }`
-            )
-            .join("\n")
-        : "[None]";
-
-    const dependencyText =
-      dependency?.summary ||
-      "[No dependency information available]";
-
-    const impactText =
-      impact?.summary ||
-      "[No impact analysis available]";
-
     return {
-      plan: resolved.plan,
+      plan:
+        resolved.plan,
+
+      request,
+
+      liveBuffer,
 
       target,
 
@@ -116,90 +80,11 @@ ${request}
 
       intent,
 
+      confidence,
+
       dependency,
 
-      impact,
-
-      context: `
-PRIMARY TARGET
-
-FILE:
-${
-  target.file ||
-  "[Current File]"
-}
-
-PATH:
-${
-  target.path ||
-  "[Current File]"
-}
-
-SOURCE:
-${target.source}
-
-CONFIDENCE:
-${confidence}
-
-TARGET SYMBOL
-
-TYPE:
-${target.symbolType}
-
-NAME:
-${target.name}
-
-LINES:
-${target.startLine}-${target.endLine}
-
-DEFINITION
-
-${
-  definition
-    ? `${definition.file}:${definition.line}`
-    : "[Unknown]"
-}
-
-WORKSPACE REFERENCES
-
-${referenceText}
-
-INTENT ANALYSIS
-
-KEYWORDS:
-${keywordText}
-
-TOP CANDIDATES
-
-${candidateText}
-
-DEPENDENCY GRAPH
-
-${dependencyText}
-
-IMPACT ANALYSIS
-
-${impactText}
-
-TARGET CODE
-
-${target.content}
-
-USER REQUEST
-
-${request}
-
-INSTRUCTIONS
-
-- Modify only what is necessary.
-- Preserve formatting and coding style.
-- Do not rewrite unrelated code.
-- Respect the dependency graph.
-- Respect the impact analysis.
-- If scope is "workspace", update every affected file.
-- If scope is "file", modify only the primary target.
-- Return Nexus actions for every modified file.
-`
+      impact
     };
   }
 }
