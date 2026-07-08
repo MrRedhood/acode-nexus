@@ -5,6 +5,9 @@ import PatchPlannerService from "./patch-planner-service.js";
 import EditContextService from "./edit-context-service.js";
 
 export default class EditService {
+  static lastEditContext =
+    null;
+
   static extractLiveBuffer(
     messages
   ) {
@@ -195,6 +198,9 @@ export default class EditService {
         liveBuffer
       );
 
+    this.lastEditContext =
+      context;
+
     const processedMessages = [
       {
         role: "system",
@@ -213,8 +219,20 @@ export default class EditService {
       apiKey,
       model,
       processedMessages,
-      plan
+      plan,
+      context
     };
+  }
+
+  static getLastEditContext() {
+    return (
+      this.lastEditContext
+    );
+  }
+
+  static clearLastEditContext() {
+    this.lastEditContext =
+      null;
   }
 
   static async sendMessageStream(
@@ -227,7 +245,8 @@ export default class EditService {
       apiKey,
       model,
       processedMessages,
-      plan
+      plan,
+      context
     } =
       await this.prepareMessages(
         messages
@@ -236,6 +255,11 @@ export default class EditService {
     console.log(
       "PATCH PLAN:",
       plan
+    );
+
+    console.log(
+      "EDIT CONTEXT:",
+      context
     );
 
     console.log(
