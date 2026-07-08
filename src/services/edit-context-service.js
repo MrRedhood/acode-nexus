@@ -1,4 +1,5 @@
 import WorkspaceSymbolResolverService from "./workspace-symbol-resolver-service.js";
+import DependencyResolverService from "./dependency-resolver-service.js";
 
 export default class EditContextService {
   static async prepare(
@@ -51,6 +52,11 @@ ${request}
       resolved.confidence ??
       "Unknown";
 
+    const dependency =
+      DependencyResolverService.resolve(
+        target.name
+      );
+
     const referenceText =
       references.length
         ? references
@@ -84,6 +90,10 @@ ${request}
             .join("\n")
         : "[None]";
 
+    const dependencyText =
+      dependency?.summary ||
+      "[No dependency information available]";
+
     return {
       plan: resolved.plan,
 
@@ -94,6 +104,8 @@ ${request}
       references,
 
       intent,
+
+      dependency,
 
       context: `
 PRIMARY TARGET
@@ -144,9 +156,13 @@ INTENT ANALYSIS
 KEYWORDS:
 ${keywordText}
 
-TOP CANDIDATES:
+TOP CANDIDATES
 
 ${candidateText}
+
+DEPENDENCY GRAPH
+
+${dependencyText}
 
 TARGET CODE
 
@@ -161,6 +177,8 @@ INSTRUCTIONS
 - Modify only what is necessary.
 - Preserve formatting and coding style.
 - Do not rewrite unrelated code.
+- Use the dependency graph to understand architectural impact.
+- Update related files only if required.
 - If other files must also change, return Nexus actions for them.
 `
     };
