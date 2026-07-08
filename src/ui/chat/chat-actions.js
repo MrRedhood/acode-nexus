@@ -4,6 +4,7 @@ import AttachmentStorage from "../../services/attachment-storage.js";
 import SearchService from "../../services/search-service.js";
 import CommandService from "../../services/command-service.js";
 import ActionService from "../../services/action-service.js";
+import EditService from "../../services/edit-service.js";
 import parseMarkdown from "../../utils/markdown.js";
 
 export default {
@@ -181,10 +182,16 @@ export default {
     assistantMessage.content
   );
 
+const editContext =
+  EditService.getLastEditContext();
+
 const results =
   await ActionService.executeActions(
-    parsedActions
+    parsedActions,
+    editContext
   );
+
+EditService.clearLastEditContext();
 
 console.log(
   "AI Action Results:",
