@@ -8,6 +8,14 @@ export default class TaskPlanService {
         userRequest || ""
       ).trim();
 
+    const strategy =
+      editPlan?.strategy ||
+      "replace_file";
+
+    const scope =
+      editPlan?.scope ||
+      "file";
+
     const plan = {
       id:
         "plan_" +
@@ -27,19 +35,19 @@ export default class TaskPlanService {
       status:
         "draft",
 
-      scope:
-        editPlan?.scope ||
-        "file",
+      strategy,
+
+      scope,
 
       risk:
         editPlan?.risk ||
         "low",
 
-      strategy:
-        editPlan?.strategy ||
-        "replace_file",
-
-      estimatedFiles: 1,
+      estimatedFiles:
+        scope ===
+        "workspace"
+          ? 5
+          : 1,
 
       estimatedSymbols: 1,
 
@@ -68,6 +76,14 @@ export default class TaskPlanService {
     request,
     editPlan
   ) {
+    const strategy =
+      editPlan?.strategy ||
+      "replace_file";
+
+    const scope =
+      editPlan?.scope ||
+      "file";
+
     const addTask = (
       type,
       title,
@@ -99,18 +115,57 @@ export default class TaskPlanService {
       "resolve_target",
       "Resolve workspace target",
       {
-        strategy:
-          editPlan?.strategy,
-        request
+        request,
+        strategy
       }
     );
 
+    if (
+      strategy ===
+        "rename_symbol" ||
+      strategy ===
+        "patch_function" ||
+      strategy ===
+        "patch_class" ||
+      strategy ===
+        "replace_file"
+    ) {
+      addTask(
+        "analyze_dependencies",
+        "Analyze dependencies",
+        {
+          strategy
+        }
+      );
+    }
+
+    if (
+      strategy ===
+        "rename_symbol"
+    ) {
+      addTask(
+        "find_references",
+        "Find symbol references",
+        {}
+      );
+    }
+
+    if (
+      scope ===
+        "workspace"
+    ) {
+      addTask(
+        "impact_analysis",
+        "Analyze workspace impact",
+        {}
+      );
+    }
+
     addTask(
       "generate_actions",
-      "Generate AI actions",
+      "Generate Nexus actions",
       {
-        strategy:
-          editPlan?.strategy
+        strategy
       }
     );
 
@@ -121,7 +176,7 @@ export default class TaskPlanService {
 
     addTask(
       "apply_actions",
-      "Apply actions"
+      "Apply changes"
     );
 
     addTask(
@@ -137,7 +192,8 @@ export default class TaskPlanService {
       return "Unnamed Task";
     }
 
-    return request.length > 60
+    return request.length >
+      60
       ? request.slice(
           0,
           57
@@ -145,14 +201,18 @@ export default class TaskPlanService {
       : request;
   }
 
-  static approve(plan) {
+  static approve(
+    plan
+  ) {
     plan.status =
       "approved";
 
     return plan;
   }
 
-  static reject(plan) {
+  static reject(
+    plan
+  ) {
     plan.status =
       "rejected";
 
