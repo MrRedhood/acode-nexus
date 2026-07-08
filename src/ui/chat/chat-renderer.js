@@ -1,6 +1,7 @@
 import SessionService from "../../services/session-service.js";
 import SearchService from "../../services/search-service.js";
 import parseMarkdown from "../../utils/markdown.js";
+import ThinkingRenderer from "./helpers/thinking-renderer.js";
 
 export default {
   convertFileReferences(content) {
