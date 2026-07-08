@@ -51,7 +51,7 @@ export default class TaskPlanService {
       tasks: []
     };
 
-    this.populateTasks(
+    this.buildTasks(
       plan,
       request,
       editPlan
@@ -63,161 +63,71 @@ export default class TaskPlanService {
     return plan;
   }
 
-  static populateTasks(
+  static buildTasks(
     plan,
     request,
     editPlan
   ) {
-    const add =
-      (
+    const addTask = (
+      type,
+      title,
+      payload = {}
+    ) => {
+      plan.tasks.push({
+        id:
+          plan.tasks.length +
+          1,
+
+        type,
+
         title,
-        description,
-        type = "edit"
-      ) => {
-        plan.tasks.push({
-          id:
-            plan.tasks.length +
-            1,
 
-          type,
+        payload,
 
-          title,
+        status:
+          "pending",
 
-          description,
+        completed:
+          false,
 
-          status:
-            "pending",
+        result:
+          null
+      });
+    };
 
-          completed:
-            false,
+    addTask(
+      "resolve_target",
+      "Resolve workspace target",
+      {
+        strategy:
+          editPlan?.strategy,
+        request
+      }
+    );
 
-          result:
-            null
-        });
-      };
+    addTask(
+      "generate_actions",
+      "Generate AI actions",
+      {
+        strategy:
+          editPlan?.strategy
+      }
+    );
 
-    switch (
-      editPlan?.strategy
-    ) {
-      case "rename_symbol":
-        add(
-          "Locate symbol",
-          "Resolve target symbol."
-        );
+    addTask(
+      "preview_changes",
+      "Preview changes"
+    );
 
-        add(
-          "Rename declaration",
-          "Rename the primary declaration."
-        );
+    addTask(
+      "apply_actions",
+      "Apply actions"
+    );
 
-        add(
-          "Update references",
-          "Update every reference."
-        );
-
-        add(
-          "Verify workspace",
-          "Ensure no broken references remain.",
-          "verify"
-        );
-
-        plan.estimatedFiles =
-          5;
-
-        plan.estimatedSymbols =
-          1;
-        break;
-
-      case "patch_function":
-        add(
-          "Locate function",
-          "Resolve target function."
-        );
-
-        add(
-          "Patch function",
-          "Apply requested changes."
-        );
-
-        add(
-          "Verify edit",
-          "Ensure edit is correct.",
-          "verify"
-        );
-        break;
-
-      case "patch_class":
-        add(
-          "Locate class",
-          "Resolve target class."
-        );
-
-        add(
-          "Patch class",
-          "Apply requested changes."
-        );
-
-        add(
-          "Verify edit",
-          "Ensure edit is correct.",
-          "verify"
-        );
-        break;
-
-      case "delete":
-        add(
-          "Locate target",
-          "Resolve deletion target."
-        );
-
-        add(
-          "Delete code",
-          "Remove requested code."
-        );
-
-        add(
-          "Verify workspace",
-          "Ensure nothing broke.",
-          "verify"
-        );
-        break;
-
-      case "insert":
-        add(
-          "Locate insertion point",
-          "Find correct location."
-        );
-
-        add(
-          "Insert code",
-          "Insert requested implementation."
-        );
-
-        add(
-          "Verify edit",
-          "Ensure insertion is valid.",
-          "verify"
-        );
-        break;
-
-      default:
-        add(
-          "Analyze request",
-          request,
-          "analysis"
-        );
-
-        add(
-          "Apply edit",
-          "Modify code."
-        );
-
-        add(
-          "Verify changes",
-          "Ensure edit is correct.",
-          "verify"
-        );
-    }
+    addTask(
+      "verify_workspace",
+      "Verify workspace"
+    );
   }
 
   static createTitle(
@@ -227,28 +137,22 @@ export default class TaskPlanService {
       return "Unnamed Task";
     }
 
-    return (
-      request.length > 60
-        ? request.slice(
-            0,
-            57
-          ) + "..."
-        : request
-    );
+    return request.length > 60
+      ? request.slice(
+          0,
+          57
+        ) + "..."
+      : request;
   }
 
-  static approve(
-    plan
-  ) {
+  static approve(plan) {
     plan.status =
       "approved";
 
     return plan;
   }
 
-  static reject(
-    plan
-  ) {
+  static reject(plan) {
     plan.status =
       "rejected";
 
@@ -257,12 +161,11 @@ export default class TaskPlanService {
 
   static startTask(
     plan,
-    taskId
+    id
   ) {
     const task =
       plan.tasks.find(
-        t =>
-          t.id === taskId
+        t => t.id === id
       );
 
     if (!task) {
@@ -277,13 +180,12 @@ export default class TaskPlanService {
 
   static completeTask(
     plan,
-    taskId,
+    id,
     result = null
   ) {
     const task =
       plan.tasks.find(
-        t =>
-          t.id === taskId
+        t => t.id === id
       );
 
     if (!task) {
@@ -305,7 +207,8 @@ export default class TaskPlanService {
       ).length;
 
     if (
-      plan.progress.completed ===
+      plan.progress
+        .completed ===
       plan.progress.total
     ) {
       plan.status =
@@ -317,13 +220,12 @@ export default class TaskPlanService {
 
   static failTask(
     plan,
-    taskId,
+    id,
     error
   ) {
     const task =
       plan.tasks.find(
-        t =>
-          t.id === taskId
+        t => t.id === id
       );
 
     if (!task) {
