@@ -1,5 +1,3 @@
-import WorkspaceScopeService from "./workspace-scope-service.js";
-
 export default class FileContentService {
   static fileCache =
     new Map();
@@ -269,70 +267,15 @@ export default class FileContentService {
     }
   }
 
-  static async readFullFile(
-    path
-  ) {
-    const file =
-      this.openFile(
-        path
-      );
-
-    if (!file) {
-      return null;
-    }
-
-    return await this.fetchFileContent(
-      file
-    );
-  }
-
-  static openFile(
+  static invalidate(
     path
   ) {
     if (!path) {
-      return null;
+      return;
     }
 
-    const files =
-      WorkspaceScopeService.getScopedFiles();
-
-    const lower =
-      path.toLowerCase();
-
-    return (
-      files.find(
-        file =>
-          (
-            file.name ||
-            ""
-          )
-            .toLowerCase() ===
-            lower ||
-          (
-            file.path ||
-            ""
-          )
-            .toLowerCase()
-            .endsWith(
-              lower
-            ) ||
-          (
-            file.name ||
-            ""
-          )
-            .toLowerCase()
-            .includes(
-              lower
-            ) ||
-          (
-            file.path ||
-            ""
-          )
-            .toLowerCase()
-            .includes(
-              lower
-            )
-      ) || null
+    this.fileCache.delete(
+      path
     );
   }
 
