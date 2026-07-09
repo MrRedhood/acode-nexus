@@ -2,7 +2,6 @@ import StorageService from "./storage-service.js";
 import PromptService from "./prompt-service.js";
 import ProviderService from "./provider-service.js";
 import EditMessageParser from "./edit-message-parser.js";
-import EditStateService from "./edit-state-service.js";
 import EditOrchestratorService from "./edit-orchestrator-service.js";
 
 export default class EditService {
@@ -69,14 +68,6 @@ export default class EditService {
         liveBuffer
       );
 
-    EditStateService.setLastEditContext(
-      session.editContext
-    );
-
-    EditStateService.setLastTaskPlan(
-      session.taskPlan
-    );
-
     const processedMessages = [
       {
         role: "system",
@@ -105,24 +96,20 @@ export default class EditService {
   }
 
   static getLastEditContext() {
-    return EditStateService.getLastEditContext();
+    return EditOrchestratorService.getEditContext();
   }
 
   static getLastTaskPlan() {
-    return EditStateService.getLastTaskPlan();
+    return EditOrchestratorService.getTaskPlan();
   }
 
   static clearLastEditContext() {
-    EditStateService.clearLastEditContext();
     EditOrchestratorService.clear();
   }
 
-  static clearLastTaskPlan() {
-    EditStateService.clearLastTaskPlan();
-  }
+  static clearLastTaskPlan() {}
 
   static clearExecutionState() {
-    EditStateService.clearExecutionState();
     EditOrchestratorService.clear();
   }
 
