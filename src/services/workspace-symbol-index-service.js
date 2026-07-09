@@ -87,6 +87,31 @@ static fileMap =
     ];
   }
 
+  static register(
+  symbol
+) {
+  this.symbols.push(
+    symbol
+  );
+
+  this.symbolMap.set(
+    symbol.name,
+    symbol
+  );
+
+  const list =
+    this.fileMap.get(
+      symbol.path
+    ) || [];
+
+  list.push(symbol);
+
+  this.fileMap.set(
+    symbol.path,
+    list
+  );
+  }
+
   static findExact(
     name
   ) {
