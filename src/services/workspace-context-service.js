@@ -3,7 +3,19 @@ import WorkspaceSummaryService from "./workspace-summary-service.js";
 import WorkspaceSymbolIndexService from "./workspace-symbol-index-service.js";
 
 export default class WorkspaceContextService {
-  static async build() {
+  static currentContext =
+    null;
+
+  static async build(
+    force = false
+  ) {
+    if (
+      !force &&
+      this.currentContext
+    ) {
+      return this.currentContext;
+    }
+
     const workspace =
       WorkspaceScopeService.getSelectedWorkspace();
 
@@ -22,24 +34,70 @@ export default class WorkspaceContextService {
         await WorkspaceSymbolIndexService.buildIndex();
     }
 
-    return {
+    this.currentContext = {
       workspace,
       files,
       summary,
-      symbols
+      symbols,
+      generatedAt:
+        Date.now()
     };
-  }
 
-  static async getPromptSummary() {
-    await this.build();
-
-    return WorkspaceSummaryService.buildPromptSummary();
+    return this.currentContext;
   }
 
   static async refresh() {
     WorkspaceSummaryService.clear();
     WorkspaceSymbolIndexService.clear();
 
+    this.currentContext =
+      null;
+
+    return await this.build(
+      true
+    );
+  }
+
+  static clear() {
+    this.currentContext =
+      null;
+  }
+
+  static async get() {
     return await this.build();
+  }
+
+  static async getWorkspace() {
+    const context =
+      await this.build();
+
+    return context.workspace;
+  }
+
+  static async getFiles() {
+    const context =
+      await this.build();
+
+    return context.files;
+  }
+
+  static async getSummary() {
+    const context =
+      await this.build();
+
+    return context.summary;
+  }
+
+  static async getSymbols() {
+    const context =
+      await this.build();
+
+    return context.symbols;
+  }
+
+  static async getPromptSummary() {
+    await this.build();
+
+    return WorkspaceSummaryService.buildPromptSummary();
   }
 }
