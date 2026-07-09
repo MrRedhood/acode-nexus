@@ -70,7 +70,7 @@ export default class PatchService {
     }
   }
 
-    static async patchFile(
+  static async patchFile(
     action,
     editContext = null
   ) {
@@ -288,79 +288,5 @@ export default class PatchService {
           error.message
       };
     }
-  }
-
-    static async applyPatchSet(
-    patchSet = [],
-    editContext = null
-  ) {
-    const results = [];
-
-    for (const fileSet of patchSet) {
-      const fileResult = {
-        file: fileSet.file,
-        actions: [],
-        success: true
-      };
-
-      for (const action of fileSet.actions) {
-        let result;
-
-        switch (action.type) {
-          case "patch_file":
-            result =
-              await this.patchFile(
-                action,
-                editContext
-              );
-            break;
-
-          case "replace_file":
-            result =
-              await this.replaceFile(
-                action,
-                editContext
-              );
-            break;
-
-          case "replace_symbol":
-            result =
-              await this.replaceSymbol(
-                action,
-                editContext
-              );
-            break;
-
-          default:
-            result = {
-              success: false,
-              error:
-                `Unsupported action: ${action.type}`
-            };
-        }
-
-        fileResult.actions.push(
-          result
-        );
-
-        if (!result.success) {
-          fileResult.success =
-            false;
-          break;
-        }
-      }
-
-      results.push(
-        fileResult
-      );
-    }
-
-    return {
-      success: results.every(
-        result =>
-          result.success
-      ),
-      results
-    };
   }
 }
