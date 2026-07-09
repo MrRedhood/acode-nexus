@@ -7,7 +7,7 @@ import ChatMessageEditor from "./chat-message-editor.js";
 
 import SessionService from "../../../services/session-service.js";
 import AttachmentStorage from "../../../services/attachment-storage.js";
-import EditService from "../../../services/edit-service.js";
+import EditOrchestratorService from "../../../services/edit-orchestrator-service.js";
 import TaskEditService from "../../../services/task-edit-service.js";
 
 export default class ChatPipeline {
@@ -169,7 +169,7 @@ export default class ChatPipeline {
         );
 
       const editContext =
-        EditService.getLastEditContext();
+        EditOrchestratorService.getEditContext();
 
       if (editContext) {
         const results =
@@ -183,7 +183,7 @@ export default class ChatPipeline {
           results
         );
 
-        EditService.clearLastEditContext();
+        EditOrchestratorService.clear();
       }
 
       await ChatTaskRunner.execute(
