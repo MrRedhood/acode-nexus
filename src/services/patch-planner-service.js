@@ -10,19 +10,211 @@ export default class PatchPlannerService {
     const prompt =
       text.toLowerCase();
 
-    const plan = {
+    const plan =
+      this.createDefaultPlan();
+
+    plan.operation =
+      this.detectOperation(
+        prompt
+      );
+
+    plan.targetType =
+      this.detectTargetType(
+        prompt
+      );
+
+    plan.scope =
+      this.detectScope(
+        prompt
+      );
+
+    plan.risk =
+      this.detectRisk(
+        prompt
+      );
+
+    plan.confidence =
+      this.detectConfidence(
+        prompt
+      );
+
+    const rename =
+      this.detectRename(
+        text
+      );
+
+    if (rename) {
+      plan.strategy =
+        "rename_symbol";
+
+      plan.intent =
+        "rename_symbol";
+
+      plan.operation =
+        "rename";
+
+      plan.scope =
+        "workspace";
+
+      plan.target =
+        rename.oldName;
+
+      plan.targetType =
+        "symbol";
+
+      plan.newName =
+        rename.newName;
+
+      plan.requiresReferenceUpdate =
+        true;
+
+      plan.risk =
+        "high";
+
+      plan.reason =
+        "Explicit rename request.";
+
+      return plan;
+    }
+
+    switch (
+      plan.operation
+    ) {
+      case "edit_function":
+        plan.strategy =
+          "patch_function";
+
+        plan.intent =
+          "edit_function";
+
+        break;
+
+      case "edit_class":
+        plan.strategy =
+          "patch_class";
+
+        plan.intent =
+          "edit_class";
+
+        break;
+
+      case "imports":
+        plan.strategy =
+          "imports";
+
+        plan.intent =
+          "edit_imports";
+
+        plan.requiresImportUpdate =
+          true;
+
+        break;
+
+      case "create_file":
+        plan.strategy =
+          "create_file";
+
+        plan.intent =
+          "create_file";
+
+        break;
+
+      case "delete_file":
+        plan.strategy =
+          "delete_file";
+
+        plan.intent =
+          "delete_file";
+
+        break;
+
+      case "insert":
+        plan.strategy =
+          "insert";
+
+        plan.intent =
+          "insert_code";
+
+        break;
+
+      case "delete":
+        plan.strategy =
+          "delete";
+
+        plan.intent =
+          "delete_code";
+
+        break;
+
+      case "refactor":
+        plan.strategy =
+          "refactor";
+
+        plan.intent =
+          "refactor";
+
+        plan.requiresReferenceUpdate =
+          true;
+
+        break;
+
+      case "optimize":
+        plan.strategy =
+          "optimize";
+
+        plan.intent =
+          "optimize";
+
+        break;
+
+      case "fix":
+        plan.strategy =
+          "fix";
+
+        plan.intent =
+          "bug_fix";
+
+        break;
+
+      default:
+        plan.strategy =
+          "replace_file";
+
+        plan.intent =
+          "generic_edit";
+    }
+
+    return plan;
+  }
+
+  static createDefaultPlan() {
+    return {
       strategy:
         "replace_file",
 
       intent:
         "generic_edit",
 
+      operation:
+        "edit",
+
       scope:
         "file",
 
-      target: null,
+      target:
+        null,
 
-      reason: null,
+      targetType:
+        "unknown",
+
+      newName:
+        null,
+
+      confidence:
+        0.5,
+
+      reason:
+        null,
 
       requiresReferenceUpdate:
         false,
@@ -33,52 +225,38 @@ export default class PatchPlannerService {
       risk:
         "low"
     };
+  }
 
-    const rename =
-      prompt.match(
+  static detectRename(
+    text
+  ) {
+    const match =
+      text.match(
         /rename\s+([A-Za-z_$][A-Za-z0-9_$]*)\s+to\s+([A-Za-z_$][A-Za-z0-9_$]*)/i
       );
 
-    if (rename) {
-      plan.strategy =
-        "rename_symbol";
-
-      plan.intent =
-        "rename_symbol";
-
-      plan.scope =
-        "workspace";
-
-      plan.target =
-        rename[1];
-
-      plan.newName =
-        rename[2];
-
-      plan.requiresReferenceUpdate =
-        true;
-
-      plan.risk =
-        "high";
-
-      return plan;
+    if (!match) {
+      return null;
     }
 
+    return {
+      oldName:
+        match[1],
+
+      newName:
+        match[2]
+    };
+  }
+
+  static detectOperation(
+    prompt
+  ) {
     if (
       /replace function|rewrite function|modify function|change function|update function|fix function/i.test(
         prompt
       )
     ) {
-      plan.strategy =
-        "patch_function";
-
-      plan.intent =
-        "edit_function";
-
-      plan.scope =
-        "file";
-
-      return plan;
+      return "edit_function";
     }
 
     if (
@@ -86,36 +264,15 @@ export default class PatchPlannerService {
         prompt
       )
     ) {
-      plan.strategy =
-        "patch_class";
-
-      plan.intent =
-        "edit_class";
-
-      plan.scope =
-        "file";
-
-      return plan;
+      return "edit_class";
     }
 
     if (
-      /add import|remove import|change import|update import/i.test(
+      /add import|remove import|update import|change import/i.test(
         prompt
       )
     ) {
-      plan.strategy =
-        "imports";
-
-      plan.intent =
-        "edit_imports";
-
-      plan.scope =
-        "file";
-
-      plan.requiresImportUpdate =
-        true;
-
-      return plan;
+      return "imports";
     }
 
     if (
@@ -123,19 +280,7 @@ export default class PatchPlannerService {
         prompt
       )
     ) {
-      plan.strategy =
-        "create_file";
-
-      plan.intent =
-        "create_file";
-
-      plan.scope =
-        "workspace";
-
-      plan.risk =
-        "medium";
-
-      return plan;
+      return "create_file";
     }
 
     if (
@@ -143,47 +288,7 @@ export default class PatchPlannerService {
         prompt
       )
     ) {
-      plan.strategy =
-        "delete_file";
-
-      plan.intent =
-        "delete_file";
-
-      plan.scope =
-        "workspace";
-
-      plan.risk =
-        "high";
-
-      return plan;
-    }
-
-    if (
-      /insert|add/i.test(
-        prompt
-      )
-    ) {
-      plan.strategy =
-        "insert";
-
-      plan.intent =
-        "insert_code";
-
-      return plan;
-    }
-
-    if (
-      /delete|remove/i.test(
-        prompt
-      )
-    ) {
-      plan.strategy =
-        "delete";
-
-      plan.intent =
-        "delete_code";
-
-      return plan;
+      return "delete_file";
     }
 
     if (
@@ -191,22 +296,7 @@ export default class PatchPlannerService {
         prompt
       )
     ) {
-      plan.strategy =
-        "refactor";
-
-      plan.intent =
-        "refactor";
-
-      plan.scope =
-        "workspace";
-
-      plan.requiresReferenceUpdate =
-        true;
-
-      plan.risk =
-        "medium";
-
-      return plan;
+      return "refactor";
     }
 
     if (
@@ -214,16 +304,7 @@ export default class PatchPlannerService {
         prompt
       )
     ) {
-      plan.strategy =
-        "optimize";
-
-      plan.intent =
-        "optimize";
-
-      plan.scope =
-        "file";
-
-      return plan;
+      return "optimize";
     }
 
     if (
@@ -231,18 +312,145 @@ export default class PatchPlannerService {
         prompt
       )
     ) {
-      plan.strategy =
-        "fix";
-
-      plan.intent =
-        "bug_fix";
-
-      plan.scope =
-        "file";
-
-      return plan;
+      return "fix";
     }
 
-    return plan;
+    if (
+      /\binsert\b|\badd\b/i.test(
+        prompt
+      )
+    ) {
+      return "insert";
+    }
+
+    if (
+      /\bdelete\b|\bremove\b/i.test(
+        prompt
+      )
+    ) {
+      return "delete";
+    }
+
+    return "edit";
+  }
+
+  static detectTargetType(
+    prompt
+  ) {
+    if (
+      /\bfunction\b/.test(
+        prompt
+      )
+    ) {
+      return "function";
+    }
+
+    if (
+      /\bclass\b/.test(
+        prompt
+      )
+    ) {
+      return "class";
+    }
+
+    if (
+      /\bimport\b/.test(
+        prompt
+      )
+    ) {
+      return "import";
+    }
+
+    if (
+      /\bvariable\b|\bconst\b|\blet\b|\bvar\b/.test(
+        prompt
+      )
+    ) {
+      return "variable";
+    }
+
+    if (
+      /\bfile\b/.test(
+        prompt
+      )
+    ) {
+      return "file";
+    }
+
+    return "unknown";
+  }
+
+  static detectScope(
+    prompt
+  ) {
+    if (
+      /workspace|project|every file|all files|across/i.test(
+        prompt
+      )
+    ) {
+      return "workspace";
+    }
+
+    return "file";
+  }
+
+  static detectRisk(
+    prompt
+  ) {
+    if (
+      /rename|delete|remove file|workspace/i.test(
+        prompt
+      )
+    ) {
+      return "high";
+    }
+
+    if (
+      /create|refactor/i.test(
+        prompt
+      )
+    ) {
+      return "medium";
+    }
+
+    return "low";
+  }
+
+  static detectConfidence(
+    prompt
+  ) {
+    let score =
+      0.5;
+
+    const keywords = [
+      "rename",
+      "function",
+      "class",
+      "file",
+      "import",
+      "refactor",
+      "fix",
+      "optimize",
+      "delete",
+      "create"
+    ];
+
+    for (const keyword of keywords) {
+      if (
+        prompt.includes(
+          keyword
+        )
+      ) {
+        score +=
+          0.05;
+      }
+    }
+
+    return Math.min(
+      1,
+      Number(
+        score.toFixed(2)
+      )
+    );
   }
 }
