@@ -1,238 +1,26 @@
-import SearchService from "./search-service.js";
+import EditorFileService from "./editor-file-service.js";
+import EditorContentService from "./editor-content-service.js";
+import SnapshotService from "./snapshot-service.js";
 
 export default class PatchService {
-  static snapshots = new Map();
-
-  static MAX_HISTORY = 20;
-
-  static findOpenEditorFile(filename) {
-    if (
-      !filename ||
-      !editorManager ||
-      !editorManager.files
-    ) {
-      return null;
-    }
-
-    const normalize = value =>
-      String(value || "")
-        .trim()
-        .replace(/\\/g, "/")
-        .toLowerCase();
-
-    const target = normalize(filename);
-    const targetBase =
-      target.split("/").pop();
-
-    return (
-      editorManager.files.find(file => {
-        const name = normalize(
-          file.filename || file.name
-        );
-
-        const uri = normalize(file.uri);
-        const uriBase =
-          uri.split("/").pop();
-
-        return (
-          name === target ||
-          name === targetBase ||
-          uri === target ||
-          uri.includes(target) ||
-          uriBase === targetBase
-        );
-      }) || null
-    );
-  }
-
-  static async openFile(filename) {
-    try {
-      const alreadyOpen =
-        this.findOpenEditorFile(
-          filename
-        );
-
-      if (alreadyOpen) {
-        editorManager.switchFile(
-          alreadyOpen.id
-        );
-
-        return {
-          success: true,
-          reused: true,
-          file: alreadyOpen
-        };
-      }
-
-      const file =
-        SearchService.openFile(
-          filename
-        );
-
-      if (!file) {
-        return {
-          success: false,
-          error: "File not found"
-        };
-      }
-
-      const content =
-        await SearchService.readFullFile(
-          filename
-        );
-
-      if (!content) {
-        return {
-          success: false,
-          error:
-            "Could not read file"
-        };
-      }
-
-      const EditorFile =
-        editorManager.files[0]
-          .constructor;
-
-      const openedFile =
-        new EditorFile(
-          file.name,
-          {
-            uri:
-              file.url ||
-              file.path,
-            text: content,
-            editable: true
-          }
-        );
-
-      return {
-        success: true,
-        file: openedFile
-      };
-    } catch (error) {
-      console.error(
-        "openFile failed:",
-        error
-      );
-
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  static isActiveFile(file) {
-    return (
-      editorManager?.activeFile?.id ===
-      file?.id
-    );
-  }
-
-  static getFileContent(file) {
-    if (!file) {
-      return "";
-    }
-
-    if (
-      this.isActiveFile(file) &&
-      editorManager?.editor?.state?.doc
-    ) {
-      return editorManager.editor
-        .state.doc
-        .toString();
-    }
-
-    return (
-      file.session?.getValue?.() || ""
-    );
-  }
-
-  static setFileContent(
-    file,
-    content
-  ) {
-    if (!file) {
-      return;
-    }
-
-    if (
-      this.isActiveFile(file) &&
-      editorManager?.editor?.dispatch &&
-      editorManager?.editor?.state?.doc
-    ) {
-      editorManager.editor.dispatch({
-        changes: {
-          from: 0,
-          to:
-            editorManager.editor
-              .state.doc.length,
-          insert: content
-        }
-      });
-
-      return;
-    }
-
-    file.session?.setValue?.(
-      content
-    );
-  }
-
-  static saveSnapshot(file) {
-    if (!file) {
-      return;
-    }
-
-    const key =
-      file.filename ||
-      file.name ||
-      file.uri;
-
-    const content =
-      this.getFileContent(file);
-
-    let history =
-      this.snapshots.get(key) || [];
-
-    if (
-      history.length &&
-      history[
-        history.length - 1
-      ] === content
-    ) {
-      return;
-    }
-
-    history.push(content);
-
-    if (
-      history.length >
-      this.MAX_HISTORY
-    ) {
-      history.shift();
-    }
-
-    this.snapshots.set(key, history);
-  }
-
   static async replaceFile(
-  action,
-  editContext = null
-) {
+    action,
+    editContext = null
+  ) {
     try {
       console.log(
-  "PATCH CONTEXT:",
-  editContext
-);
+        "PATCH CONTEXT:",
+        editContext
+      );
+
       let file =
-        this.findOpenEditorFile(
+        EditorFileService.findOpenFile(
           action.file
         );
 
       if (!file) {
         const openResult =
-          await this.openFile(
+          await EditorFileService.openFile(
             action.file
           );
 
@@ -240,7 +28,8 @@ export default class PatchService {
           return openResult;
         }
 
-        file = openResult.file;
+        file =
+          openResult.file;
       }
 
       if (!file) {
@@ -251,12 +40,15 @@ export default class PatchService {
         };
       }
 
-      editorManager.switchFile(
-        file.id
+      EditorFileService.switchTo(
+        file
       );
 
-      this.saveSnapshot(file);
-      this.setFileContent(
+      SnapshotService.save(
+        file
+      );
+
+      EditorContentService.setContent(
         file,
         action.content
       );
@@ -272,28 +64,30 @@ export default class PatchService {
 
       return {
         success: false,
-        error: error.message
+        error:
+          error.message
       };
     }
   }
 
-  static async patchFile(
-  action,
-  editContext = null
-) {
+    static async patchFile(
+    action,
+    editContext = null
+  ) {
     try {
       console.log(
-  "PATCH CONTEXT:",
-  editContext
-);
+        "PATCH CONTEXT:",
+        editContext
+      );
+
       let file =
-        this.findOpenEditorFile(
+        EditorFileService.findOpenFile(
           action.file
         );
 
       if (!file) {
         const openResult =
-          await this.openFile(
+          await EditorFileService.openFile(
             action.file
           );
 
@@ -301,7 +95,8 @@ export default class PatchService {
           return openResult;
         }
 
-        file = openResult.file;
+        file =
+          openResult.file;
       }
 
       if (!file) {
@@ -312,54 +107,26 @@ export default class PatchService {
         };
       }
 
-      const currentContent =
-        this.getFileContent(file);
+      EditorFileService.switchTo(
+        file
+      );
 
-      if (
-        !currentContent.includes(
-          action.search
-        )
-      ) {
-        return {
-          success: false,
-          error:
-            "Search text not found"
-        };
-      }
+      SnapshotService.save(
+        file
+      );
 
-      const occurrences =
-        currentContent.split(
-          action.search
-        ).length - 1;
-
-      if (occurrences > 1) {
-        return {
-          success: false,
-          error:
-            "Search text appears multiple times"
-        };
-      }
-
-      const patchedContent =
-        currentContent.replace(
+      const result =
+        EditorContentService.replace(
+          file,
           action.search,
           action.replace
         );
 
-      editorManager.switchFile(
-        file.id
-      );
-
-      this.saveSnapshot(file);
-
-      this.setFileContent(
-        file,
-        patchedContent
-      );
-
-      return {
-        success: true
-      };
+      return result.success
+        ? {
+            success: true
+          }
+        : result;
     } catch (error) {
       console.error(
         "patchFile failed:",
@@ -368,128 +135,122 @@ export default class PatchService {
 
       return {
         success: false,
-        error: error.message
+        error:
+          error.message
       };
     }
   }
 
   static async replaceSymbol(
-  action,
-  editContext = null
-) {
-  try {
-    if (
-      !editContext ||
-      !editContext.target
-    ) {
-      return {
-        success: false,
-        error:
-          "No resolved symbol context."
-      };
-    }
+    action,
+    editContext = null
+  ) {
+    try {
+      if (
+        !editContext ||
+        !editContext.target
+      ) {
+        return {
+          success: false,
+          error:
+            "No resolved symbol context."
+        };
+      }
 
-    const target =
-      editContext.target;
+      const target =
+        editContext.target;
 
-    let file =
-      this.findOpenEditorFile(
-        target.file ||
-          action.file
-      );
-
-    if (!file) {
-      const openResult =
-        await this.openFile(
+      let file =
+        EditorFileService.findOpenFile(
           target.file ||
             action.file
         );
+
+      if (!file) {
+        const openResult =
+          await EditorFileService.openFile(
+            target.file ||
+              action.file
+          );
 
         if (!openResult.success) {
           return openResult;
         }
 
-        file = openResult.file;
-    }
+        file =
+          openResult.file;
+      }
 
-    if (!file) {
-      return {
-        success: false,
-        error:
-          "Unable to open target file."
-      };
-    }
+      if (!file) {
+        return {
+          success: false,
+          error:
+            "Unable to open target file."
+        };
+      }
 
-    const currentContent =
-      this.getFileContent(file);
+      if (
+        !target.content
+      ) {
+        return {
+          success: false,
+          error:
+            "Target symbol content missing."
+        };
+      }
 
-    const original =
-      target.content;
-
-    if (!original) {
-      return {
-        success: false,
-        error:
-          "Target symbol content missing."
-      };
-    }
-
-    if (
-      !currentContent.includes(
-        original
-      )
-    ) {
-      return {
-        success: false,
-        error:
-          "Resolved symbol no longer matches file."
-      };
-    }
-
-    editorManager.switchFile(
-      file.id
-    );
-
-    this.saveSnapshot(file);
-
-    const updated =
-      currentContent.replace(
-        original,
-        action.content
+      EditorFileService.switchTo(
+        file
       );
 
-    this.setFileContent(
-      file,
-      updated
-    );
+      SnapshotService.save(
+        file
+      );
 
-    return {
-      success: true
-    };
-  } catch (error) {
-    console.error(
-      "replaceSymbol failed:",
-      error
-    );
+      const result =
+        EditorContentService.replaceExact(
+          file,
+          target.content,
+          action.content
+        );
 
-    return {
-      success: false,
-      error:
-        error.message
-    };
+      if (!result.success) {
+        return {
+          success: false,
+          error:
+            "Resolved symbol no longer matches file."
+        };
+      }
+
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error(
+        "replaceSymbol failed:",
+        error
+      );
+
+      return {
+        success: false,
+        error:
+          error.message
+      };
+    }
   }
-}
 
-  static async undoFile(action) {
+  static async undoFile(
+    action
+  ) {
     try {
       let file =
-        this.findOpenEditorFile(
+        EditorFileService.findOpenFile(
           action.file
         );
 
       if (!file) {
         const openResult =
-          await this.openFile(
+          await EditorFileService.openFile(
             action.file
           );
 
@@ -497,73 +258,42 @@ export default class PatchService {
           return openResult;
         }
 
-        file = openResult.file;
+        file =
+          openResult.file;
       }
 
-      const key =
-        file.filename ||
-        file.name ||
-        file.uri;
-
-      const history =
-        this.snapshots.get(key);
-
-      if (
-        !history ||
-        !history.length
-      ) {
-        return {
-          success: false,
-          error:
-            "No snapshot found"
-        };
-      }
-
-      const snapshot =
-        history.pop();
-
-      this.setFileContent(
-        file,
-        snapshot
-      );
-
-      if (
-        history.length === 0
-      ) {
-        this.snapshots.delete(
-          key
+      const result =
+        SnapshotService.undo(
+          file
         );
-      } else {
-        this.snapshots.set(
-          key,
-          history
+
+      if (
+        result.success
+      ) {
+        EditorFileService.switchTo(
+          file
         );
       }
 
-      editorManager.switchFile(
-        file.id
-      );
-
-      return {
-        success: true
-      };
+      return result;
     } catch (error) {
       console.error(
         "undoFile failed:",
         error
       );
 
-            return {
+      return {
         success: false,
-        error: error.message
+        error:
+          error.message
       };
     }
   }
 
-  static async applyPatchSet(
-  patchSet = [],
-  editContext = null
-) {
+    static async applyPatchSet(
+    patchSet = [],
+    editContext = null
+  ) {
     const results = [];
 
     for (const fileSet of patchSet) {
@@ -576,32 +306,30 @@ export default class PatchService {
       for (const action of fileSet.actions) {
         let result;
 
-        switch (
-          action.type
-        ) {
+        switch (action.type) {
           case "patch_file":
             result =
               await this.patchFile(
-  action,
-  editContext
-);
+                action,
+                editContext
+              );
             break;
 
           case "replace_file":
             result =
               await this.replaceFile(
-  action,
-  editContext
-);
+                action,
+                editContext
+              );
             break;
 
-            case "replace_symbol":
-  result =
-    await this.replaceSymbol(
-      action,
-      editContext
-    );
-  break;
+          case "replace_symbol":
+            result =
+              await this.replaceSymbol(
+                action,
+                editContext
+              );
+            break;
 
           default:
             result = {
@@ -615,12 +343,9 @@ export default class PatchService {
           result
         );
 
-        if (
-          !result.success
-        ) {
+        if (!result.success) {
           fileResult.success =
             false;
-
           break;
         }
       }
@@ -632,8 +357,8 @@ export default class PatchService {
 
     return {
       success: results.every(
-        item =>
-          item.success
+        result =>
+          result.success
       ),
       results
     };
