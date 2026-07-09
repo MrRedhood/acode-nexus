@@ -1,12 +1,9 @@
 import StorageService from "./storage-service.js";
 import PromptService from "./prompt-service.js";
 import ProviderService from "./provider-service.js";
-import PatchPlannerService from "./patch-planner-service.js";
-import EditContextService from "./edit-context-service.js";
-import TaskPlanService from "./task-plan-service.js";
-import ActionContextBuilderService from "./action-context-builder-service.js";
 import EditMessageParser from "./edit-message-parser.js";
 import EditStateService from "./edit-state-service.js";
+import EditOrchestratorService from "./edit-orchestrator-service.js";
 
 export default class EditService {
   static async prepareMessages(
@@ -66,45 +63,19 @@ export default class EditService {
         rawUserRequest
       );
 
-    const plan =
-      await PatchPlannerService.createPlan(
-        userRequest
-      );
-
-    const context =
-      await EditContextService.prepare(
-        plan,
+    const session =
+      await EditOrchestratorService.prepare(
         userRequest,
         liveBuffer
       );
 
-    const taskPlan =
-      TaskPlanService.createPlan(
-        userRequest,
-        plan
-      );
-
-    context.request =
-      userRequest;
-
-    context.liveBuffer =
-      liveBuffer;
-
-    context.taskPlan =
-      taskPlan;
-
     EditStateService.setLastEditContext(
-      context
+      session.editContext
     );
 
     EditStateService.setLastTaskPlan(
-      taskPlan
+      session.taskPlan
     );
-
-    const userPrompt =
-      ActionContextBuilderService.build(
-        context
-      );
 
     const processedMessages = [
       {
@@ -115,7 +86,7 @@ export default class EditService {
       {
         role: "user",
         content:
-          userPrompt
+          session.actionContext
       }
     ];
 
@@ -124,9 +95,12 @@ export default class EditService {
       apiKey,
       model,
       processedMessages,
-      plan,
-      context,
-      taskPlan
+      plan:
+        session.plan,
+      context:
+        session.editContext,
+      taskPlan:
+        session.taskPlan
     };
   }
 
@@ -140,6 +114,7 @@ export default class EditService {
 
   static clearLastEditContext() {
     EditStateService.clearLastEditContext();
+    EditOrchestratorService.clear();
   }
 
   static clearLastTaskPlan() {
@@ -148,6 +123,7 @@ export default class EditService {
 
   static clearExecutionState() {
     EditStateService.clearExecutionState();
+    EditOrchestratorService.clear();
   }
 
   static async sendMessageStream(
