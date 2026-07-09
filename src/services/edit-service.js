@@ -5,135 +5,10 @@ import PatchPlannerService from "./patch-planner-service.js";
 import EditContextService from "./edit-context-service.js";
 import TaskPlanService from "./task-plan-service.js";
 import ActionContextBuilderService from "./action-context-builder-service.js";
+import EditMessageParser from "./edit-message-parser.js";
+import EditStateService from "./edit-state-service.js";
 
 export default class EditService {
-  static lastEditContext =
-    null;
-
-  static lastTaskPlan =
-    null;
-
-  static extractLiveBuffer(
-    messages
-  ) {
-    if (!messages?.length) {
-      return null;
-    }
-
-    for (
-      let i = messages.length - 1;
-      i >= 0;
-      i--
-    ) {
-      const msg =
-        messages[i];
-
-      if (
-        msg.role !== "user" ||
-        !msg.content
-      ) {
-        continue;
-      }
-
-      const text =
-        msg.content;
-
-      if (
-        !(
-          text.includes(
-            "LIVE EDITOR BUFFER"
-          ) ||
-          text.includes(
-            "ACTIVE FILE"
-          ) ||
-          text.includes(
-            "LIVE EDITOR FILE"
-          )
-        )
-      ) {
-        continue;
-      }
-
-      const fenced =
-        text.match(
-          /```(?:[\w-]+)?\n([\s\S]*?)```/
-        );
-
-      if (
-        fenced &&
-        fenced[1]
-      ) {
-        return fenced[1].trim();
-      }
-
-      return text.trim();
-    }
-
-    return null;
-  }
-
-  static extractUserRequest(
-    messages
-  ) {
-    if (!messages?.length) {
-      return "";
-    }
-
-    for (
-      let i = messages.length - 1;
-      i >= 0;
-      i--
-    ) {
-      const msg =
-        messages[i];
-
-      if (
-        msg.role === "user" &&
-        msg.content
-      ) {
-        return msg.content;
-      }
-    }
-
-    return "";
-  }
-
-  static cleanUserRequest(
-    text
-  ) {
-    if (!text) {
-      return "";
-    }
-
-    const markers = [
-      "ACTIVE FILE (LIVE EDITOR BUFFER)",
-      "LIVE EDITOR FILE",
-      "ACTIVE FILE"
-    ];
-
-    let cleaned =
-      text;
-
-    for (const marker of markers) {
-      const index =
-        cleaned.indexOf(
-          marker
-        );
-
-      if (
-        index !== -1
-      ) {
-        cleaned =
-          cleaned.slice(
-            0,
-            index
-          );
-      }
-    }
-
-    return cleaned.trim();
-  }
-
   static async prepareMessages(
     messages
   ) {
@@ -171,7 +46,7 @@ export default class EditService {
     }
 
     const liveBuffer =
-      this.extractLiveBuffer(
+      EditMessageParser.extractLiveBuffer(
         messages
       );
 
@@ -182,12 +57,12 @@ export default class EditService {
     }
 
     const rawUserRequest =
-      this.extractUserRequest(
+      EditMessageParser.extractUserRequest(
         messages
       );
 
     const userRequest =
-      this.cleanUserRequest(
+      EditMessageParser.cleanUserRequest(
         rawUserRequest
       );
 
@@ -218,11 +93,13 @@ export default class EditService {
     context.taskPlan =
       taskPlan;
 
-    this.lastEditContext =
-      context;
+    EditStateService.setLastEditContext(
+      context
+    );
 
-    this.lastTaskPlan =
-      taskPlan;
+    EditStateService.setLastTaskPlan(
+      taskPlan
+    );
 
     const userPrompt =
       ActionContextBuilderService.build(
@@ -254,31 +131,23 @@ export default class EditService {
   }
 
   static getLastEditContext() {
-    return (
-      this.lastEditContext
-    );
+    return EditStateService.getLastEditContext();
   }
 
   static getLastTaskPlan() {
-    return (
-      this.lastTaskPlan
-    );
+    return EditStateService.getLastTaskPlan();
   }
 
   static clearLastEditContext() {
-    this.lastEditContext =
-      null;
+    EditStateService.clearLastEditContext();
   }
 
   static clearLastTaskPlan() {
-    this.lastTaskPlan =
-      null;
+    EditStateService.clearLastTaskPlan();
   }
 
   static clearExecutionState() {
-    this.clearLastEditContext();
-
-    this.clearLastTaskPlan();
+    EditStateService.clearExecutionState();
   }
 
   static async sendMessageStream(
