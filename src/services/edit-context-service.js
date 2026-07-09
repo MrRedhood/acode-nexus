@@ -1,6 +1,7 @@
 import WorkspaceSymbolResolverService from "./workspace-symbol-resolver-service.js";
 import DependencyResolverService from "./dependency-resolver-service.js";
 import ImpactAnalysisService from "./impact-analysis-service.js";
+import WorkspaceContextService from "./workspace-context-service.js";
 
 export default class EditContextService {
   static async prepare(
@@ -12,6 +13,9 @@ export default class EditContextService {
       String(
         userRequest || ""
       ).trim();
+
+    const workspace =
+      await WorkspaceContextService.build();
 
     const resolved =
       await WorkspaceSymbolResolverService.resolve(
@@ -27,6 +31,9 @@ export default class EditContextService {
         plan,
         request,
         liveBuffer,
+
+        workspace,
+
         target: null,
         definition: null,
         references: [],
@@ -71,6 +78,8 @@ export default class EditContextService {
       request,
 
       liveBuffer,
+
+      workspace,
 
       target,
 
