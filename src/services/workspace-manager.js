@@ -223,6 +223,119 @@ export default class WorkspaceManager {
     );
   }
 
+    static getWorkspaceRoots() {
+    return Object.keys(
+      this.workspaceBuckets
+    );
+  }
+
+  static getWorkspace(
+    root
+  ) {
+    return (
+      this.workspaceBuckets[
+        root
+      ] || []
+    );
+  }
+
+  static getWorkspaceFiles(
+    root = null
+  ) {
+    if (!root) {
+      return this.getFiles();
+    }
+
+    return (
+      this.workspaceBuckets[
+        root
+      ] || []
+    );
+  }
+
+  static getFileByPath(
+    path
+  ) {
+    return this.getFiles().find(
+      file =>
+        file.path === path ||
+        file.url === path
+    );
+  }
+
+  static getFileByName(
+    name
+  ) {
+    const lower =
+      String(name)
+        .toLowerCase();
+
+    return this.getFiles().find(
+      file =>
+        String(
+          file.name
+        )
+          .toLowerCase() ===
+        lower
+    );
+  }
+
+  static hasFile(
+    path
+  ) {
+    return Boolean(
+      this.getFileByPath(
+        path
+      )
+    );
+  }
+
+  static getFolders() {
+    return [
+      ...new Set(
+        this.getFiles()
+          .map(file => {
+            const path =
+              file.path ||
+              "";
+
+            const index =
+              path.lastIndexOf(
+                "/"
+              );
+
+            return index === -1
+              ? ""
+              : path.slice(
+                  0,
+                  index
+                );
+          })
+          .filter(Boolean)
+      )
+    ];
+  }
+
+  static getStats() {
+    return {
+      workspaces:
+        this.getWorkspaceRoots()
+          .length,
+
+      files:
+        this.getFiles()
+          .length,
+
+      folders:
+        this.getFolders()
+          .length
+    };
+  }
+
+  static async refresh() {
+    return await this.scanWorkspace();
+  }
+
   static debugOpenFiles() {
     try {
       console.log(
