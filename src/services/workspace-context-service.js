@@ -1,6 +1,7 @@
 import WorkspaceScopeService from "./workspace-scope-service.js";
 import WorkspaceSummaryService from "./workspace-summary-service.js";
 import WorkspaceSymbolIndexService from "./workspace-symbol-index-service.js";
+import WorkspaceQueryService from "./workspace-query-service.js";
 
 export default class WorkspaceContextService {
   static currentContext =
@@ -68,36 +69,72 @@ export default class WorkspaceContextService {
   }
 
   static async getWorkspace() {
-    const context =
-      await this.build();
-
-    return context.workspace;
+    return (
+      await this.build()
+    ).workspace;
   }
 
   static async getFiles() {
-    const context =
-      await this.build();
-
-    return context.files;
+    return (
+      await this.build()
+    ).files;
   }
 
   static async getSummary() {
-    const context =
-      await this.build();
-
-    return context.summary;
+    return (
+      await this.build()
+    ).summary;
   }
 
   static async getSymbols() {
-    const context =
-      await this.build();
-
-    return context.symbols;
+    return (
+      await this.build()
+    ).symbols;
   }
 
   static async getPromptSummary() {
     await this.build();
 
     return WorkspaceSummaryService.buildPromptSummary();
+  }
+
+  static async findSymbol(
+    name
+  ) {
+    await this.build();
+
+    return WorkspaceSymbolIndexService.findExact(
+      name
+    );
+  }
+
+  static async findSimilarSymbols(
+    query
+  ) {
+    await this.build();
+
+    return WorkspaceSymbolIndexService.findSimilar(
+      query
+    );
+  }
+
+  static async findDefinition(
+    symbol
+  ) {
+    await this.build();
+
+    return WorkspaceQueryService.findDefinition(
+      symbol
+    );
+  }
+
+  static async findReferences(
+    symbol
+  ) {
+    await this.build();
+
+    return WorkspaceQueryService.findReferences(
+      symbol
+    );
   }
 }
