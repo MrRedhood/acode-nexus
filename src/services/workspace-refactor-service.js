@@ -1,4 +1,5 @@
 import PatchSetService from "./patch-set-service.js";
+import WorkspaceRefactorSummaryService from "./workspace-refactor-summary-service.js";
 
 export default class WorkspaceRefactorService {
   static build(
@@ -17,6 +18,7 @@ export default class WorkspaceRefactorService {
       actions.length === 0
     ) {
       result.success = false;
+
       result.errors.push(
         "No actions returned by AI."
       );
@@ -72,14 +74,16 @@ export default class WorkspaceRefactorService {
     const actual =
       new Set();
 
-    for (const file of impact.affectedFiles ||
+    for (const file of
+      impact.affectedFiles ||
       []) {
       expected.add(
         file.file
       );
     }
 
-    for (const group of patchSet.groups ||
+    for (const group of
+      patchSet.groups ||
       []) {
       actual.add(
         group.file
@@ -110,61 +114,8 @@ export default class WorkspaceRefactorService {
   static summarize(
     result
   ) {
-    if (!result) {
-      return "";
-    }
-
-    const lines = [];
-
-    lines.push(
-      `SUCCESS: ${result.success}`
-    );
-
-    if (
-      result.errors.length
-    ) {
-      lines.push("");
-      lines.push(
-        "ERRORS:"
-      );
-
-      for (const error of result.errors) {
-        lines.push(
-          `- ${error}`
-        );
-      }
-    }
-
-    if (
-      result.warnings.length
-    ) {
-      lines.push("");
-      lines.push(
-        "WARNINGS:"
-      );
-
-      for (const warning of result.warnings) {
-        lines.push(
-          `- ${warning}`
-        );
-      }
-    }
-
-    if (
-      result.patchSet
-    ) {
-      lines.push("");
-      lines.push(
-        `FILES: ${result.patchSet.getFiles().length}`
-      );
-
-      lines.push(
-        `ACTIONS: ${result.patchSet.totalActions()}`
-      );
-    }
-
-    return lines.join(
-      "\n"
+    return WorkspaceRefactorSummaryService.summarize(
+      result
     );
   }
 }
