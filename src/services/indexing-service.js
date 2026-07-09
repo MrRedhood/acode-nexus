@@ -1,5 +1,6 @@
 import WorkspaceScopeService from "./workspace-scope-service.js";
 import SearchService from "./search-service.js";
+import SourceAnalyzerService from "./source-analyzer-service.js";
 
 export default class IndexingService {
   static currentIndex =
@@ -37,7 +38,7 @@ export default class IndexingService {
             file.path || "",
 
           extension:
-            this.getExtension(
+            SourceAnalyzerService.getExtension(
               file.name
             ),
 
@@ -50,9 +51,6 @@ export default class IndexingService {
           functions: []
         };
 
-        const ext =
-          fileData.extension;
-
         const shouldAnalyze =
           [
             "js",
@@ -60,35 +58,28 @@ export default class IndexingService {
             "json",
             "css",
             "md"
-          ].includes(ext);
+          ].includes(
+            fileData.extension
+          );
 
-        if (shouldAnalyze) {
+        if (
+          shouldAnalyze
+        ) {
           try {
             const content =
               await this.readFileContent(
                 file
               );
 
-            if (content) {
-              fileData.imports =
-                this.extractImports(
+            if (
+              content
+            ) {
+              Object.assign(
+                fileData,
+                SourceAnalyzerService.analyze(
                   content
-                );
-
-              fileData.exports =
-                this.extractExports(
-                  content
-                );
-
-              fileData.classes =
-                this.extractClasses(
-                  content
-                );
-
-              fileData.functions =
-                this.extractFunctions(
-                  content
-                );
+                )
+              );
             }
           } catch (err) {
             console.error(
@@ -111,15 +102,19 @@ export default class IndexingService {
         console.log(
           "[INDEX CANCELLED]"
         );
+
         return null;
       }
 
       const index = {
         workspace,
+
         totalFiles:
           indexedFiles.length,
+
         generatedAt:
           Date.now(),
+
         files:
           indexedFiles
       };
@@ -157,7 +152,8 @@ export default class IndexingService {
         );
 
       return (
-        content || null
+        content ||
+        null
       );
     } catch (error) {
       console.error(
@@ -168,111 +164,5 @@ export default class IndexingService {
 
       return null;
     }
-  }
-
-  static extractImports(
-    content
-  ) {
-    const matches =
-      content.matchAll(
-        /import\s+.*?from\s+["'](.+?)["']/g
-      );
-
-    return [
-      ...new Set(
-        [...matches].map(
-          match =>
-            match[1]
-        )
-      )
-    ];
-  }
-
-  static extractExports(
-    content
-  ) {
-    const matches =
-      content.matchAll(
-        /export\s+(?:default\s+)?(?:class|function|const|let|var)?\s*([A-Za-z0-9_$]*)/g
-      );
-
-    return [
-      ...new Set(
-        [...matches]
-          .map(
-            match =>
-              match[1]
-          )
-          .filter(Boolean)
-      )
-    ];
-  }
-
-  static extractClasses(
-    content
-  ) {
-    const matches =
-      content.matchAll(
-        /class\s+([A-Za-z0-9_$]+)/g
-      );
-
-    return [
-      ...new Set(
-        [...matches].map(
-          match =>
-            match[1]
-        )
-      )
-    ];
-  }
-
-  static extractFunctions(
-    content
-  ) {
-    const matches =
-      content.matchAll(
-        /(?:async\s+)?([A-Za-z0-9_$]+)\s*\([^)]*\)\s*\{/g
-      );
-
-    return [
-      ...new Set(
-        [...matches]
-          .map(
-            match =>
-              match[1]
-          )
-          .filter(
-            name =>
-              ![
-                "if",
-                "for",
-                "while",
-                "switch",
-                "catch"
-              ].includes(
-                name
-              )
-          )
-      )
-    ];
-  }
-
-  static getExtension(
-    name
-  ) {
-    if (!name) {
-      return "";
-    }
-
-    const parts =
-      name.split(".");
-
-    if (
-      parts.length < 2
-    ) {
-      return "";
-    }
-
-    return parts.pop();
   }
 }
