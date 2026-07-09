@@ -74,7 +74,11 @@ static fileMap =
   }
 
   static clear() {
-    this.symbols = [];
+  this.symbols = [];
+
+  this.symbolMap.clear();
+
+  this.fileMap.clear();
   }
 
   static getSymbols() {
