@@ -1,9 +1,35 @@
 import SearchService from "./search-service.js";
+import WorkspaceScopeService from "./workspace-scope-service.js";
+import WorkspaceSymbolIndexService from "./workspace-symbol-index-service.js";
 
 export default class WorkspaceQueryService {
   static async findDefinition(
     symbolName
   ) {
+    if (!symbolName) {
+      return null;
+    }
+
+    const indexed =
+      WorkspaceSymbolIndexService.findExact(
+        symbolName
+      );
+
+    if (indexed) {
+      return {
+        file:
+          indexed.file,
+        path:
+          indexed.path,
+        line:
+          indexed.line,
+        text:
+          indexed.text,
+        type:
+          "definition"
+      };
+    }
+
     const references =
       await this.findReferences(
         symbolName
@@ -25,17 +51,8 @@ export default class WorkspaceQueryService {
       return [];
     }
 
-    const files =
-      SearchService.openFile
-        ? null
-        : null;
-
     const scopedFiles =
-      (
-        await import(
-          "./workspace-scope-service.js"
-        )
-      ).default.getScopedFiles();
+      WorkspaceScopeService.getScopedFiles();
 
     const results = [];
 
@@ -83,16 +100,12 @@ export default class WorkspaceQueryService {
           results.push({
             file:
               file.name,
-
             path:
               file.path,
-
             line:
               i + 1,
-
             text:
               line.trim(),
-
             type:
               this.classifyLine(
                 line,
@@ -108,6 +121,38 @@ export default class WorkspaceQueryService {
     }
 
     return results;
+  }
+
+  static findSymbol(
+    symbolName
+  ) {
+    return WorkspaceSymbolIndexService.findExact(
+      symbolName
+    );
+  }
+
+  static findSymbols(
+    query
+  ) {
+    return WorkspaceSymbolIndexService.findSimilar(
+      query
+    );
+  }
+
+  static hasSymbol(
+    symbolName
+  ) {
+    return WorkspaceSymbolIndexService.hasSymbol(
+      symbolName
+    );
+  }
+
+  static getFileSymbols(
+    path
+  ) {
+    return WorkspaceSymbolIndexService.getFileSymbols(
+      path
+    );
   }
 
   static classifyLine(
