@@ -50,6 +50,12 @@ export default class WorkspaceSummaryService {
     );
   }
 
+  static refresh() {
+    this.clear();
+
+    return this.buildSummary();
+  }
+
   static clear() {
     this.currentSummary =
       null;
