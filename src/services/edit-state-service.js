@@ -1,44 +1,55 @@
+import EditOrchestratorService from "./edit-orchestrator-service.js";
+
 export default class EditStateService {
-  static lastEditContext =
-    null;
-
-  static lastTaskPlan =
-    null;
-
   static getLastEditContext() {
-    return this.lastEditContext;
+    return EditOrchestratorService.getEditContext();
   }
 
   static setLastEditContext(
     context
   ) {
-    this.lastEditContext =
-      context;
+    if (
+      EditOrchestratorService.current
+    ) {
+      EditOrchestratorService.current.editContext =
+        context;
+    }
   }
 
   static clearLastEditContext() {
-    this.lastEditContext =
-      null;
+    if (
+      EditOrchestratorService.current
+    ) {
+      EditOrchestratorService.current.editContext =
+        null;
+    }
   }
 
   static getLastTaskPlan() {
-    return this.lastTaskPlan;
+    return EditOrchestratorService.getTaskPlan();
   }
 
   static setLastTaskPlan(
     plan
   ) {
-    this.lastTaskPlan =
-      plan;
+    if (
+      EditOrchestratorService.current
+    ) {
+      EditOrchestratorService.current.taskPlan =
+        plan;
+    }
   }
 
   static clearLastTaskPlan() {
-    this.lastTaskPlan =
-      null;
+    if (
+      EditOrchestratorService.current
+    ) {
+      EditOrchestratorService.current.taskPlan =
+        null;
+    }
   }
 
   static clearExecutionState() {
-    this.clearLastEditContext();
-    this.clearLastTaskPlan();
+    EditOrchestratorService.clear();
   }
 }
