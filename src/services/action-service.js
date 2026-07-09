@@ -1,20 +1,12 @@
 import FileService from "./file-service.js";
 import PatchService from "./patch-service.js";
 import ActionParserService from "./action-parser-service.js";
+import ActionValidationService from "./action-validation-service.js";
 import PatchSetService from "./patch-set-service.js";
 import MultiDiffPreviewService from "./multi-diff-preview-service.js";
 import WorkspaceRefactorService from "./workspace-refactor-service.js";
 
 export default class ActionService {
-  static SUPPORTED_ACTIONS = [
-    "focus_file",
-    "open_file",
-    "replace_file",
-    "replace_symbol",
-    "patch_file",
-    "undo_file"
-  ];
-
   static parseActions(text) {
     const result =
       ActionParserService.parseActions(
@@ -25,26 +17,33 @@ export default class ActionService {
       console.warn(
         result.error
       );
+
       return [];
     }
 
-    return result.actions;
+    const validation =
+      ActionValidationService.validateActions(
+        result.actions
+      );
+
+    if (
+      validation.errors.length
+    ) {
+      console.warn(
+        "Invalid actions:",
+        validation.errors
+      );
+    }
+
+    return validation.actions;
   }
 
   static validateAction(
     action
   ) {
-    if (!action) {
-      return false;
-    }
-
-    if (!action.type) {
-      return false;
-    }
-
-    return this.SUPPORTED_ACTIONS.includes(
-      action.type
-    );
+    return ActionValidationService.validateAction(
+      action
+    ).valid;
   }
 
   static async executePatchActions(
@@ -88,6 +87,7 @@ export default class ActionService {
     console.log(
       "EDIT CONTEXT:"
     );
+
     console.log(
       editContext
     );
@@ -95,6 +95,7 @@ export default class ActionService {
     console.log(
       "WORKSPACE REFACTOR:"
     );
+
     console.log(
       WorkspaceRefactorService.summarize(
         validation
@@ -157,15 +158,18 @@ export default class ActionService {
       action
     );
 
-    if (
-      !this.validateAction(
+    const validation =
+      ActionValidationService.validateAction(
         action
-      )
+      );
+
+    if (
+      !validation.valid
     ) {
       return {
         success: false,
         error:
-          "Invalid action"
+          validation.error
       };
     }
 
@@ -205,7 +209,7 @@ export default class ActionService {
         return {
           success: false,
           error:
-            "Unsupported action"
+            "Unsupported action."
         };
     }
   }
