@@ -5,19 +5,21 @@ import LiveBufferSymbolService from "./live-buffer-symbol-service.js";
 export default class WorkspaceSymbolIndexService {
   static symbols = [];
 
-static symbolMap =
-  new Map();
+  static symbolMap =
+    new Map();
 
-static fileMap =
-  new Map();
+  static fileMap =
+    new Map();
 
   static async buildIndex() {
-    this.symbols = [];
+    this.clear();
 
     const files =
       WorkspaceScopeService.getScopedFiles()
         .filter(file =>
-          SearchService.isSearchableFile(file)
+          SearchService.isSearchableFile(
+            file
+          )
         );
 
     console.log(
@@ -42,15 +44,12 @@ static fileMap =
           );
 
         for (const symbol of symbols) {
-          this.symbols.push({
+          this.register({
             ...symbol,
-
             file:
               file.name,
-
             path:
               file.path,
-
             url:
               file.url
           });
@@ -73,43 +72,43 @@ static fileMap =
     return this.symbols;
   }
 
+  static register(
+    symbol
+  ) {
+    this.symbols.push(
+      symbol
+    );
+
+    this.symbolMap.set(
+      symbol.name,
+      symbol
+    );
+
+    const list =
+      this.fileMap.get(
+        symbol.path
+      ) || [];
+
+    list.push(symbol);
+
+    this.fileMap.set(
+      symbol.path,
+      list
+    );
+  }
+
   static clear() {
-  this.symbols = [];
+    this.symbols = [];
 
-  this.symbolMap.clear();
+    this.symbolMap.clear();
 
-  this.fileMap.clear();
+    this.fileMap.clear();
   }
 
   static getSymbols() {
     return [
       ...this.symbols
     ];
-  }
-
-  static register(
-  symbol
-) {
-  this.symbols.push(
-    symbol
-  );
-
-  this.symbolMap.set(
-    symbol.name,
-    symbol
-  );
-
-  const list =
-    this.fileMap.get(
-      symbol.path
-    ) || [];
-
-  list.push(symbol);
-
-  this.fileMap.set(
-    symbol.path,
-    list
-  );
   }
 
   static findExact(
@@ -120,10 +119,8 @@ static fileMap =
     }
 
     return (
-      this.symbols.find(
-        symbol =>
-          symbol.name ===
-          name
+      this.symbolMap.get(
+        name
       ) || null
     );
   }
@@ -166,6 +163,20 @@ static fileMap =
           path
       );
 
+    this.fileMap.delete(
+      path
+    );
+
+    this.symbolMap =
+      new Map(
+        this.symbols.map(
+          symbol => [
+            symbol.name,
+            symbol
+          ]
+        )
+      );
+
     const content =
       await SearchService.readFullFile(
         path
@@ -194,18 +205,39 @@ static fileMap =
       );
 
     for (const symbol of symbols) {
-      this.symbols.push({
+      this.register({
         ...symbol,
-
         file:
           file.name,
-
         path:
           file.path,
-
         url:
           file.url
       });
     }
+  }
+
+  static getFileSymbols(
+    path
+  ) {
+    return [
+      ...(
+        this.fileMap.get(
+          path
+        ) || []
+      )
+    ];
+  }
+
+  static hasSymbol(
+    name
+  ) {
+    return this.symbolMap.has(
+      name
+    );
+  }
+
+  static count() {
+    return this.symbols.length;
   }
 }
