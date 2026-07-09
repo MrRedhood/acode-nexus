@@ -5,6 +5,12 @@ import LiveBufferSymbolService from "./live-buffer-symbol-service.js";
 export default class WorkspaceSymbolIndexService {
   static symbols = [];
 
+static symbolMap =
+  new Map();
+
+static fileMap =
+  new Map();
+
   static async buildIndex() {
     this.symbols = [];
 
