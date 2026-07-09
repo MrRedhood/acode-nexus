@@ -1,5 +1,4 @@
-import PatchService from "./patch-service.js";
-import PatchValidatorService from "./patch-validator-service.js";
+import PatchExecutionService from "./patch-execution-service.js";
 import EditorFileService from "./editor-file-service.js";
 import SnapshotService from "./snapshot-service.js";
 
@@ -62,107 +61,34 @@ export default class WorkspaceTransactionService {
           actions: []
         };
 
-        for (const action of group.actions ||
-          []) {
-          const validation =
-            action.type ===
-            "patch_file"
-              ? PatchValidatorService.validatePatchAction(
-                  action
-                )
-              : PatchValidatorService.validateAction(
-                  action
-                );
-
-          if (
-            !validation.valid
-          ) {
-            fileReport.success =
-              false;
-
-            report.success =
-              false;
-
-            report.errors.push({
-              file:
-                group.file,
-              action:
-                action.type,
-              error:
-                validation.error
-            });
-
-            break;
-          }
-
-          let result;
-
-          switch (
-            action.type
-          ) {
-            case "patch_file":
-              result =
-                await PatchService.patchFile(
-                  action,
-                  editContext
-                );
-              break;
-
-            case "replace_file":
-              result =
-                await PatchService.replaceFile(
-                  action,
-                  editContext
-                );
-              break;
-
-            case "replace_symbol":
-              result =
-                await PatchService.replaceSymbol(
-                  action,
-                  editContext
-                );
-              break;
-
-            case "undo_file":
-              result =
-                await PatchService.undoFile(
-                  action
-                );
-              break;
-
-            default:
-              result = {
-                success: false,
-                error:
-                  `Unsupported action: ${action.type}`
-              };
-          }
-
-          fileReport.actions.push(
-            result
+        const result =
+          await PatchExecutionService.executeGroup(
+            group.actions || [],
+            editContext
           );
 
-          if (
-            !result.success
-          ) {
-            fileReport.success =
-              false;
+        fileReport.actions =
+          result.results;
 
-            report.success =
-              false;
+        if (!result.success) {
+          fileReport.success =
+            false;
 
-            report.errors.push({
-              file:
-                group.file,
-              action:
-                action.type,
-              error:
-                result.error
-            });
+          report.success =
+            false;
 
-            break;
-          }
+          const failed =
+            result.results.find(
+              r => !r.success
+            );
+
+          report.errors.push({
+            file:
+              group.file,
+            error:
+              failed?.error ||
+              "Unknown execution error"
+          });
         }
 
         report.files.push(
