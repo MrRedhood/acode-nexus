@@ -1,6 +1,7 @@
 import FileService from "./file-service.js";
 import PatchService from "./patch-service.js";
 import ActionParserService from "./action-parser-service.js";
+import ActionOptimizerService from "./action-optimizer-service.js";
 import ActionValidationService from "./action-validation-service.js";
 import PatchSetService from "./patch-set-service.js";
 import MultiDiffPreviewService from "./multi-diff-preview-service.js";
@@ -21,9 +22,21 @@ export default class ActionService {
       return [];
     }
 
+    const optimized =
+      ActionOptimizerService.optimize(
+        result.actions
+      );
+
+    console.log(
+      "ACTION SUMMARY:",
+      ActionOptimizerService.summarize(
+        optimized
+      )
+    );
+
     const validation =
       ActionValidationService.validateActions(
-        result.actions
+        optimized
       );
 
     if (
@@ -60,8 +73,13 @@ export default class ActionService {
       };
     }
 
+    const optimized =
+      ActionOptimizerService.optimize(
+        actions
+      );
+
     const patchActions =
-      actions.filter(
+      optimized.filter(
         action =>
           action.type ===
             "patch_file" ||
@@ -225,10 +243,15 @@ export default class ActionService {
       return [];
     }
 
+    const optimized =
+      ActionOptimizerService.optimize(
+        actions
+      );
+
     const results = [];
 
     const patchActions =
-      actions.filter(
+      optimized.filter(
         action =>
           action.type ===
             "patch_file" ||
@@ -237,14 +260,14 @@ export default class ActionService {
       );
 
     const symbolActions =
-      actions.filter(
+      optimized.filter(
         action =>
           action.type ===
           "replace_symbol"
       );
 
     const otherActions =
-      actions.filter(
+      optimized.filter(
         action =>
           action.type !==
             "patch_file" &&
