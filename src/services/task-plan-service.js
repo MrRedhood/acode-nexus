@@ -1,3 +1,5 @@
+import TaskGraphBuilderService from "./task-graph-builder-service.js";
+
 export default class TaskPlanService {
   static createPlan(
     userRequest,
@@ -86,29 +88,27 @@ export default class TaskPlanService {
     request,
     editPlan
   ) {
-    const strategy =
-      editPlan?.strategy ||
-      "replace_file";
+    const graph =
+      TaskGraphBuilderService.build(
+        request,
+        editPlan
+      );
 
-    const scope =
-      editPlan?.scope ||
-      "file";
-
-    const addTask = (
-      type,
-      title,
-      payload = {}
-    ) => {
+    for (const node of graph) {
       plan.tasks.push({
         id:
           plan.tasks.length +
           1,
 
-        type,
+        type:
+          node.type,
 
-        title,
+        title:
+          node.title,
 
-        payload,
+        payload:
+          node.payload ||
+          {},
 
         status:
           "pending",
@@ -125,70 +125,7 @@ export default class TaskPlanService {
         result:
           null
       });
-    };
-
-    addTask(
-      "resolve_target",
-      "Resolve workspace target",
-      {
-        request,
-        strategy
-      }
-    );
-
-    if (
-      strategy ===
-        "rename_symbol" ||
-      strategy ===
-        "patch_function" ||
-      strategy ===
-        "patch_class" ||
-      strategy ===
-        "replace_file"
-    ) {
-      addTask(
-        "analyze_dependencies",
-        "Analyze dependencies",
-        {
-          strategy
-        }
-      );
     }
-
-    if (
-      strategy ===
-      "rename_symbol"
-    ) {
-      addTask(
-        "find_references",
-        "Find symbol references"
-      );
-    }
-
-    if (
-      scope ===
-      "workspace"
-    ) {
-      addTask(
-        "impact_analysis",
-        "Analyze workspace impact"
-      );
-    }
-
-    addTask(
-      "preview_changes",
-      "Preview changes"
-    );
-
-    addTask(
-      "apply_actions",
-      "Apply changes"
-    );
-
-    addTask(
-      "verify_workspace",
-      "Verify workspace"
-    );
   }
 
   static createTitle(
