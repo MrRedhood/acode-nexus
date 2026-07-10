@@ -1,8 +1,13 @@
+import ActionPlannerService from "./action-planner-service.js";
+
 export default class ActionContextBuilderService {
   static build(context = {}) {
     const sections = [];
 
-    const push = (title, value) => {
+    const push = (
+      title,
+      value
+    ) => {
       if (
         value === undefined ||
         value === null ||
@@ -18,9 +23,22 @@ ${value}
 `.trim());
     };
 
+    const planner =
+      ActionPlannerService.build(
+        context.taskPlan,
+        context
+      );
+
     push(
       "USER REQUEST",
       context.request
+    );
+
+    push(
+      "ACTION PLAN",
+      this.buildPlanner(
+        planner
+      )
     );
 
     push(
@@ -82,6 +100,67 @@ ${value}
     return sections.join(
       "\n\n"
     );
+  }
+
+  static buildPlanner(
+    planner
+  ) {
+    if (!planner) {
+      return "[None]";
+    }
+
+    return `
+OUTPUT:
+${planner.output}
+
+ACTION TYPE:
+${planner.actionType}
+
+PATCH STYLE:
+${planner.patchStyle}
+
+TARGET TYPE:
+${planner.targetType}
+
+SCOPE:
+${planner.scope}
+
+RISK:
+${planner.risk}
+
+VERIFY IMPORTS:
+${planner.verifyImports}
+
+VERIFY REFERENCES:
+${planner.verifyReferences}
+
+VERIFY WORKSPACE:
+${planner.verifyWorkspace}
+
+PRESERVE FORMATTING:
+${planner.preserveFormatting}
+
+PRESERVE COMMENTS:
+${planner.preserveComments}
+
+PRESERVE IMPORTS:
+${planner.preserveImports}
+
+MINIMAL CHANGES:
+${planner.minimalChanges}
+
+ALLOW CREATE FILES:
+${planner.allowCreateFiles}
+
+ALLOW DELETE FILES:
+${planner.allowDeleteFiles}
+
+ALLOW RENAME:
+${planner.allowRename}
+
+ALLOW WORKSPACE CHANGES:
+${planner.allowWorkspaceChanges}
+`.trim();
   }
 
   static buildTarget(
