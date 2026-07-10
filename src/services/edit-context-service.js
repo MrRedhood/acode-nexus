@@ -2,6 +2,7 @@ import WorkspaceSymbolResolverService from "./workspace-symbol-resolver-service.
 import DependencyResolverService from "./dependency-resolver-service.js";
 import ImpactAnalysisService from "./impact-analysis-service.js";
 import WorkspaceContextService from "./workspace-context-service.js";
+import WorkspaceChangeAnalyzerService from "./workspace-change-analyzer-service.js";
 
 export default class EditContextService {
   static async prepare(
@@ -40,7 +41,8 @@ export default class EditContextService {
         intent: null,
         confidence: "Unknown",
         dependency: null,
-        impact: null
+        impact: null,
+        changeAnalysis: null
       };
     }
 
@@ -71,7 +73,7 @@ export default class EditContextService {
         target
       );
 
-    return {
+    const context = {
       plan:
         resolved.plan,
 
@@ -95,5 +97,12 @@ export default class EditContextService {
 
       impact
     };
+
+    context.changeAnalysis =
+      WorkspaceChangeAnalyzerService.analyze(
+        context
+      );
+
+    return context;
   }
 }
