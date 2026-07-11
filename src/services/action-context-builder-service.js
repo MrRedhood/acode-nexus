@@ -91,6 +91,13 @@ ${value}
     );
 
     push(
+      "WORKSPACE CHANGE ANALYSIS",
+      this.buildChangeAnalysis(
+        context.changeAnalysis
+      )
+    );
+
+    push(
       "TASK PLAN",
       this.buildTaskPlan(
         context.taskPlan
@@ -293,6 +300,62 @@ ${candidates}
         2
       )
     );
+  }
+
+  static buildChangeAnalysis(
+    analysis
+  ) {
+    if (!analysis) {
+      return "[None]";
+    }
+
+    const files =
+      analysis.affectedFiles
+        ?.length
+        ? analysis.affectedFiles.join(
+            "\n"
+          )
+        : "[None]";
+
+    const symbols =
+      analysis.affectedSymbols
+        ?.length
+        ? analysis.affectedSymbols.join(
+            "\n"
+          )
+        : "[None]";
+
+    return `
+WORKSPACE SCOPE:
+${analysis.workspaceScope}
+
+BREAKING CHANGE:
+${analysis.breakingChange}
+
+IMPORT UPDATE REQUIRED:
+${analysis.requiresImportUpdate}
+
+REFERENCE UPDATE REQUIRED:
+${analysis.requiresReferenceUpdate}
+
+CONFIDENCE:
+${Math.round(
+  (analysis.confidence ||
+    0) * 100
+)}%
+
+AFFECTED FILES
+
+${files}
+
+AFFECTED SYMBOLS
+
+${symbols}
+
+SUMMARY
+
+${analysis.summary || "[None]"}
+`.trim();
   }
 
   static buildTaskPlan(
