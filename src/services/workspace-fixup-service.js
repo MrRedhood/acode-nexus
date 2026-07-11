@@ -10,6 +10,9 @@ export default class WorkspaceFixupService {
 
       warnings: [],
 
+      difficulty:
+        "low",
+
       summary: null
     };
 
@@ -82,7 +85,9 @@ export default class WorkspaceFixupService {
         plan
       );
 
-    return plan;
+    return this.optimizePlan(
+      plan
+    );
   }
 
   static fixForError(
@@ -161,18 +166,129 @@ export default class WorkspaceFixupService {
     };
   }
 
+  static optimizePlan(
+    plan
+  ) {
+    const unique =
+      new Map();
+
+    for (const fix of plan.fixes) {
+      if (
+        !unique.has(
+          fix.type
+        )
+      ) {
+        unique.set(
+          fix.type,
+          fix
+        );
+      }
+    }
+
+    plan.fixes = [
+      ...unique.values()
+    ];
+
+    const hasSpecific =
+      plan.fixes.some(
+        fix =>
+          fix.type !==
+          "manual_review"
+      );
+
+    if (
+      hasSpecific
+    ) {
+      plan.fixes =
+        plan.fixes.filter(
+          fix =>
+            fix.type !==
+            "manual_review"
+        );
+    }
+
+    const priority = {
+      high: 1,
+      medium: 2,
+      low: 3
+    };
+
+    plan.fixes.sort(
+      (a, b) =>
+        (priority[
+          a.priority
+        ] || 99) -
+        (priority[
+          b.priority
+        ] || 99)
+    );
+
+    const hasHigh =
+      plan.fixes.some(
+        fix =>
+          fix.priority ===
+          "high"
+      );
+
+    const hasMedium =
+      plan.fixes.some(
+        fix =>
+          fix.priority ===
+          "medium"
+      );
+
+    if (
+      hasHigh
+    ) {
+      plan.difficulty =
+        "high";
+    } else if (
+      hasMedium
+    ) {
+      plan.difficulty =
+        "medium";
+    } else {
+      plan.difficulty =
+        "low";
+    }
+
+    plan.summary =
+      this.buildSummary(
+        plan
+      );
+
+    return plan;
+  }
+
   static buildSummary(
     plan
   ) {
+    const fixList =
+      plan.fixes.length
+        ? plan.fixes
+            .map(
+              fix =>
+                `- ${fix.type} (${fix.priority})`
+            )
+            .join("\n")
+        : "[None]";
+
     return `
 Fix-up Required:
 ${plan.required}
+
+Repair Difficulty:
+${plan.difficulty}
 
 Fix Count:
 ${plan.fixes.length}
 
 Warnings:
 ${plan.warnings.length}
+
+Fixes
+
+${fixList}
 `.trim();
   }
 
@@ -181,9 +297,11 @@ ${plan.warnings.length}
   ) {
     return Boolean(
       verification &&
-      (!verification.success ||
+      (
+        !verification.success ||
         verification.recommendations
-          ?.length)
+          ?.length
+      )
     );
   }
 }
