@@ -1,3 +1,5 @@
+import WorkspaceVerificationService from "../services/workspace-verification-service.js";
+
 export default class VerifyWorkspaceTask {
   static async execute(
     task,
@@ -8,67 +10,57 @@ export default class VerifyWorkspaceTask {
       "VerifyWorkspaceTask"
     );
 
-    const diagnostics = [];
+    const verification =
+      WorkspaceVerificationService.verify(
+        plan.result,
+        context?.changeAnalysis ||
+          context?.editContext
+            ?.changeAnalysis ||
+          null
+      );
 
-    if (
-      !plan.actions ||
-      plan.actions.length === 0
-    ) {
-      diagnostics.push({
-        level: "warning",
-        message:
-          "No actions were generated."
-      });
-    }
-
-    if (!plan.result) {
-      diagnostics.push({
-        level: "warning",
-        message:
-          "No execution result available."
-      });
-    }
-
-    if (
-      plan.result &&
-      Array.isArray(
-        plan.result
-      )
-    ) {
-      const failed =
-        plan.result.filter(
-          result =>
-            result &&
-            result.success ===
-              false
-        );
-
-      for (const item of failed) {
-        diagnostics.push({
-          level: "error",
-          message:
-            item.error ||
-            "Unknown execution error."
-        });
-      }
-    }
+    plan.verification =
+      verification;
 
     plan.diagnostics =
-      diagnostics;
+      [
+        ...(verification.errors || []).map(
+          error => ({
+            level: "error",
+            message: error
+          })
+        ),
 
-    const hasErrors =
-      diagnostics.some(
-        item =>
-          item.level ===
-          "error"
-      );
+        ...(verification.warnings || []).map(
+          warning => ({
+            level: "warning",
+            message: warning
+          })
+        )
+      ];
+
+    if (
+      verification.recommendations
+        ?.length
+    ) {
+      plan.warnings = [
+        ...(plan.warnings ||
+          []),
+        ...verification.recommendations
+      ];
+    }
 
     return {
       success:
-        !hasErrors,
+        verification.success,
+
       verified:
-        !hasErrors,
-      diagnostics
+        verification.verified,
+
+      diagnostics:
+        plan.diagnostics,
+
+      verification
     };
   }
 }
